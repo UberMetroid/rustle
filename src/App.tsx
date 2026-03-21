@@ -84,8 +84,10 @@ function App() {
   )
 
   useEffect(() => {
+    console.log('Initializing Wasm engine...')
     init()
       .then(() => {
+        console.log('Wasm engine ready!')
         setIsWasmReady(true)
         const data = getSolution(gameDate)
         setSolutionData(data)

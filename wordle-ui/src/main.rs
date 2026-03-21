@@ -151,15 +151,15 @@ fn App() -> impl IntoView {
         }
     });
 
-    // Keyboard Status Mapping Logic - Fixed with Case Sensitivity handling
+    // Keyboard Status Mapping Logic - Fixed with Case Sensitivity and Proper Result Mapping
     let char_statuses = create_memo(move |_| {
         let mut map = HashMap::new();
-        let sol = solution_data.get().solution;
+        let sol = solution_data.get().solution.to_uppercase();
         for g in guesses.get() {
-            let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &g)).unwrap_or_default();
-            for (c, s) in g.chars().zip(statuses.into_iter()) {
-                let upper_c = c.to_ascii_uppercase();
-                let current = map.entry(upper_c).or_insert(s.clone());
+            let guess_upper = g.to_uppercase();
+            let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &guess_upper)).unwrap_or_default();
+            for (c, s) in guess_upper.chars().zip(statuses.into_iter()) {
+                let current = map.entry(c).or_insert(s.clone());
                 if s == "correct" { *current = s; }
                 else if s == "present" && *current != "correct" { *current = s; }
                 else if s == "absent" && *current != "correct" && *current != "present" { *current = s; }
@@ -182,8 +182,8 @@ fn App() -> impl IntoView {
         let storage = window().local_storage().unwrap().unwrap();
 
         if key == "ENTER" {
-            let input = current_input.get();
-            let sol = solution_data.get().solution;
+            let input = current_input.get().to_uppercase();
+            let sol = solution_data.get().solution.to_uppercase();
             
             if input.len() < 5 {
                 show_alert("NOT ENOUGH LETTERS".to_string());
@@ -197,19 +197,19 @@ fn App() -> impl IntoView {
 
             // Hard Mode Logic
             if hard_mode.get() && !guesses.get().is_empty() {
-                let prev_guess = guesses.get().last().cloned().unwrap();
+                let prev_guess = guesses.get().last().cloned().unwrap().to_uppercase();
                 let prev_statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &prev_guess)).unwrap_or_default();
                 
                 for (i, (c, s)) in prev_guess.chars().zip(prev_statuses.iter()).enumerate() {
-                    if s == "correct" && input.chars().nth(i).unwrap().to_ascii_lowercase() != c.to_ascii_lowercase() {
-                        show_alert(format!("MUST USE {} IN SPOT {}", c.to_uppercase(), i + 1));
+                    if s == "correct" && input.chars().nth(i).unwrap() != c {
+                        show_alert(format!("MUST USE {} IN SPOT {}", c, i + 1));
                         return;
                     }
                 }
 
                 for (c, s) in prev_guess.chars().zip(prev_statuses.iter()) {
-                    if s == "present" && !input.to_ascii_lowercase().contains(c.to_ascii_lowercase()) {
-                        show_alert(format!("MUST CONTAIN {}", c.to_uppercase()));
+                    if s == "present" && !input.contains(c) {
+                        show_alert(format!("MUST CONTAIN {}", c));
                         return;
                     }
                 }
@@ -223,7 +223,6 @@ fn App() -> impl IntoView {
             let state = StoredState { guesses: new_guesses.clone(), solution: sol.clone() };
             let _ = storage.set_item("game-state", &serde_json::to_string(&state).unwrap());
 
-            // Trigger reveal animation only for this row
             set_is_revealing_row.set(true);
             set_timeout(move || set_is_revealing_row.set(false), std::time::Duration::from_millis(2000));
 
@@ -251,15 +250,16 @@ fn App() -> impl IntoView {
         } else if key == "DELETE" {
             set_current_input.update(|s| { s.pop(); });
         } else if current_input.get().len() < 5 {
-            set_current_input.update(|s| s.push_str(&key.to_lowercase()));
+            set_current_input.update(|s| s.push_str(&key.to_uppercase()));
         }
     });
 
     let on_share = move |_| {
-        let sol = solution_data.get().solution;
+        let sol = solution_data.get().solution.to_uppercase();
         let mut text = format!("Rustle {} {}/6\n\n", solution_data.get().solution_index, if game_won.get() { guesses.get().len().to_string() } else { "X".to_string() });
         for g in guesses.get() {
-            let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &g)).unwrap_or_default();
+            let guess_upper = g.to_uppercase();
+            let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &guess_upper)).unwrap_or_default();
             for s in statuses {
                 text.push_str(match s.as_str() {
                     "correct" => "🟩",
@@ -289,20 +289,17 @@ fn App() -> impl IntoView {
         <div class="flex h-screen flex-col items-center justify-between py-4 sm:py-8 overflow-hidden transition-all duration-500 text-black dark:text-white px-2">
             <div class="w-full max-w-[600px] flex flex-col items-center">
                 <nav class="w-full grid grid-cols-3 items-center px-4 mb-4 sm:mb-8">
-                    // Left Buttons (Matching Letter Pad size and shape exactly)
                     <div class="flex gap-2 justify-start">
-                        <button on:click=move |_| set_show_stats.set(true) class="glass-pad w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl hover:scale-110 transition-transform shadow-lg">
+                        <button on:click=move |_| set_show_stats.set(true) class="glass-pad w-12 h-12 flex items-center justify-center rounded-xl hover:scale-110 transition-transform shadow-lg">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
-                        <button on:click=move |_| set_show_settings.set(true) class="glass-pad w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl hover:scale-110 transition-transform shadow-lg">
+                        <button on:click=move |_| set_show_settings.set(true) class="glass-pad w-12 h-12 flex items-center justify-center rounded-xl hover:scale-110 transition-transform shadow-lg">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
                     
-                    // Centered Title
                     <h1 class="text-2xl sm:text-4xl font-black tracking-tighter italic text-center title-text">"RUSTLE"</h1>
                     
-                    // Right Slider
                     <div class="flex justify-end">
                         <div class="glass-pad p-2 rounded-2xl flex items-center shadow-lg">
                             {move || {
@@ -332,17 +329,17 @@ fn App() -> impl IntoView {
                     <div class="flex flex-col gap-1 sm:gap-2">
                         {move || {
                             let gs = guesses.get();
-                            let sol = solution_data.get().solution;
+                            let sol = solution_data.get().solution.to_uppercase();
                             let is_rev = is_revealing_row.get();
                             let len = gs.len();
                             gs.into_iter().enumerate().map(move |(i, g)| { 
-                                view! { <Row guess=g solution=sol.clone() is_revealing=is_rev && i == len-1 is_jiggling=Signal::derive(|| false) /> } 
+                                view! { <Row guess=g.to_uppercase() solution=sol.clone() is_revealing=is_rev && i == len-1 is_jiggling=Signal::derive(|| false) /> } 
                             }).collect_view()
                         }}
                         
                         {move || if guesses.get().len() < 6 && !game_won.get() { 
-                            let current_input = current_input.get();
-                            let solution = solution_data.get().solution;
+                            let current_input = current_input.get().to_uppercase();
+                            let solution = solution_data.get().solution.to_uppercase();
                             view! { <Row guess=current_input solution=solution is_revealing=false is_jiggling=Signal::derive(move || jiggle_row.get()) /> }.into_view() 
                         } else { view! {}.into_view() }}
                         
@@ -428,11 +425,11 @@ fn App() -> impl IntoView {
             </Modal>
 
             {move || if !alert_message.get().is_empty() {
-                view! { <div class="fixed top-24 px-4 py-2 rounded-xl bg-black text-white font-bold shadow-xl glass z-[100] animate-bounce toast-slide"> {alert_message.get()} </div> }.into_view()
+                view! { <div class="fixed top-24 px-4 py-2 rounded-xl bg-black text-white font-bold shadow-xl glass z-[100] animate-bounce toast-slide text-center"> {alert_message.get()} </div> }.into_view()
             } else if game_won.get() {
                 view! { <div class="fixed top-24 px-6 py-3 rounded-full bg-green-500 text-white font-black text-xl shadow-2xl animate-bounce glass text-center"> "AMAZING! YOU WON!" </div> }.into_view() 
             } else if game_lost.get() {
-                view! { <div class="fixed top-24 px-6 py-3 rounded-full bg-red-500 text-white font-black text-xl shadow-2xl glass uppercase font-black text-center"> {format!("The word was: {}", solution_data.get().solution)} </div> }.into_view() 
+                view! { <div class="fixed top-24 px-6 py-3 rounded-full bg-red-500 text-white font-black text-xl shadow-2xl glass uppercase font-black text-center"> {format!("The word was: {}", solution_data.get().solution.to_uppercase())} </div> }.into_view() 
             } else { view! {}.into_view() }}
         </div>
     }

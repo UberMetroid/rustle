@@ -52,18 +52,22 @@ fn Cell(
     position: usize, 
     is_revealing: bool, 
     is_completed: bool,
-    surge_trigger: ReadSignal<String>,
     destroy_trigger: ReadSignal<String>,
     is_last_typed: bool,
     is_hard_mode: bool
 ) -> impl IntoView {
     let (ring_id, set_ring_id) = create_signal("".to_string());
     let (destroy_id, set_destroy_id) = create_signal("".to_string());
+    let (pop_trigger, set_pop_trigger) = create_signal("".to_string());
 
     create_effect(move |_| {
-        // ONLY triggers Power Ring if Hard Mode is on
-        if is_hard_mode && is_last_typed && value != ' ' && !is_completed && !is_revealing {
-            set_ring_id.set(js_sys::Date::now().to_string());
+        if is_last_typed && value != ' ' && !is_completed && !is_revealing {
+            // Standard Pop
+            set_pop_trigger.set(js_sys::Date::now().to_string());
+            // Hard Mode Power Ring
+            if is_hard_mode {
+                set_ring_id.set(js_sys::Date::now().to_string());
+            }
         }
     });
 
@@ -76,23 +80,27 @@ fn Cell(
 
     let classes = move || {
         let mut base = "relative w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 border-solid border-2 flex items-center justify-center mx-0.5 text-xl sm:text-4xl font-bold rounded-xl transition-all duration-300".to_string();
+        
         if is_completed || is_revealing {
             if !status.is_empty() { base.push_str(&format!(" {}", status)); }
             else { base.push_str(" cell-neutral"); }
         } else {
             base.push_str(" cell-neutral");
         }
+
         if is_revealing {
             base.push_str(" cell-reveal");
+        } else if !pop_trigger.get().is_empty() && !is_completed {
+            base.push_str(" cell-pop");
         }
+
         if is_hard_mode && value != ' ' && !is_completed {
             base.push_str(" ring-2 ring-white ring-opacity-50 shadow-[0_0_15px_rgba(255,255,255,0.5)]");
         }
         base
     };
     
-    // Staggered reveal delay
-    let style = move || if is_revealing { format!("animation-delay: {}ms;", position * 150) } else { "".to_string() };
+    let style = move || if is_revealing { format!("animation-delay: {}ms;", position * 250) } else { "".to_string() };
     
     view! { 
         <div class=classes style=style>
@@ -101,14 +109,7 @@ fn Cell(
                 let id = ring_id.get();
                 if !id.is_empty() { view! { <div key=id class="power-ring" /> }.into_view() } else { view! {}.into_view() }
             }}
-            // Entire Word Surge (Enter) - Hard Mode Only
-            {move || {
-                let id = surge_trigger.get();
-                if is_hard_mode && !id.is_empty() && !is_completed && !is_revealing {
-                    view! { <div key=id class="surge-ring" /> }.into_view()
-                } else { view! {}.into_view() }
-            }}
-            // Deletion Shatter (Always cool)
+            // Deletion Shatter
             {move || {
                 let id = destroy_id.get();
                 if !id.is_empty() { view! { <div key=id class="destroyed-puff" /> }.into_view() } else { view! {}.into_view() }
@@ -125,7 +126,6 @@ fn Row(
     is_revealing: bool, 
     is_completed: bool, 
     is_jiggling: Signal<bool>,
-    surge_trigger: ReadSignal<String>,
     destroy_trigger: ReadSignal<String>,
     last_typed_index: i32,
     is_hard_mode: bool
@@ -136,7 +136,7 @@ fn Row(
     view! {
         <div class=move || format!("flex justify-center mb-1 {}", if is_jiggling.get() { "jiggle" } else { "" })>
             {guess.chars().chain(std::iter::repeat(' ')).take(5).zip(statuses.into_iter().chain(std::iter::repeat("".to_string()))).enumerate().map(|(i, (c, s))| {
-                view! { <Cell value=c status=s position=i is_revealing=is_revealing is_completed=is_completed surge_trigger=surge_trigger destroy_trigger=destroy_trigger is_last_typed=i as i32 == last_typed_index is_hard_mode=is_hard_mode /> }
+                view! { <Cell value=c status=s position=i is_revealing=is_revealing is_completed=is_completed destroy_trigger=destroy_trigger is_last_typed=i as i32 == last_typed_index is_hard_mode=is_hard_mode /> }
             }).collect_view()}
         </div>
     }
@@ -172,7 +172,6 @@ fn App() -> impl IntoView {
     let (jiggle_row, set_jiggle_row) = create_signal(false);
     let (alert_message, set_alert_message) = create_signal(String::new());
     let (is_revealing_row, set_is_revealing_row) = create_signal(false);
-    let (surge_trigger, set_surge_trigger) = create_signal(String::new());
     let (destroy_trigger, set_destroy_trigger) = create_signal(String::new());
     let (last_typed_index, set_last_typed_index) = create_signal(-1_i32);
     
@@ -297,7 +296,6 @@ fn App() -> impl IntoView {
                     }
                 }
             }
-            set_surge_trigger.set(js_sys::Date::now().to_string());
             let mut new_guesses = guesses.get();
             new_guesses.push(input.clone());
             set_guesses.set(new_guesses.clone());
@@ -404,7 +402,7 @@ fn App() -> impl IntoView {
                             let len = gs.len();
                             let hard = hard_mode.get();
                             gs.into_iter().enumerate().map(move |(i, g)| { 
-                                view! { <Row guess=g.to_uppercase() solution=sol.clone() is_revealing=is_rev && i == len-1 is_completed=true is_jiggling=Signal::derive(|| false) surge_trigger=surge_trigger destroy_trigger=destroy_trigger last_typed_index=-1 is_hard_mode=hard /> } 
+                                view! { <Row guess=g.to_uppercase() solution=sol.clone() is_revealing=is_rev && i == len-1 is_completed=true is_jiggling=Signal::derive(|| false) destroy_trigger=destroy_trigger last_typed_index=-1 is_hard_mode=hard /> } 
                             }).collect_view()
                         }}
                         {move || if guesses.get().len() < 6 && !game_won.get() { 
@@ -412,11 +410,11 @@ fn App() -> impl IntoView {
                             let solution = solution_data.get().solution.to_uppercase();
                             let last_idx = last_typed_index.get();
                             let hard = hard_mode.get();
-                            view! { <Row guess=current_input solution=solution is_revealing=false is_completed=false is_jiggling=Signal::derive(move || jiggle_row.get()) surge_trigger=surge_trigger destroy_trigger=destroy_trigger last_typed_index=last_idx is_hard_mode=hard /> }.into_view() 
+                            view! { <Row guess=current_input solution=solution is_revealing=false is_completed=false is_jiggling=Signal::derive(move || jiggle_row.get()) destroy_trigger=destroy_trigger last_typed_index=last_idx is_hard_mode=hard /> }.into_view() 
                         } else { view! {}.into_view() }}
                         {move || {
                             let hard = hard_mode.get();
-                            (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(move |_| { view! { <Row guess="".to_string() solution="".to_string() is_revealing=false is_completed=false is_jiggling=Signal::derive(|| false) surge_trigger=surge_trigger destroy_trigger=destroy_trigger last_typed_index=-1 is_hard_mode=hard /> } }).collect_view()
+                            (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(move |_| { view! { <Row guess="".to_string() solution="".to_string() is_revealing=false is_completed=false is_jiggling=Signal::derive(|| false) destroy_trigger=destroy_trigger last_typed_index=-1 is_hard_mode=hard /> } }).collect_view()
                         }}
                     </div>
                 </div>
@@ -442,7 +440,7 @@ fn App() -> impl IntoView {
             </div>
 
             <Modal title="How to Play".to_string() is_open=show_help set_is_open=set_show_help>
-                <div class="flex flex-col gap-6 text-white">
+                <div class="flex flex-col gap-6 text-white text-white">
                     <div class="space-y-4">
                         <div class="space-y-3">
                             <div class="flex flex-col items-center gap-1">

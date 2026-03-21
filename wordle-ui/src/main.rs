@@ -45,23 +45,52 @@ fn get_storage() -> Option<web_sys::Storage> {
     window().local_storage().ok().flatten()
 }
 
+fn get_theme_emojis(theme: &str) -> (&str, &str, &str) {
+    match theme {
+        "dark" => ("⬜", "🟨", "⬛"),
+        "red" => ("🟥", "🟨", "⬛"),
+        "orange" => ("🟧", "🟨", "⬛"),
+        "yellow" => ("🟨", "⬜", "⬛"),
+        "green" => ("🟩", "🟨", "⬛"),
+        "blue" => ("🟦", "🟨", "⬛"),
+        "purple" => ("🟪", "🟨", "⬛"),
+        "light" => ("🟩", "🟨", "⬜"),
+        _ => ("🟩", "🟨", "⬛"),
+    }
+}
+
 fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool) -> String {
-    if is_loss { return "Poseur.".to_string(); }
+    if is_loss {
+        return vec![
+            "Game Over, Poseur.", 
+            "Total barf bag.", 
+            "Gag me with a spoon.", 
+            "Barf out!", 
+            "Wasted.", 
+            "Adjust your tracking."
+        ][js_sys::Math::floor(js_sys::Math::random() * 6.0) as usize].to_string();
+    }
+    
     if is_win {
         let win_msgs = match tries {
-            1 => vec!["HACKER!", "Pure Luck.", "Sus physics."],
-            2 => vec!["Radical!", "Tubular!", "Showoff."],
-            3 => vec!["Righteous.", "Choice.", "Solid mid."],
-            4 => vec!["Finally.", "Getting slow?"],
-            5 => vec!["Sweaty.", "Close one."],
-            6 => vec!["Barely.", "Scrub tier."],
+            1 => vec!["HACK THE PLANET!", "Pure Luck.", "Sus physics.", "God Mode active.", "Keyboard Cowboy."],
+            2 => vec!["Radical!", "Tubular!", "Showoff.", "Maximum Overdrive.", "Excellent!", "Righteous."],
+            3 => vec!["Righteous.", "Choice.", "Solid mid.", "Right on.", "Righteous.", "Stay gold."],
+            4 => vec!["Finally.", "Took your time.", "Getting slow?", "Analog brain.", "Manual override."],
+            5 => vec!["Panic yet?", "Sweaty.", "Close one.", "Danger Zone.", "Tracking error.", "Static..."],
+            6 => vec!["Barely.", "Yikes.", "Scrub tier.", "Bogus win.", "Poseur alert.", "Last life."],
             _ => vec!["Win."],
         };
         let mut msg = win_msgs[js_sys::Math::floor(js_sys::Math::random() * win_msgs.len() as f64) as usize].to_string();
         if is_hard { msg.push_str(" (Hard Mode)"); }
         return msg;
     }
-    let mid_comments = vec!["Gnarly.", "Totally.", "Groovy.", "Neon.", "Retro.", "Bogus?"];
+    
+    let mid_comments = vec![
+        "Gnarly.", "Totally.", "Groovy.", "Neon.", "Retro.", "Bogus.", "As if!",
+        "Not!", "Eat my shorts!", "Party on.", "Cyber-glitch.", "Shall we play?",
+        "L33T logic.", "Static...", "No way!", "Way harsh.", "Take a chill pill."
+    ];
     mid_comments[js_sys::Math::floor(js_sys::Math::random() * mid_comments.len() as f64) as usize].to_string()
 }
 
@@ -237,7 +266,7 @@ fn App() -> impl IntoView {
                 return;
             }
             if !is_word_in_list(&input) {
-                set_snarky_comment.set("Not a word, dweeb.".to_string());
+                set_snarky_comment.set("Not a word, poser.".to_string());
                 set_jiggle_row.set(true);
                 set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
@@ -549,10 +578,12 @@ fn App() -> impl IntoView {
                             let sol = solution_data.get().solution.to_uppercase();
                             let is_hard = hard_mode.get();
                             let comment = snarky_comment.get();
+                            let current_theme = theme.get();
+                            let (correct_e, present_e, absent_e) = get_theme_emojis(&current_theme);
                             let mut text = format!("RUSTLE {} {}/6 {}\n\n", solution_data.get().solution_index, if game_won.get() { guesses.get().len().to_string() } else { "X".to_string() }, if is_hard { "⚡" } else { "" });
                             for g in guesses.get() {
                                 let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &g.to_uppercase())).unwrap_or_default();
-                                for s in statuses { text.push_str(match s.as_str() { "correct" => "🟩", "present" => "🟨", _ => "⬛" }); }
+                                for s in statuses { text.push_str(match s.as_str() { "correct" => correct_e, "present" => present_e, _ => absent_e }); }
                                 text.push('\n');
                             }
                             text.push('\n');

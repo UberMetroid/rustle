@@ -151,6 +151,7 @@ fn App() -> impl IntoView {
         }
     });
 
+    // Keyboard Status Mapping Logic
     let char_statuses = create_memo(move |_| {
         let mut map = HashMap::new();
         let sol = solution_data.get().solution;
@@ -160,6 +161,7 @@ fn App() -> impl IntoView {
                 let current = map.entry(c).or_insert(s.clone());
                 if s == "correct" { *current = s; }
                 else if s == "present" && *current != "correct" { *current = s; }
+                else if s == "absent" && *current != "correct" && *current != "present" { *current = s; }
             }
         }
         map
@@ -286,12 +288,12 @@ fn App() -> impl IntoView {
         <div class="flex h-screen flex-col items-center justify-between py-4 sm:py-8 overflow-hidden transition-all duration-500 text-black dark:text-white px-2">
             <div class="w-full max-w-[600px] flex flex-col items-center">
                 <nav class="w-full grid grid-cols-3 items-center px-4 mb-4 sm:mb-8">
-                    // Left Buttons
+                    // Left Buttons (Matching Letter Pad size and shape)
                     <div class="flex gap-2 justify-start">
-                        <button on:click=move |_| set_show_stats.set(true) class="glass-pad p-2 rounded-xl hover:scale-110 transition-transform shadow-lg">
+                        <button on:click=move |_| set_show_stats.set(true) class="glass-pad w-12 h-12 flex items-center justify-center rounded-xl hover:scale-110 transition-transform shadow-lg">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
-                        <button on:click=move |_| set_show_settings.set(true) class="glass-pad p-2 rounded-xl hover:scale-110 transition-transform shadow-lg">
+                        <button on:click=move |_| set_show_settings.set(true) class="glass-pad w-12 h-12 flex items-center justify-center rounded-xl hover:scale-110 transition-transform shadow-lg">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
@@ -301,7 +303,7 @@ fn App() -> impl IntoView {
                     
                     // Right Slider
                     <div class="flex justify-end">
-                        <div class="glass-pad p-2 rounded-3xl flex items-center shadow-lg">
+                        <div class="glass-pad p-2 rounded-2xl flex items-center shadow-lg">
                             {move || {
                                 let themes = vec!["dark", "red", "orange", "yellow", "green", "blue", "purple", "light"];
                                 let current = theme.get();
@@ -362,7 +364,12 @@ fn App() -> impl IntoView {
                                 
                                 {row.into_iter().map(|c| {
                                     let status = move || char_statuses.get().get(&c).cloned().unwrap_or_default();
-                                    let bg = move || match status().as_str() { "correct" => "bg-green-500", "present" => "bg-yellow-500", "absent" => "bg-gray-700 shadow-inner opacity-60", _ => "bg-gray-400" };
+                                    let bg = move || match status().as_str() { 
+                                        "correct" => "bg-green-500", 
+                                        "present" => "bg-yellow-500", 
+                                        "absent" => "bg-gray-700 shadow-inner opacity-60 grayscale", 
+                                        _ => "bg-gray-400" 
+                                    };
                                     view! { <button class=move || format!("h-12 sm:h-14 mx-0.5 rounded-xl font-bold text-white flex-1 min-w-[25px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg {}", bg()) on:click=move |_| on_key.call(c.to_string())> {c.to_string()} </button> }
                                 }).collect_view()}
                                 

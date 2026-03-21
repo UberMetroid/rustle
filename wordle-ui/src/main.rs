@@ -57,12 +57,12 @@ fn Cell(
     is_last_typed: bool,
     is_hard_mode: bool
 ) -> impl IntoView {
-    let delay = position * 350;
     let (ring_id, set_ring_id) = create_signal("".to_string());
     let (destroy_id, set_destroy_id) = create_signal("".to_string());
 
     create_effect(move |_| {
-        if is_last_typed && value != ' ' && !is_completed && !is_revealing {
+        // ONLY triggers Power Ring if Hard Mode is on
+        if is_hard_mode && is_last_typed && value != ' ' && !is_completed && !is_revealing {
             set_ring_id.set(js_sys::Date::now().to_string());
         }
     });
@@ -79,20 +79,40 @@ fn Cell(
         if is_completed || is_revealing {
             if !status.is_empty() { base.push_str(&format!(" {}", status)); }
             else { base.push_str(" cell-neutral"); }
-        } else { base.push_str(" cell-neutral"); }
-        if is_revealing { base.push_str(" cell-reveal"); }
+        } else {
+            base.push_str(" cell-neutral");
+        }
+        if is_revealing {
+            base.push_str(" cell-reveal");
+        }
         if is_hard_mode && value != ' ' && !is_completed {
             base.push_str(" ring-2 ring-white ring-opacity-50 shadow-[0_0_15px_rgba(255,255,255,0.5)]");
         }
         base
     };
     
-    let style = move || format!("animation-delay: {}ms;", delay);
+    // Staggered reveal delay
+    let style = move || if is_revealing { format!("animation-delay: {}ms;", position * 150) } else { "".to_string() };
+    
     view! { 
         <div class=classes style=style>
-            {move || { let id = ring_id.get(); if !id.is_empty() { view! { <div key=id class="power-ring" /> }.into_view() } else { view! {}.into_view() } }}
-            {move || { let id = surge_trigger.get(); if !id.is_empty() && !is_completed && !is_revealing { view! { <div key=id class="surge-ring" /> }.into_view() } else { view! {}.into_view() } }}
-            {move || { let id = destroy_id.get(); if !id.is_empty() { view! { <div key=id class="destroyed-puff" /> }.into_view() } else { view! {}.into_view() } }}
+            // Single Letter Entry Ring (Hard Mode Only)
+            {move || {
+                let id = ring_id.get();
+                if !id.is_empty() { view! { <div key=id class="power-ring" /> }.into_view() } else { view! {}.into_view() }
+            }}
+            // Entire Word Surge (Enter) - Hard Mode Only
+            {move || {
+                let id = surge_trigger.get();
+                if is_hard_mode && !id.is_empty() && !is_completed && !is_revealing {
+                    view! { <div key=id class="surge-ring" /> }.into_view()
+                } else { view! {}.into_view() }
+            }}
+            // Deletion Shatter (Always cool)
+            {move || {
+                let id = destroy_id.get();
+                if !id.is_empty() { view! { <div key=id class="destroyed-puff" /> }.into_view() } else { view! {}.into_view() }
+            }}
             <div>{value.to_uppercase().to_string()}</div>
         </div> 
     }
@@ -128,7 +148,7 @@ fn Modal(title: String, is_open: ReadSignal<bool>, set_is_open: WriteSignal<bool
     let children = store_value(children);
     view! {
         <Show when=move || is_open.get()>
-            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50" on:click=move |_| set_is_open.set(false)>
+            <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black bg-opacity-50" on:click=move |_| set_is_open.set(false)>
                 <div class="glass-pad w-full max-w-sm p-6 shadow-2xl transition-all scale-up overflow-y-auto max-h-[90vh]" on:click=move |ev| ev.stop_propagation()>
                     <div class="flex justify-between items-center mb-4 uppercase text-white">
                         <h2 class="text-2xl font-black tracking-tighter"> {title_clone.clone()} </h2>
@@ -345,10 +365,8 @@ fn App() -> impl IntoView {
     });
 
     view! {
-        <div class="flex flex-col h-screen transition-all duration-500 px-2 overflow-hidden">
+        <div class="flex flex-col h-full transition-all duration-500 px-2 bg-app-bg text-app-text">
             <div class="flex-1 flex flex-col justify-evenly items-center max-w-[600px] mx-auto w-full py-4 overflow-hidden h-full">
-                
-                // NO PAD NAVBAR
                 <nav class="w-full grid grid-cols-3 items-center px-4 py-2 shrink-0">
                     <div class="flex gap-2 justify-start items-center">
                         <button on:click=move |_| set_show_stats.set(true) title="Score" class="correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
@@ -365,9 +383,8 @@ fn App() -> impl IntoView {
                         </button>
                     </div>
                     <h1 class="text-xl sm:text-4xl font-black tracking-tighter italic text-center title-text uppercase shrink-0">"RUSTLE"</h1>
-                    <div class="flex justify-end items-center">
-                        // FIXED THEME SLIDER (Z-INDEX and POSITIONING)
-                        <div class="glass-pad p-1.5 sm:p-2 rounded-2xl flex items-center shadow-lg pointer-events-auto relative z-50">
+                    <div class="flex justify-end items-center pointer-events-none">
+                        <div class="glass-pad p-1.5 sm:p-2 rounded-2xl flex items-center shadow-lg pointer-events-auto relative z-[50]">
                             {move || {
                                 let themes = vec!["dark", "red", "orange", "yellow", "green", "blue", "purple", "light"];
                                 let current = theme.get();
@@ -378,7 +395,6 @@ fn App() -> impl IntoView {
                     </div>
                 </nav>
 
-                // NO PAD GRID
                 <div class="flex items-center justify-center shrink min-h-0 py-2">
                     <div class="flex flex-col gap-1 sm:gap-2 max-h-full aspect-[5/6]">
                         {move || {
@@ -405,7 +421,6 @@ fn App() -> impl IntoView {
                     </div>
                 </div>
 
-                // NO PAD KEYBOARD
                 <div class="w-full max-w-[550px] px-1 flex flex-col items-center shrink-0">
                     {move || {
                         let rows = vec![vec!['Q','W','E','R','T','Y','U','I','O','P'], vec!['A','S','D','F','G','H','J','K','L'], vec!['Z','X','C','V','B','N','M']];
@@ -426,7 +441,6 @@ fn App() -> impl IntoView {
                 </div>
             </div>
 
-            // MODALS (Stats & Help)
             <Modal title="How to Play".to_string() is_open=show_help set_is_open=set_show_help>
                 <div class="flex flex-col gap-6 text-white">
                     <div class="space-y-4">
@@ -467,14 +481,14 @@ fn App() -> impl IntoView {
             </Modal>
 
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
-                <div class="flex flex-col items-center text-center text-white">
+                <div class="flex flex-col items-center text-center text-white text-white">
                     <div class="flex w-full justify-around mb-6">
                         <div><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70">"Played"</div></div>
                         <div><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70">"Win %"</div></div>
                         <div><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70">"Streak"</div></div>
                         <div><div class="text-3xl font-black">{move || stats.get().best_streak}</div><div class="text-xs uppercase opacity-70">"Best"</div></div>
                     </div>
-                    <h3 class="text-sm font-bold uppercase mb-2">"Guess Distribution"</h3>
+                    <h3 class="text-sm font-bold uppercase mb-2 text-white">"Guess Distribution"</h3>
                     <div class="w-full space-y-1 mb-6 text-left">
                         {move || stats.get().distribution.iter().enumerate().map(|(i, count)| {
                             let wins = stats.get().wins;

@@ -4,7 +4,6 @@ import { ClockIcon } from '@heroicons/react/outline'
 import { format } from 'date-fns'
 import { default as GraphemeSplitter } from 'grapheme-splitter'
 import { useEffect, useState } from 'react'
-import Div100vh from 'react-div-100vh'
 
 import { AlertContainer } from './components/alerts/AlertContainer'
 import { Grid } from './components/grid/Grid'
@@ -251,35 +250,43 @@ function App() {
     }
   }
 
+  if (!isWasmReady || !solutionData) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-xl font-bold">Loading Wordle Rust...</p>
+      </div>
+    )
+  }
+
   return (
-    <Div100vh>
-      <div className="flex h-full flex-col">
-        <Navbar
-          setIsInfoModalOpen={setIsInfoModalOpen}
-          setIsStatsModalOpen={setIsStatsModalOpen}
-          setIsDatePickerModalOpen={setIsDatePickerModalOpen}
-          setIsSettingsModalOpen={setIsSettingsModalOpen}
-        />
+    <div className="flex h-full flex-col">
+      <Navbar
+        setIsInfoModalOpen={setIsInfoModalOpen}
+        setIsStatsModalOpen={setIsStatsModalOpen}
+        setIsDatePickerModalOpen={setIsDatePickerModalOpen}
+        setIsSettingsModalOpen={setIsSettingsModalOpen}
+      />
 
-        {!isLatestGame && (
-          <div className="flex items-center justify-center">
-            <ClockIcon className="h-6 w-6 stroke-gray-600" />
-            <p className="text-base text-gray-600">
-              {format(gameDate, 'd MMMM yyyy', { locale: DATE_LOCALE })}
-            </p>
-          </div>
-        )}
+      {!isLatestGame && (
+        <div className="flex items-center justify-center">
+          <ClockIcon className="h-6 w-6 stroke-gray-600" />
+          <p className="text-base text-gray-600">
+            {format(gameDate, 'd MMMM yyyy', { locale: DATE_LOCALE })}
+          </p>
+        </div>
+      )}
 
-        <div className="mx-auto flex w-full grow flex-col px-1 pt-2 pb-8 sm:px-6 md:max-w-7xl lg:px-8 short:pb-2 short:pt-2">
-          <div className="flex grow flex-col justify-center pb-6 short:pb-2">
-            <Grid
-              solution={solutionData?.solution || '     '}
-              guesses={guesses}
-              currentGuess={currentGuess}
-              isRevealing={isRevealing}
-              currentRowClassName={currentRowClass}
-            />
-          </div>
+      <div className="mx-auto flex w-full max-w-[500px] grow flex-col justify-between px-1 py-2 sm:px-6">
+        <div className="flex grow flex-col justify-center">
+          <Grid
+            solution={solutionData?.solution || '     '}
+            guesses={guesses}
+            currentGuess={currentGuess}
+            isRevealing={isRevealing}
+            currentRowClassName={currentRowClass}
+          />
+        </div>
+        <div className="pb-2">
           <Keyboard
             onChar={onChar}
             onDelete={onDelete}
@@ -288,60 +295,60 @@ function App() {
             guesses={guesses}
             isRevealing={isRevealing}
           />
-          <InfoModal
-            isOpen={isInfoModalOpen}
-            handleClose={() => setIsInfoModalOpen(false)}
-          />
-          <StatsModal
-            isOpen={isStatsModalOpen}
-            handleClose={() => setIsStatsModalOpen(false)}
-            solution={solutionData?.solution || ''}
-            solutionIndex={solutionData?.solutionIndex || 0}
-            solutionGameDate={solutionData?.solutionGameDate || new Date()}
-            tomorrow={solutionData?.tomorrow || 0}
-            guesses={guesses}
-            gameStats={stats}
-            isLatestGame={isLatestGame}
-            isGameLost={isGameLost}
-            isGameWon={isGameWon}
-            handleShareToClipboard={() => showSuccessAlert(GAME_COPIED_MESSAGE)}
-            handleShareFailure={() =>
-              showErrorAlert(SHARE_FAILURE_TEXT, {
-                durationMs: LONG_ALERT_TIME_MS,
-              })
-            }
-            handleMigrateStatsButton={() => {
-              setIsStatsModalOpen(false)
-              setIsMigrateStatsModalOpen(true)
-            }}
-            isHardMode={isHardMode}
-            numberOfGuessesMade={guesses.length}
-          />
-          <DatePickerModal
-            isOpen={isDatePickerModalOpen}
-            initialDate={solutionData?.solutionGameDate || new Date()}
-            handleSelectDate={(d) => {
-              setIsDatePickerModalOpen(false)
-              setGameDate(d)
-            }}
-            handleClose={() => setIsDatePickerModalOpen(false)}
-          />
-          <MigrateStatsModal
-            isOpen={isMigrateStatsModalOpen}
-            handleClose={() => setIsMigrateStatsModalOpen(false)}
-          />
-          <SettingsModal
-            isOpen={isSettingsModalOpen}
-            handleClose={() => setIsSettingsModalOpen(false)}
-            isHardMode={isHardMode}
-            handleHardMode={handleHardMode}
-            currentTheme={currentTheme}
-            handleTheme={handleTheme}
-          />
-          <AlertContainer />
         </div>
+        <InfoModal
+          isOpen={isInfoModalOpen}
+          handleClose={() => setIsInfoModalOpen(false)}
+        />
+        <StatsModal
+          isOpen={isStatsModalOpen}
+          handleClose={() => setIsStatsModalOpen(false)}
+          solution={solutionData?.solution || ''}
+          solutionIndex={solutionData?.solutionIndex || 0}
+          solutionGameDate={solutionData?.solutionGameDate || new Date()}
+          tomorrow={solutionData?.tomorrow || 0}
+          guesses={guesses}
+          gameStats={stats}
+          isLatestGame={isLatestGame}
+          isGameLost={isGameLost}
+          isGameWon={isGameWon}
+          handleShareToClipboard={() => showSuccessAlert(GAME_COPIED_MESSAGE)}
+          handleShareFailure={() =>
+            showErrorAlert(SHARE_FAILURE_TEXT, {
+              durationMs: LONG_ALERT_TIME_MS,
+            })
+          }
+          handleMigrateStatsButton={() => {
+            setIsStatsModalOpen(false)
+            setIsMigrateStatsModalOpen(true)
+          }}
+          isHardMode={isHardMode}
+          numberOfGuessesMade={guesses.length}
+        />
+        <DatePickerModal
+          isOpen={isDatePickerModalOpen}
+          initialDate={solutionData?.solutionGameDate || new Date()}
+          handleSelectDate={(d) => {
+            setIsDatePickerModalOpen(false)
+            setGameDate(d)
+          }}
+          handleClose={() => setIsDatePickerModalOpen(false)}
+        />
+        <MigrateStatsModal
+          isOpen={isMigrateStatsModalOpen}
+          handleClose={() => setIsMigrateStatsModalOpen(false)}
+        />
+        <SettingsModal
+          isOpen={isSettingsModalOpen}
+          handleClose={() => setIsSettingsModalOpen(false)}
+          isHardMode={isHardMode}
+          handleHardMode={handleHardMode}
+          currentTheme={currentTheme}
+          handleTheme={handleTheme}
+        />
+        <AlertContainer />
       </div>
-    </Div100vh>
+    </div>
   )
 }
 

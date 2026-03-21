@@ -478,7 +478,18 @@ fn App() -> impl IntoView {
     view! {
         <div class="flex flex-col h-full transition-all duration-500 bg-app-bg text-app-text overflow-hidden">
             <header class="w-full flex flex-col items-center py-4 shrink-0">
-                <h1 class="text-3xl sm:text-5xl font-black tracking-tighter italic text-center title-text uppercase">"RUSTLE"</h1>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-3xl sm:text-5xl font-black tracking-tighter italic text-center title-text uppercase">"RUSTLE"</h1>
+                    <Show when=move || is_ng_plus.get()>
+                        <button 
+                            on:click=move |_| start_ng_plus()
+                            title="Reset New Game+" 
+                            class="ai-active-pad w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-90 shadow-[0_0_15px_rgba(255,0,255,0.8)]"
+                        >
+                            <span class="text-xl sm:text-2xl font-black text-white">"+"</span>
+                        </button>
+                    </Show>
+                </div>
                 <div class="min-h-8 flex items-center justify-center w-full max-w-sm px-4 mt-1">
                     {move || {
                         let snark = snarky_comment.get();
@@ -506,14 +517,6 @@ fn App() -> impl IntoView {
                         <svg class=move || format!("w-6 h-6 sm:w-8 sm:h-8 transition-all {}", if hard_mode.get() || is_ng_plus.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_12px_rgba(253,224,71,1)]" } else { "text-current opacity-40" }) fill="currentColor" viewBox="0 0 24 24">
                             <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                         </svg>
-                    </button>
-                    <button 
-                        on:click=move |_| start_ng_plus()
-                        disabled=move || !daily_game_done.get()
-                        title="New Game+" 
-                        class=move || format!("w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center rounded-2xl shadow-lg border-2 transition-all active:scale-90 {}", if is_ng_plus.get() { "ai-active-pad border-transparent shadow-[0_0_25px_rgba(255,0,255,1)]" } else if daily_game_done.get() { "cell-neutral border-current" } else { "opacity-30 grayscale cursor-not-allowed border-current" })
-                    >
-                        <span class=move || format!("text-2xl sm:text-4xl font-black transition-all {}", if is_ng_plus.get() { "text-white scale-110" } else { "text-current opacity-40" })>"+"</span>
                     </button>
                 </aside>
 

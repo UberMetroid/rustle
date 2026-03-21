@@ -10,11 +10,12 @@ console_error_panic_hook = "0.1"
 gloo-timers = "0.3"
 chrono = "0.4"
 wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
 serde-wasm-bindgen = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 js-sys = "0.3"
-web-sys = { version = "0.3", features = ["Storage", "Window", "Document", "Element", "HtmlElement", "Navigator", "Clipboard"] }
+web-sys = { version = "0.3", features = ["Storage", "Window", "Document", "Element", "HtmlElement", "Navigator", "Clipboard", "Request", "RequestInit", "Response"] }
 
 [profile.release]
 lto = true

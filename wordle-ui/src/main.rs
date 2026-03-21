@@ -11,13 +11,20 @@ extern "C" {
     fn celebrate(theme: &str, is_hard: bool, is_ng_plus: bool);
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
 struct GameStats {
     pub total_games: u32,
     pub wins: u32,
     pub current_streak: u32,
     pub best_streak: u32,
     pub distribution: [u32; 6],
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
+struct GlobalStats {
+    pub cracked: String,
+    pub avg_ops: String,
+    pub efficiency: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -31,6 +38,21 @@ struct StoredState {
 
 fn get_storage() -> Option<web_sys::Storage> {
     window().local_storage().ok().flatten()
+}
+
+async fn fetch_global_stats() -> GlobalStats {
+    let mut opts = web_sys::RequestInit::new();
+    opts.set_method("GET");
+    let request = web_sys::Request::new_with_str_and_init("/global-stats.json", &opts).unwrap();
+    let window = window();
+    let resp_value = wasm_bindgen_futures::JsFuture::from(window.fetch_with_request(&request)).await.unwrap();
+    let resp: web_sys::Response = resp_value.dyn_into().unwrap();
+    if resp.status() == 200 {
+        let json_value = wasm_bindgen_futures::JsFuture::from(resp.json().unwrap()).await.unwrap();
+        serde_wasm_bindgen::from_value(json_value).unwrap_or_default()
+    } else {
+        GlobalStats { cracked: "1.2M".to_string(), avg_ops: "4.2".to_string(), efficiency: "88%".to_string() }
+    }
 }
 
 fn get_theme_emojis(theme: &str) -> (&str, &str, &str) {
@@ -203,6 +225,8 @@ fn App() -> impl IntoView {
     let (is_ng_plus, set_is_ng_plus) = create_signal(false);
     let (ai_pool, set_ai_pool) = create_signal(Vec::<String>::new());
     let (daily_game_done, set_daily_game_done) = create_signal(false);
+
+    let global_stats_res = create_local_resource(move || (), |_| fetch_global_stats());
 
     let now = js_sys::Date::now();
     let solution_data = create_memo(move |_| {
@@ -517,16 +541,16 @@ fn App() -> impl IntoView {
 
             <main class="flex-1 flex items-center justify-center w-full max-w-4xl mx-auto px-2 sm:px-4 min-h-0">
                 <aside class="flex flex-col gap-4 py-4 shrink-0">
-                    <button on:click=move |_| set_show_stats.set(true) title="Score" class="correct-pad w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center rounded-2xl shadow-lg border-2 border-transparent transition-all active:scale-90">
+                    <button on:click=move |_| set_show_stats.set(true) title="Score" class="btn-large correct-pad shadow-lg border-2 border-transparent transition-all active:scale-90">
                         <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                     </button>
-                    <button on:click=move |_| set_show_help.set(true) title="How to Play" class="correct-pad w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center rounded-2xl shadow-lg border-2 border-transparent transition-all active:scale-90">
+                    <button on:click=move |_| set_show_help.set(true) title="How to Play" class="btn-large correct-pad shadow-lg border-2 border-transparent transition-all active:scale-90">
                         <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </button>
                     <button 
                         on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) } 
                         title="Hard Mode" 
-                        class=move || format!("w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center rounded-2xl shadow-lg border-2 transition-all active:scale-90 {}", if hard_mode.get() || is_ng_plus.get() { "correct-pad border-transparent" } else { "cell-neutral border-current" })
+                        class=move || format!("btn-large shadow-lg border-2 transition-all active:scale-90 {}", if hard_mode.get() || is_ng_plus.get() { "correct-pad border-transparent" } else { "cell-neutral border-current" })
                     >
                         <svg class=move || format!("w-6 h-6 sm:w-8 sm:h-8 transition-all {}", if hard_mode.get() || is_ng_plus.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_12px_rgba(253,224,71,1)]" } else { "text-current opacity-40" }) fill="currentColor" viewBox="0 0 24 24">
                             <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
@@ -662,9 +686,9 @@ fn App() -> impl IntoView {
                     <div class="w-full border-t border-white border-opacity-10 pt-6 mb-6 text-center">
                         <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary">"Global Statistics"</h3>
                         <div class="grid grid-cols-3 w-full gap-2">
-                            <div class="flex flex-col p-2 rounded-lg bg-white bg-opacity-5"><div class="text-xl font-black">"1.2M"</div><div class="text-[7px] uppercase opacity-50">"Cracked"</div></div>
-                            <div class="flex flex-col p-2 rounded-lg bg-white bg-opacity-5"><div class="text-xl font-black">"4.2"</div><div class="text-[7px] uppercase opacity-50">"Avg Ops"</div></div>
-                            <div class="flex flex-col p-2 rounded-lg bg-white bg-opacity-5"><div class="text-xl font-black">"88%"</div><div class="text-[7px] uppercase opacity-50">"Efficiency"</div></div>
+                            <div class="flex flex-col p-2 rounded-lg bg-white bg-opacity-5"><div class="text-xl font-black">{move || global_stats_res.get().map(|s| s.cracked).unwrap_or("1.2M".to_string())}</div><div class="text-[7px] uppercase opacity-50">"Cracked"</div></div>
+                            <div class="flex flex-col p-2 rounded-lg bg-white bg-opacity-5"><div class="text-xl font-black">{move || global_stats_res.get().map(|s| s.avg_ops).unwrap_or("4.2".to_string())}</div><div class="text-[7px] uppercase opacity-50">"Avg Ops"</div></div>
+                            <div class="flex flex-col p-2 rounded-lg bg-white bg-opacity-5"><div class="text-xl font-black">{move || global_stats_res.get().map(|s| s.efficiency).unwrap_or("88%".to_string())}</div><div class="text-[7px] uppercase opacity-50">"Efficiency"</div></div>
                         </div>
                     </div>
 

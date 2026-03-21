@@ -49,7 +49,7 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 1rem !important;
+  border-radius: 0.75rem !important;
 }
 
 .theme-white .glass-pad {
@@ -78,7 +78,7 @@ body {
   position: absolute;
   inset: -2px;
   border: 2px solid var(--theme-primary);
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   opacity: 0;
   pointer-events: none;
   animation: power-ring-expand 0.4s cubic-bezier(0, 0, 0.2, 1);
@@ -111,7 +111,7 @@ body {
   position: absolute;
   inset: 0;
   background: white;
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   opacity: 0;
   pointer-events: none;
   animation: destroy-shatter 0.3s ease-out;
@@ -189,23 +189,26 @@ body {
   }
 }
 
-/* UNIFIED BUTTON SHAPE FOR THEMES */
-.theme-square {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.75rem;
+/* UNIFIED BUTTON SHAPE SIZE L */
+.btn-large, .theme-square {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
   border: 2px solid rgba(255, 255, 255, 0.15);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (min-width: 640px) {
-  .theme-square {
-    width: 3.5rem;
-    height: 3.5rem;
-    border-radius: 1rem;
+  .btn-large, .theme-square {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.75rem;
   }
 }
 
-.theme-square:hover { transform: scale(1.1); filter: brightness(1.2); }
+.btn-large:hover, .theme-square:hover { transform: scale(1.1); filter: brightness(1.2); }
 .theme-square.active { border-color: white; box-shadow: 0 0 15px currentColor; transform: scale(1.15); }

@@ -351,9 +351,9 @@ fn App() -> impl IntoView {
     view! {
         <div class="flex flex-col h-screen transition-all duration-500 px-2 overflow-hidden bg-app-bg text-app-text">
             // Balanced flex container for equal spacing and auto-scaling
-            <div class="flex-1 flex flex-col justify-evenly items-center max-w-[600px] mx-auto w-full py-2 overflow-hidden h-full">
+            <div class="flex-1 flex flex-col justify-evenly items-center max-w-[600px] mx-auto w-full py-4 overflow-hidden h-full">
                 
-                // TOP BAR
+                // FLOATING NAVBAR PAD
                 <nav class="w-full grid grid-cols-3 items-center px-4 glass-pad py-2 shrink-0">
                     <div class="flex gap-2 justify-start items-center">
                         <button on:click=move |_| set_show_stats.set(true) title="Score" class="correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
@@ -397,8 +397,8 @@ fn App() -> impl IntoView {
                     </div>
                 </nav>
 
-                // GAME GRID (Auto-scaling via flex-1 and overflow-hidden)
-                <div class="p-2 sm:p-4 shrink min-h-0 flex items-center justify-center">
+                // FLOATING GRID PAD
+                <div class="glass-pad p-4 sm:p-8 flex items-center justify-center shrink min-h-0">
                     <div class="flex flex-col gap-1 sm:gap-2 max-h-full aspect-[5/6]">
                         {move || {
                             let gs = guesses.get();
@@ -424,8 +424,8 @@ fn App() -> impl IntoView {
                     </div>
                 </div>
 
-                // KEYBOARD (Sized to fit)
-                <div class="w-full max-w-[500px] px-1 py-3 glass-pad flex flex-col items-center text-white shadow-2xl shrink-0">
+                // FLOATING KEYBOARD PAD
+                <div class="w-full max-w-[600px] px-2 py-4 glass-pad flex flex-col items-center text-white shadow-2xl shrink-0">
                     {move || {
                         let rows = vec![vec!['Q','W','E','R','T','Y','U','I','O','P'], vec!['A','S','D','F','G','H','J','K','L'], vec!['Z','X','C','V','B','N','M']];
                         rows.into_iter().enumerate().map(|(i, row)| {
@@ -445,9 +445,9 @@ fn App() -> impl IntoView {
                 </div>
             </div>
 
-            // MODALS (Help & Stats only)
+            // MODALS
             <Modal title="How to Play".to_string() is_open=show_help set_is_open=set_show_help>
-                <div class="flex flex-col gap-6 text-white">
+                <div class="flex flex-col gap-6 text-white text-white">
                     <div class="space-y-4">
                         <div class="space-y-3">
                             <div class="flex flex-col items-center gap-1">
@@ -486,14 +486,14 @@ fn App() -> impl IntoView {
             </Modal>
 
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
-                <div class="flex flex-col items-center text-center text-white">
+                <div class="flex flex-col items-center text-center text-white text-white">
                     <div class="flex w-full justify-around mb-6">
                         <div><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70">"Played"</div></div>
                         <div><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70">"Win %"</div></div>
                         <div><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70">"Streak"</div></div>
                         <div><div class="text-3xl font-black">{move || stats.get().best_streak}</div><div class="text-xs uppercase opacity-70">"Best"</div></div>
                     </div>
-                    <h3 class="text-sm font-bold uppercase mb-2">"Guess Distribution"</h3>
+                    <h3 class="text-sm font-bold uppercase mb-2 text-white">"Guess Distribution"</h3>
                     <div class="w-full space-y-1 mb-6 text-left">
                         {move || stats.get().distribution.iter().enumerate().map(|(i, count)| {
                             let wins = stats.get().wins;

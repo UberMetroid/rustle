@@ -1,3 +1,4 @@
+import { get_guess_statuses } from '../wordle-engine-pkg'
 import { unicodeSplit } from './words'
 
 export type CharStatus = 'absent' | 'present' | 'correct'
@@ -35,45 +36,53 @@ export const getGuessStatuses = (
   solution: string,
   guess: string
 ): CharStatus[] => {
-  const splitSolution = unicodeSplit(solution)
-  const splitGuess = unicodeSplit(guess)
+  try {
+    // Try to use the Rust/Wasm engine
+    return get_guess_statuses(solution, guess)
+  } catch (e) {
+    // Fallback to TypeScript logic if Wasm is not initialized yet or fails
+    console.warn('Wasm engine not ready, using fallback logic', e)
+    
+    const splitSolution = unicodeSplit(solution)
+    const splitGuess = unicodeSplit(guess)
 
-  const solutionCharsTaken = splitSolution.map((_) => false)
+    const solutionCharsTaken = splitSolution.map((_) => false)
 
-  const statuses: CharStatus[] = Array.from(Array(guess.length))
+    const statuses: CharStatus[] = Array.from(Array(guess.length))
 
-  // handle all correct cases first
-  splitGuess.forEach((letter, i) => {
-    if (letter === splitSolution[i]) {
-      statuses[i] = 'correct'
-      solutionCharsTaken[i] = true
-      return
-    }
-  })
+    // handle all correct cases first
+    splitGuess.forEach((letter, i) => {
+      if (letter === splitSolution[i]) {
+        statuses[i] = 'correct'
+        solutionCharsTaken[i] = true
+        return
+      }
+    })
 
-  splitGuess.forEach((letter, i) => {
-    if (statuses[i]) return
+    splitGuess.forEach((letter, i) => {
+      if (statuses[i]) return
 
-    if (!splitSolution.includes(letter)) {
-      // handles the absent case
-      statuses[i] = 'absent'
-      return
-    }
+      if (!splitSolution.includes(letter)) {
+        // handles the absent case
+        statuses[i] = 'absent'
+        return
+      }
 
-    // now we are left with "present"s
-    const indexOfPresentChar = splitSolution.findIndex(
-      (x, index) => x === letter && !solutionCharsTaken[index]
-    )
+      // now we are left with "present"s
+      const indexOfPresentChar = splitSolution.findIndex(
+        (x, index) => x === letter && !solutionCharsTaken[index]
+      )
 
-    if (indexOfPresentChar > -1) {
-      statuses[i] = 'present'
-      solutionCharsTaken[indexOfPresentChar] = true
-      return
-    } else {
-      statuses[i] = 'absent'
-      return
-    }
-  })
+      if (indexOfPresentChar > -1) {
+        statuses[i] = 'present'
+        solutionCharsTaken[indexOfPresentChar] = true
+        return
+      } else {
+        statuses[i] = 'absent'
+        return
+      }
+    })
 
-  return statuses
+    return statuses
+  }
 }

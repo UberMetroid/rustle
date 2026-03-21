@@ -51,6 +51,7 @@ import {
   solutionGameDate,
   unicodeLength,
 } from './lib/words'
+import init from './wordle-engine-pkg'
 
 function App() {
   const isLatestGame = getIsLatestGame()
@@ -97,6 +98,10 @@ function App() {
       ? localStorage.getItem('gameMode') === 'hard'
       : false
   )
+
+  useEffect(() => {
+    init().catch(console.error)
+  }, [])
 
   useEffect(() => {
     if (!loadGameStateFromLocalStorage(true)) {

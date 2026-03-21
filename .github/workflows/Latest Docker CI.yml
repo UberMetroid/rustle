@@ -9,9 +9,11 @@ on:
       - src/**
       - public/**
       - package.json
+      - wordle-engine/**
   pull_request:
     paths:
       - docker/Dockerfile
+      - wordle-engine/**
   workflow_dispatch:
 
 jobs:

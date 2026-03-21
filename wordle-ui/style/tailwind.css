@@ -32,19 +32,19 @@ body {
   position: relative;
 }
 
-/* Theme Definitions with High Legibility and Unified Unused Colors */
+/* Theme Definitions - SYNCED KEYBOARD AND FIELD */
 
 /* 0: Dark */
 .theme-dark {
   --app-bg: #0f172a;
   --app-text: #f8fafc;
-  --default-cell-bg-color: #334155;
-  --default-cell-border-color: #475569;
+  --default-cell-bg-color: rgba(255, 255, 255, 0.05);
+  --default-cell-border-color: rgba(255, 255, 255, 0.1);
   --default-cell-text-color: #f8fafc;
-  --key-bg: #334155;
+  --key-bg: rgba(255, 255, 255, 0.1);
   --key-text: #f8fafc;
   --theme-primary: #38bdf8;
-  --absent-cell-bg-color: #1e293b;
+  --absent-cell-bg-color: #334155;
   --correct-cell-bg-color: #22c55e;
   --present-cell-bg-color: #eab308;
 }
@@ -53,13 +53,13 @@ body {
 .theme-red {
   --app-bg: #450a0a;
   --app-text: #ffffff;
-  --default-cell-bg-color: #991b1b;
-  --default-cell-border-color: #b91c1c;
+  --default-cell-bg-color: rgba(255, 255, 255, 0.05);
+  --default-cell-border-color: rgba(255, 255, 255, 0.1);
   --default-cell-text-color: #ffffff;
-  --key-bg: #991b1b;
+  --key-bg: rgba(255, 255, 255, 0.1);
   --key-text: #ffffff;
   --theme-primary: #fca5a5;
-  --absent-cell-bg-color: #450a0a;
+  --absent-cell-bg-color: #7f1d1d;
   --correct-cell-bg-color: #dc2626;
   --present-cell-bg-color: #ef4444;
 }
@@ -68,13 +68,13 @@ body {
 .theme-orange {
   --app-bg: #431407;
   --app-text: #ffffff;
-  --default-cell-bg-color: #9a3412;
-  --default-cell-border-color: #ea580c;
+  --default-cell-bg-color: rgba(255, 255, 255, 0.05);
+  --default-cell-border-color: rgba(255, 255, 255, 0.1);
   --default-cell-text-color: #ffffff;
-  --key-bg: #9a3412;
+  --key-bg: rgba(255, 255, 255, 0.1);
   --key-text: #ffffff;
   --theme-primary: #fcd34d;
-  --absent-cell-bg-color: #431407;
+  --absent-cell-bg-color: #7c2d12;
   --correct-cell-bg-color: #ea580c;
   --present-cell-bg-color: #f97316;
 }
@@ -83,13 +83,13 @@ body {
 .theme-yellow {
   --app-bg: #422006;
   --app-text: #ffffff;
-  --default-cell-bg-color: #854d0e;
-  --default-cell-border-color: #ca8a04;
+  --default-cell-bg-color: rgba(255, 255, 255, 0.05);
+  --default-cell-border-color: rgba(255, 255, 255, 0.1);
   --default-cell-text-color: #ffffff;
-  --key-bg: #854d0e;
+  --key-bg: rgba(255, 255, 255, 0.1);
   --key-text: #ffffff;
   --theme-primary: #fef08a;
-  --absent-cell-bg-color: #422006;
+  --absent-cell-bg-color: #713f12;
   --correct-cell-bg-color: #eab308;
   --present-cell-bg-color: #facc15;
 }
@@ -98,13 +98,13 @@ body {
 .theme-green {
   --app-bg: #064e3b;
   --app-text: #ffffff;
-  --default-cell-bg-color: #047857;
-  --default-cell-border-color: #10b981;
+  --default-cell-bg-color: rgba(255, 255, 255, 0.05);
+  --default-cell-border-color: rgba(255, 255, 255, 0.1);
   --default-cell-text-color: #ffffff;
-  --key-bg: #047857;
+  --key-bg: rgba(255, 255, 255, 0.1);
   --key-text: #ffffff;
   --theme-primary: #86efac;
-  --absent-cell-bg-color: #064e3b;
+  --absent-cell-bg-color: #065f46;
   --correct-cell-bg-color: #22c55e;
   --present-cell-bg-color: #4ade80;
 }
@@ -113,13 +113,13 @@ body {
 .theme-blue {
   --app-bg: #1e3a8a;
   --app-text: #ffffff;
-  --default-cell-bg-color: #1d4ed8;
-  --default-cell-border-color: #3b82f6;
+  --default-cell-bg-color: rgba(255, 255, 255, 0.05);
+  --default-cell-border-color: rgba(255, 255, 255, 0.1);
   --default-cell-text-color: #ffffff;
-  --key-bg: #1d4ed8;
+  --key-bg: rgba(255, 255, 255, 0.1);
   --key-text: #ffffff;
   --theme-primary: #93c5fd;
-  --absent-cell-bg-color: #1e3a8a;
+  --absent-cell-bg-color: #1e40af;
   --correct-cell-bg-color: #2563eb;
   --present-cell-bg-color: #3b82f6;
 }
@@ -128,13 +128,13 @@ body {
 .theme-purple {
   --app-bg: #4c1d95;
   --app-text: #ffffff;
-  --default-cell-bg-color: #6d28d9;
-  --default-cell-border-color: #8b5cf6;
+  --default-cell-bg-color: rgba(255, 255, 255, 0.05);
+  --default-cell-border-color: rgba(255, 255, 255, 0.1);
   --default-cell-text-color: #ffffff;
-  --key-bg: #6d28d9;
+  --key-bg: rgba(255, 255, 255, 0.1);
   --key-text: #ffffff;
   --theme-primary: #ddd6fe;
-  --absent-cell-bg-color: #4c1d95;
+  --absent-cell-bg-color: #5b21b6;
   --correct-cell-bg-color: #a855f7;
   --present-cell-bg-color: #c084fc;
 }
@@ -143,10 +143,10 @@ body {
 .theme-light {
   --app-bg: #f8fafc;
   --app-text: #0f172a;
-  --default-cell-bg-color: #e2e8f0;
-  --default-cell-border-color: #cbd5e1;
+  --default-cell-bg-color: rgba(0, 0, 0, 0.05);
+  --default-cell-border-color: rgba(0, 0, 0, 0.1);
   --default-cell-text-color: #0f172a;
-  --key-bg: #e2e8f0;
+  --key-bg: rgba(0, 0, 0, 0.05);
   --key-text: #0f172a;
   --theme-primary: #10b981;
   --absent-cell-bg-color: #94a3b8;
@@ -170,7 +170,7 @@ body {
 
 /* Unified "Pad" Glass Style */
 .glass-pad {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -193,9 +193,9 @@ body {
 }
 
 .theme-light .glass-pad {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
 /* Cell Status Overrides - Priority! */
@@ -215,11 +215,16 @@ body {
   color: white !important;
 }
 
-/* Default state for cells (when not completed/revealing) */
+/* Default state for cells and keys (when not completed/revealing) */
 .cell-neutral {
-  background-color: var(--default-cell-bg-color);
-  border-color: var(--default-cell-border-color);
-  color: var(--default-cell-text-color);
+  background-color: var(--default-cell-bg-color) !important;
+  border-color: var(--default-cell-border-color) !important;
+  color: var(--default-cell-text-color) !important;
+}
+
+.key-neutral {
+  background-color: var(--key-bg) !important;
+  color: var(--key-text) !important;
 }
 
 /* Animations */
@@ -251,7 +256,7 @@ body {
   100% { transform: translateX(0); }
 }
 
-/* Slider Toggle Styling */
+/* Slidding Toggle Styling */
 .theme-slider {
   -webkit-appearance: none;
   appearance: none;

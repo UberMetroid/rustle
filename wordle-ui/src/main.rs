@@ -151,14 +151,15 @@ fn App() -> impl IntoView {
         }
     });
 
-    // Keyboard Status Mapping Logic
+    // Keyboard Status Mapping Logic - Fixed with Case Sensitivity handling
     let char_statuses = create_memo(move |_| {
         let mut map = HashMap::new();
         let sol = solution_data.get().solution;
         for g in guesses.get() {
             let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &g)).unwrap_or_default();
             for (c, s) in g.chars().zip(statuses.into_iter()) {
-                let current = map.entry(c).or_insert(s.clone());
+                let upper_c = c.to_ascii_uppercase();
+                let current = map.entry(upper_c).or_insert(s.clone());
                 if s == "correct" { *current = s; }
                 else if s == "present" && *current != "correct" { *current = s; }
                 else if s == "absent" && *current != "correct" && *current != "present" { *current = s; }
@@ -200,14 +201,14 @@ fn App() -> impl IntoView {
                 let prev_statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &prev_guess)).unwrap_or_default();
                 
                 for (i, (c, s)) in prev_guess.chars().zip(prev_statuses.iter()).enumerate() {
-                    if s == "correct" && input.chars().nth(i).unwrap() != c {
+                    if s == "correct" && input.chars().nth(i).unwrap().to_ascii_lowercase() != c.to_ascii_lowercase() {
                         show_alert(format!("MUST USE {} IN SPOT {}", c.to_uppercase(), i + 1));
                         return;
                     }
                 }
 
                 for (c, s) in prev_guess.chars().zip(prev_statuses.iter()) {
-                    if s == "present" && !input.contains(c) {
+                    if s == "present" && !input.to_ascii_lowercase().contains(c.to_ascii_lowercase()) {
                         show_alert(format!("MUST CONTAIN {}", c.to_uppercase()));
                         return;
                     }
@@ -288,12 +289,12 @@ fn App() -> impl IntoView {
         <div class="flex h-screen flex-col items-center justify-between py-4 sm:py-8 overflow-hidden transition-all duration-500 text-black dark:text-white px-2">
             <div class="w-full max-w-[600px] flex flex-col items-center">
                 <nav class="w-full grid grid-cols-3 items-center px-4 mb-4 sm:mb-8">
-                    // Left Buttons (Matching Letter Pad size and shape)
+                    // Left Buttons (Matching Letter Pad size and shape exactly)
                     <div class="flex gap-2 justify-start">
-                        <button on:click=move |_| set_show_stats.set(true) class="glass-pad w-12 h-12 flex items-center justify-center rounded-xl hover:scale-110 transition-transform shadow-lg">
+                        <button on:click=move |_| set_show_stats.set(true) class="glass-pad w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl hover:scale-110 transition-transform shadow-lg">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
-                        <button on:click=move |_| set_show_settings.set(true) class="glass-pad w-12 h-12 flex items-center justify-center rounded-xl hover:scale-110 transition-transform shadow-lg">
+                        <button on:click=move |_| set_show_settings.set(true) class="glass-pad w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl hover:scale-110 transition-transform shadow-lg">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
@@ -409,11 +410,11 @@ fn App() -> impl IntoView {
             </Modal>
 
             <Modal title="Settings".to_string() is_open=show_settings set_is_open=set_show_settings>
-                <div class="flex flex-col gap-4">
-                    <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30 text-white">
+                <div class="flex flex-col gap-4 text-white">
+                    <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30">
                         <div>
-                            <div class="font-bold">"Hard Mode"</div>
-                            <div class="text-xs opacity-70">"Strict validation of clues"</div>
+                            <div class="font-bold text-white">"Hard Mode"</div>
+                            <div class="text-xs opacity-70 text-white">"Strict validation of clues"</div>
                         </div>
                         <button 
                             on:click=move |_| set_hard_mode.update(|h| *h = !*h)
@@ -422,7 +423,7 @@ fn App() -> impl IntoView {
                             <div class=move || format!("absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 {}", if hard_mode.get() { "left-7" } else { "left-1" }) />
                         </button>
                     </div>
-                    <div class="text-xs opacity-50 italic text-white text-center mt-2">"Rustle Version 1.0.0 (Pure Rust)"</div>
+                    <div class="text-xs opacity-50 italic text-center mt-2 text-white">"Rustle Version 1.0.0 (Pure Rust)"</div>
                 </div>
             </Modal>
 

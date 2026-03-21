@@ -5,16 +5,16 @@
 :root {
   --animation-speed: 1000ms;
   --animation-speed-fast: 250ms;
-  --default-cell-bg-color: theme('colors.white');
-  --default-cell-border-color: theme('colors.black');
-  --default-cell-text-color: theme('colors.black');
-  --absent-cell-bg-color: theme('colors.slate.400');
-  --correct-cell-bg-color: theme('colors.green.400');
-  --present-cell-bg-color: theme('colors.yellow.400');
-  --app-bg: theme('colors.white');
-  --app-text: theme('colors.black');
-  --key-bg: theme('colors.slate.200');
-  --key-text: theme('colors.black');
+  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
+  --default-cell-border-color: rgba(255, 255, 255, 0.2);
+  --default-cell-text-color: #ffffff;
+  --absent-cell-bg-color: #334155;
+  --correct-cell-bg-color: #22c55e;
+  --present-cell-bg-color: #eab308;
+  --app-bg: #0f172a;
+  --app-text: #f8fafc;
+  --key-bg: var(--default-cell-bg-color);
+  --key-text: var(--default-cell-text-color);
   --theme-primary: #10b981;
 }
 
@@ -32,19 +32,19 @@ body {
   position: relative;
 }
 
-/* Theme Definitions - SYNCED KEYBOARD AND FIELD */
+/* Theme Definitions - EXACT COLOR SYNC */
 
 /* 0: Dark */
 .theme-dark {
   --app-bg: #0f172a;
   --app-text: #f8fafc;
-  --default-cell-bg-color: rgba(255, 255, 255, 0.05);
+  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
   --default-cell-border-color: rgba(255, 255, 255, 0.1);
   --default-cell-text-color: #f8fafc;
   --key-bg: rgba(255, 255, 255, 0.1);
   --key-text: #f8fafc;
   --theme-primary: #38bdf8;
-  --absent-cell-bg-color: #334155;
+  --absent-cell-bg-color: #1e293b;
   --correct-cell-bg-color: #22c55e;
   --present-cell-bg-color: #eab308;
 }
@@ -53,8 +53,8 @@ body {
 .theme-red {
   --app-bg: #450a0a;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(255, 255, 255, 0.05);
-  --default-cell-border-color: rgba(255, 255, 255, 0.1);
+  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
+  --default-cell-border-color: rgba(255, 255, 255, 0.15);
   --default-cell-text-color: #ffffff;
   --key-bg: rgba(255, 255, 255, 0.1);
   --key-text: #ffffff;
@@ -68,8 +68,8 @@ body {
 .theme-orange {
   --app-bg: #431407;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(255, 255, 255, 0.05);
-  --default-cell-border-color: rgba(255, 255, 255, 0.1);
+  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
+  --default-cell-border-color: rgba(255, 255, 255, 0.15);
   --default-cell-text-color: #ffffff;
   --key-bg: rgba(255, 255, 255, 0.1);
   --key-text: #ffffff;
@@ -83,8 +83,8 @@ body {
 .theme-yellow {
   --app-bg: #422006;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(255, 255, 255, 0.05);
-  --default-cell-border-color: rgba(255, 255, 255, 0.1);
+  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
+  --default-cell-border-color: rgba(255, 255, 255, 0.15);
   --default-cell-text-color: #ffffff;
   --key-bg: rgba(255, 255, 255, 0.1);
   --key-text: #ffffff;
@@ -98,8 +98,8 @@ body {
 .theme-green {
   --app-bg: #064e3b;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(255, 255, 255, 0.05);
-  --default-cell-border-color: rgba(255, 255, 255, 0.1);
+  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
+  --default-cell-border-color: rgba(255, 255, 255, 0.15);
   --default-cell-text-color: #ffffff;
   --key-bg: rgba(255, 255, 255, 0.1);
   --key-text: #ffffff;
@@ -113,8 +113,8 @@ body {
 .theme-blue {
   --app-bg: #1e3a8a;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(255, 255, 255, 0.05);
-  --default-cell-border-color: rgba(255, 255, 255, 0.1);
+  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
+  --default-cell-border-color: rgba(255, 255, 255, 0.15);
   --default-cell-text-color: #ffffff;
   --key-bg: rgba(255, 255, 255, 0.1);
   --key-text: #ffffff;
@@ -128,8 +128,8 @@ body {
 .theme-purple {
   --app-bg: #4c1d95;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(255, 255, 255, 0.05);
-  --default-cell-border-color: rgba(255, 255, 255, 0.1);
+  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
+  --default-cell-border-color: rgba(255, 255, 255, 0.15);
   --default-cell-text-color: #ffffff;
   --key-bg: rgba(255, 255, 255, 0.1);
   --key-text: #ffffff;
@@ -198,11 +198,12 @@ body {
   box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
-/* Cell Status Overrides - Priority! */
+/* Shared Status Classes for Tiles AND Keys */
 .absent {
   background-color: var(--absent-cell-bg-color) !important;
   border-color: var(--absent-cell-bg-color) !important;
   color: white !important;
+  opacity: 0.6;
 }
 .correct {
   background-color: var(--correct-cell-bg-color) !important;
@@ -215,16 +216,11 @@ body {
   color: white !important;
 }
 
-/* Default state for cells and keys (when not completed/revealing) */
-.cell-neutral {
+/* Default state for cells and keys */
+.cell-neutral, .key-neutral {
   background-color: var(--default-cell-bg-color) !important;
   border-color: var(--default-cell-border-color) !important;
   color: var(--default-cell-text-color) !important;
-}
-
-.key-neutral {
-  background-color: var(--key-bg) !important;
-  color: var(--key-text) !important;
 }
 
 /* Animations */
@@ -256,7 +252,7 @@ body {
   100% { transform: translateX(0); }
 }
 
-/* Slidding Toggle Styling */
+/* Toggle Slider Styling */
 .theme-slider {
   -webkit-appearance: none;
   appearance: none;

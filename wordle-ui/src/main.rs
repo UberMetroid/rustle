@@ -308,7 +308,7 @@ fn App() -> impl IntoView {
                     <h1 class="text-2xl sm:text-4xl font-black tracking-tighter italic text-center title-text">"RUSTLE"</h1>
                     
                     <div class="flex justify-end">
-                        <div class="glass-pad p-2 rounded-3xl flex items-center shadow-lg">
+                        <div class="glass-pad p-2 rounded-2xl flex items-center shadow-lg">
                             {move || {
                                 let themes = vec!["dark", "red", "orange", "yellow", "green", "blue", "purple", "light"];
                                 let current = theme.get();
@@ -362,24 +362,24 @@ fn App() -> impl IntoView {
                         view! {
                             <div class="flex justify-center mb-2 w-full">
                                 {if i == 2 { view! { 
-                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded-xl font-bold bg-gray-500 text-white flex-[1.5] flex items-center justify-center hover:bg-gray-400 active:scale-95 transition-all shadow-lg key-neutral" on:click=move |_| on_key.call("ENTER".to_string())> 
+                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] flex items-center justify-center key-neutral" on:click=move |_| on_key.call("ENTER".to_string())> 
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
                                     </button> 
                                 }.into_view() } else { view! {}.into_view() }}
                                 
                                 {row.into_iter().map(|c| {
                                     let status = move || char_statuses.get().get(&c).cloned().unwrap_or_default();
-                                    let bg = move || match status().as_str() { 
-                                        "correct" => "bg-green-500", 
-                                        "present" => "bg-yellow-500", 
-                                        "absent" => "bg-gray-700 shadow-inner opacity-60 grayscale", 
+                                    let status_class = move || match status().as_str() { 
+                                        "correct" => "correct", 
+                                        "present" => "present", 
+                                        "absent" => "absent", 
                                         _ => "key-neutral" 
                                     };
-                                    view! { <button class=move || format!("h-12 sm:h-14 mx-0.5 rounded-xl font-bold text-white flex-1 min-w-[25px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg {}", bg()) on:click=move |_| on_key.call(c.to_string())> {c.to_string()} </button> }
+                                    view! { <button class=move || format!("h-12 sm:h-14 mx-0.5 rounded-xl font-bold flex-1 min-w-[25px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg border-2 border-transparent {}", status_class()) on:click=move |_| on_key.call(c.to_string())> {c.to_string()} </button> }
                                 }).collect_view()}
                                 
                                 {if i == 2 { view! { 
-                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded-xl font-bold bg-gray-500 text-white flex-[1.5] flex items-center justify-center hover:bg-gray-400 active:scale-95 transition-all shadow-lg key-neutral" on:click=move |_| on_key.call("DELETE".to_string())> 
+                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] flex items-center justify-center key-neutral" on:click=move |_| on_key.call("DELETE".to_string())> 
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg>
                                     </button> 
                                 }.into_view() } else { view! {}.into_view() }}

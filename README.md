@@ -1,17 +1,17 @@
-# React Wordle
+# Rust Wordle
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/UberMetroid/rust-wordle/Latest%20Docker%20CI.yml?label=Latest%20Docker%20Build)
 [![GitHub last commit](https://img.shields.io/github/last-commit/UberMetroid/rust-wordle)](https://github.com/UberMetroid/rust-wordle)
 
-This repository provides a containerized version of the popular Wordle game.
+This is a high-performance, pure Rust clone of the popular Wordle game. Built with **Leptos** (Rust Frontend) and a custom Rust business logic engine.
 
 ---
 
 ## 🐳 Container Installation
 
-Images are hosted on the GitHub Container Registry (**GHCR**).
+The application is distributed as a single container image containing the WebAssembly frontend and Nginx server.
 
-*Modern React implementation. Default container port: **7583***
+*Pure Rust/Leptos implementation. Default container port: **7583***
 
 ### **Docker Run**
 ```bash
@@ -28,6 +28,15 @@ services:
     ports:
       - "7583:7583"
 ```
+
+---
+
+## 🛠 Tech Stack
+*   **Frontend**: [Leptos](https://leptos.dev/) (Rust + Wasm)
+*   **Engine**: Custom Rust library (`wordle-engine`)
+*   **Build Tool**: [Trunk](https://trunkrs.dev/)
+*   **Styles**: Tailwind CSS
+*   **Server**: Nginx (Alpine)
 
 ---
 

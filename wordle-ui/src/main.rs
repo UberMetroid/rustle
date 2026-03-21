@@ -391,7 +391,7 @@ fn App() -> impl IntoView {
 
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
                 <div class="flex flex-col items-center text-center">
-                    <div class="flex w-full justify-around mb-6 text-white">
+                    <div class="flex w-full justify-around mb-6 text-white text-white">
                         <div><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70">"Played"</div></div>
                         <div><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70">"Win %"</div></div>
                         <div><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70">"Streak"</div></div>
@@ -419,10 +419,18 @@ fn App() -> impl IntoView {
                         <div>
                             <div class="font-bold">"Hard Mode"</div>
                             <div class="text-xs opacity-70">"Strict validation of clues"</div>
+                            {move || if !guesses.get().is_empty() {
+                                view! { <div class="text-[10px] text-red-400 mt-1 font-bold uppercase tracking-tighter italic">"Game in progress"</div> }.into_view()
+                            } else {
+                                view! {}.into_view()
+                            }}
                         </div>
                         <button 
-                            on:click=move |_| set_hard_mode.update(|h| *h = !*h)
-                            class=move || format!("w-12 h-6 rounded-full transition-colors duration-300 relative {}", if hard_mode.get() { "bg-green-500" } else { "bg-gray-600" })
+                            on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) }
+                            class=move || format!("w-12 h-6 rounded-full transition-all duration-300 relative {} {}", 
+                                if hard_mode.get() { "bg-green-500" } else { "bg-gray-600" },
+                                if !guesses.get().is_empty() { "opacity-50 cursor-not-allowed" } else { "cursor-pointer" }
+                            )
                         >
                             <div class=move || format!("absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 {}", if hard_mode.get() { "left-7" } else { "left-1" }) />
                         </button>

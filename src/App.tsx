@@ -83,35 +83,27 @@ function App() {
       : false
   )
 
+  // Fast-init Wasm
   useEffect(() => {
-    console.log('Initializing Wasm engine...')
     init()
       .then(() => {
-        console.log('Wasm engine ready!')
-        setIsWasmReady(true)
         const data = getSolution(gameDate)
         setSolutionData(data)
+        setIsWasmReady(true)
 
-        // Load game state now that we have the solution
+        // Sync state
         const loaded = loadGameStateFromLocalStorage(isLatestGame)
         if (data && loaded?.solution === data.solution) {
           setGuesses(loaded.guesses)
-          const gameWasWon = loaded.guesses.includes(data.solution)
-          if (gameWasWon) {
+          if (loaded.guesses.includes(data.solution)) {
             setIsGameWon(true)
-          }
-          if (loaded.guesses.length === MAX_CHALLENGES && !gameWasWon) {
+          } else if (loaded.guesses.length === MAX_CHALLENGES) {
             setIsGameLost(true)
-            showErrorAlert(CORRECT_WORD_MESSAGE(data.solution), {
-              persist: true,
-            })
           }
-        } else {
-          setGuesses([])
         }
       })
       .catch(console.error)
-  }, [gameDate, isLatestGame, showErrorAlert])
+  }, [gameDate, isLatestGame])
 
   useEffect(() => {
     if (isWasmReady && !loadGameStateFromLocalStorage(true)) {
@@ -174,29 +166,24 @@ function App() {
       const winMessage =
         WIN_MESSAGES[Math.floor(Math.random() * WIN_MESSAGES.length)]
       const delayMs = REVEAL_TIME_MS * solutionData.solution.length
-
       showSuccessAlert(winMessage, {
         delayMs,
         onClose: () => setIsStatsModalOpen(true),
       })
     }
-
     if (isGameLost && solutionData) {
-      setTimeout(() => {
-        setIsStatsModalOpen(true)
-      }, (solutionData.solution.length + 1) * REVEAL_TIME_MS)
+      setTimeout(
+        () => setIsStatsModalOpen(true),
+        (solutionData.solution.length + 1) * REVEAL_TIME_MS
+      )
     }
   }, [isGameWon, isGameLost, showSuccessAlert, solutionData])
 
   const onChar = (value: string) => {
-    if (
-      solutionData &&
-      unicodeLength(`${currentGuess}${value}`) <=
-        solutionData.solution.length &&
-      guesses.length < MAX_CHALLENGES &&
-      !isGameWon
-    ) {
-      setCurrentGuess(`${currentGuess}${value}`)
+    if (isWasmReady && guesses.length < MAX_CHALLENGES && !isGameWon) {
+      setCurrentGuess(
+        `${currentGuess}${value}`.slice(0, solutionData?.solution.length || 5)
+      )
     }
   }
 
@@ -207,11 +194,9 @@ function App() {
   }
 
   const onEnter = () => {
-    if (isGameWon || isGameLost || !solutionData) {
-      return
-    }
+    if (!isWasmReady || isGameWon || isGameLost || !solutionData) return
 
-    if (!(unicodeLength(currentGuess) === solutionData.solution.length)) {
+    if (unicodeLength(currentGuess) !== solutionData.solution.length) {
       setCurrentRowClass('jiggle')
       return showErrorAlert(NOT_ENOUGH_LETTERS_MESSAGE, {
         onClose: clearCurrentRowClass,
@@ -240,46 +225,30 @@ function App() {
     }
 
     setIsRevealing(true)
-    setTimeout(() => {
-      setIsRevealing(false)
-    }, REVEAL_TIME_MS * solutionData.solution.length)
+    setTimeout(
+      () => setIsRevealing(false),
+      REVEAL_TIME_MS * solutionData.solution.length
+    )
 
     const winningWord = isWinningWord(currentGuess, solutionData.solution)
+    setGuesses([...guesses, currentGuess])
+    setCurrentGuess('')
 
-    if (
-      unicodeLength(currentGuess) === solutionData.solution.length &&
-      guesses.length < MAX_CHALLENGES &&
-      !isGameWon
-    ) {
-      setGuesses([...guesses, currentGuess])
-      setCurrentGuess('')
-
-      if (winningWord) {
-        if (isLatestGame) {
-          setStats(addStatsForCompletedGame(stats, guesses.length))
-        }
-        return setIsGameWon(true)
-      }
-
-      if (guesses.length === MAX_CHALLENGES - 1) {
-        if (isLatestGame) {
-          setStats(addStatsForCompletedGame(stats, guesses.length + 1))
-        }
-        setIsGameLost(true)
-        showErrorAlert(CORRECT_WORD_MESSAGE(solutionData.solution), {
-          persist: true,
-          delayMs: REVEAL_TIME_MS * solutionData.solution.length + 1,
-        })
-      }
+    if (winningWord) {
+      if (isLatestGame)
+        setStats(addStatsForCompletedGame(stats, guesses.length))
+      return setIsGameWon(true)
     }
-  }
 
-  if (!isWasmReady || !solutionData) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <p className="text-xl font-bold">Loading Wordle Rust...</p>
-      </div>
-    )
+    if (guesses.length === MAX_CHALLENGES - 1) {
+      if (isLatestGame)
+        setStats(addStatsForCompletedGame(stats, guesses.length + 1))
+      setIsGameLost(true)
+      showErrorAlert(CORRECT_WORD_MESSAGE(solutionData.solution), {
+        persist: true,
+        delayMs: REVEAL_TIME_MS * solutionData.solution.length + 1,
+      })
+    }
   }
 
   return (
@@ -304,7 +273,7 @@ function App() {
         <div className="mx-auto flex w-full grow flex-col px-1 pt-2 pb-8 sm:px-6 md:max-w-7xl lg:px-8 short:pb-2 short:pt-2">
           <div className="flex grow flex-col justify-center pb-6 short:pb-2">
             <Grid
-              solution={solutionData.solution}
+              solution={solutionData?.solution || '     '}
               guesses={guesses}
               currentGuess={currentGuess}
               isRevealing={isRevealing}
@@ -315,7 +284,7 @@ function App() {
             onChar={onChar}
             onDelete={onDelete}
             onEnter={onEnter}
-            solution={solutionData.solution}
+            solution={solutionData?.solution || '     '}
             guesses={guesses}
             isRevealing={isRevealing}
           />
@@ -326,10 +295,10 @@ function App() {
           <StatsModal
             isOpen={isStatsModalOpen}
             handleClose={() => setIsStatsModalOpen(false)}
-            solution={solutionData.solution}
-            solutionIndex={solutionData.solutionIndex}
-            solutionGameDate={solutionData.solutionGameDate}
-            tomorrow={solutionData.tomorrow}
+            solution={solutionData?.solution || ''}
+            solutionIndex={solutionData?.solutionIndex || 0}
+            solutionGameDate={solutionData?.solutionGameDate || new Date()}
+            tomorrow={solutionData?.tomorrow || 0}
             guesses={guesses}
             gameStats={stats}
             isLatestGame={isLatestGame}
@@ -350,7 +319,7 @@ function App() {
           />
           <DatePickerModal
             isOpen={isDatePickerModalOpen}
-            initialDate={solutionData.solutionGameDate}
+            initialDate={solutionData?.solutionGameDate || new Date()}
             handleSelectDate={(d) => {
               setIsDatePickerModalOpen(false)
               setGameDate(d)

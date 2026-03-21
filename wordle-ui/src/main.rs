@@ -22,9 +22,11 @@ struct GameStats {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
 struct GlobalStats {
-    pub cracked: String,
-    pub avg_ops: String,
-    pub efficiency: String,
+    pub dark: u32,
+    pub red: u32,
+    pub green: u32,
+    pub blue: u32,
+    pub white: u32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -42,29 +44,22 @@ fn get_storage() -> Option<web_sys::Storage> {
 
 async fn fetch_global_stats() -> GlobalStats {
     let window = window();
-    // TRY GITHUB FIRST, FALLBACK TO LOCAL
-    let urls = vec![
-        "https://raw.githubusercontent.com/UberMetroid/rustle/main/data/global-stats.json",
-        "/global-stats.json"
-    ];
-    
-    for url in urls {
-        let mut opts = web_sys::RequestInit::new();
-        opts.set_method("GET");
-        if let Ok(request) = web_sys::Request::new_with_str_and_init(url, &opts) {
-            if let Ok(resp_value) = wasm_bindgen_futures::JsFuture::from(window.fetch_with_request(&request)).await {
-                let resp: web_sys::Response = resp_value.dyn_into().unwrap();
-                if resp.status() == 200 {
-                    if let Ok(json_value) = wasm_bindgen_futures::JsFuture::from(resp.json().unwrap()).await {
-                        if let Ok(stats) = serde_wasm_bindgen::from_value::<GlobalStats>(json_value) {
-                            return stats;
-                        }
+    let url = "https://raw.githubusercontent.com/UberMetroid/rustle/main/data/global-stats.json";
+    let opts = web_sys::RequestInit::new();
+    opts.set_method("GET");
+    if let Ok(request) = web_sys::Request::new_with_str_and_init(url, &opts) {
+        if let Ok(resp_value) = wasm_bindgen_futures::JsFuture::from(window.fetch_with_request(&request)).await {
+            let resp: web_sys::Response = resp_value.dyn_into().unwrap();
+            if resp.status() == 200 {
+                if let Ok(json_value) = wasm_bindgen_futures::JsFuture::from(resp.json().unwrap()).await {
+                    if let Ok(stats) = serde_wasm_bindgen::from_value::<GlobalStats>(json_value) {
+                        return stats;
                     }
                 }
             }
         }
     }
-    GlobalStats { cracked: "1.2M".to_string(), avg_ops: "4.2".to_string(), efficiency: "88%".to_string() }
+    GlobalStats { dark: 1240, red: 850, green: 2100, blue: 1100, white: 420 }
 }
 
 fn get_theme_emojis(theme: &str) -> (&str, &str, &str) {
@@ -237,6 +232,8 @@ fn App() -> impl IntoView {
     let (is_ng_plus, set_is_ng_plus) = create_signal(false);
     let (ai_pool, set_ai_pool) = create_signal(Vec::<String>::new());
     let (daily_game_done, set_daily_game_done) = create_signal(false);
+    
+    let (win_pulse_trigger, set_win_pulse_trigger) = create_signal(String::new());
 
     let global_stats_res = create_local_resource(move || (), |_| fetch_global_stats());
 
@@ -250,7 +247,13 @@ fn App() -> impl IntoView {
 
     create_effect(move |_| {
         if let Some(storage) = get_storage() {
-            if let Ok(Some(t)) = storage.get_item("color-theme") { set_theme.set(t); }
+            if let Ok(Some(t)) = storage.get_item("color-theme") { 
+                set_theme.set(t); 
+            } else {
+                let themes = vec!["dark", "red", "green", "blue", "white"];
+                let idx = js_sys::Math::floor(js_sys::Math::random() * 5.0) as usize;
+                set_theme.set(themes[idx].to_string());
+            }
             if let Ok(Some(h)) = storage.get_item("hard-mode") { set_hard_mode.set(h == "true"); }
             if let Ok(Some(s)) = storage.get_item("game-stats") {
                 if let Ok(parsed) = serde_json::from_str::<GameStats>(&s) { set_stats.set(parsed); }
@@ -298,7 +301,7 @@ fn App() -> impl IntoView {
     });
 
     let start_ng_plus = move || {
-        if !daily_game_done.get() { return; } // STRICT LOCK
+        if !daily_game_done.get() { return; }
         let daily_sol = solution_data.get().solution.to_uppercase();
         let was_active = is_ng_plus.get();
         set_is_ng_plus.set(true);
@@ -308,24 +311,13 @@ fn App() -> impl IntoView {
         set_game_won.set(false);
         set_game_lost.set(false);
         set_current_input.set(String::new());
-        
-        if was_active {
-            set_snarky_comment.set("SYSTEM REBOOT.".to_string());
-        } else {
-            let startup_msgs = vec![
-                "NEW GAME+ ENABLED. GOOD LUCK!", "PROTOCOL INITIALIZED. BREACH THE SYSTEM.",
-                "DIGITAL ENTROPY MAXIMIZED.", "ACCESSING ADVERSARIAL POOL...",
-                "TRON CALLED. HE WANTS HIS WORD BACK."
-            ];
+        if was_active { set_snarky_comment.set("SYSTEM REBOOT.".to_string()); }
+        else {
+            let startup_msgs = vec!["NEW GAME+ ENABLED. GOOD LUCK!", "PROTOCOL INITIALIZED. BREACH THE SYSTEM.", "DIGITAL ENTROPY MAXIMIZED.", "ACCESSING ADVERSARIAL POOL...", "TRON CALLED. HE WANTS HIS WORD BACK."];
             set_snarky_comment.set(startup_msgs[js_sys::Math::floor(js_sys::Math::random() * startup_msgs.len() as f64) as usize].to_string());
         }
-        
         let full_list: Vec<String> = serde_wasm_bindgen::from_value(get_ai_word_list()).unwrap_or_default();
-        let mut filtered_pool: Vec<String> = full_list.iter()
-            .filter(|w| calculate_statuses(&daily_sol, w).iter().all(|s| s == "absent"))
-            .cloned()
-            .collect();
-        
+        let mut filtered_pool: Vec<String> = full_list.iter().filter(|w| calculate_statuses(&daily_sol, w).iter().all(|s| s == "absent")).cloned().collect();
         if filtered_pool.is_empty() { filtered_pool = full_list; }
         set_ai_pool.set(filtered_pool);
         if let Some(storage) = get_storage() { let _ = storage.remove_item("game-state"); }
@@ -335,15 +327,9 @@ fn App() -> impl IntoView {
         let is_hard = hard_mode.get() || is_ng_plus.get();
         let comment = snarky_comment.get();
         let shared_comment = if game_lost.get() && !comment.contains("BREACHED") { "TOTAL BUMMER. POSEUR.".to_string() } else { comment };
-        
         let current_theme = theme.get();
         let (correct_e, present_e, absent_e) = get_theme_emojis(&current_theme);
-        let mut text = format!("RUSTLE {} {}/6 {}{}\n\n", 
-            solution_data.get().solution_index, 
-            if game_won.get() { guesses.get().len().to_string() } else { "X".to_string() }, 
-            if is_hard { "⚡" } else { "" },
-            if is_ng_plus.get() { "+" } else { "" }
-        );
+        let mut text = format!("RUSTLE {} {}/6 {}{}\n\n", solution_data.get().solution_index, if game_won.get() { guesses.get().len().to_string() } else { "X".to_string() }, if is_hard { "⚡" } else { "" }, if is_ng_plus.get() { "+" } else { "" });
         let ss = guess_statuses.get();
         for s_row in ss {
             for s in s_row { text.push_str(match s.as_str() { "correct" => correct_e, "present" => present_e, _ => absent_e }); }
@@ -354,7 +340,6 @@ fn App() -> impl IntoView {
         let _ = window().navigator().clipboard().write_text(&text);
         set_snarky_comment.set("Results Copied, poseur.".to_string());
         set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));
-        
         if !is_ng_plus.get() { start_ng_plus(); }
     };
 
@@ -375,15 +360,12 @@ fn App() -> impl IntoView {
                 set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
             }
-
             if (hard_mode.get() || is_ng_plus.get()) && !guesses.get().is_empty() {
                 let current_guesses = guesses.get();
                 let current_ss = guess_statuses.get();
                 let mut required_spots: [Option<char>; 5] = [None; 5];
                 for (g, ss) in current_guesses.iter().zip(current_ss.iter()) {
-                    for (i, (c, s)) in g.chars().zip(ss.iter()).enumerate() {
-                        if s == "correct" { required_spots[i] = Some(c); }
-                    }
+                    for (i, (c, s)) in g.chars().zip(ss.iter()).enumerate() { if s == "correct" { required_spots[i] = Some(c); } }
                 }
                 for (i, &req) in required_spots.iter().enumerate() {
                     if let Some(c) = req {
@@ -398,9 +380,7 @@ fn App() -> impl IntoView {
                 let mut required_letters: HashMap<char, usize> = HashMap::new();
                 for (g, ss) in current_guesses.iter().zip(current_ss.iter()) {
                     let mut current_g_counts: HashMap<char, usize> = HashMap::new();
-                    for (c, s) in g.chars().zip(ss.iter()) {
-                        if s == "correct" || s == "present" { *current_g_counts.entry(c).or_insert(0) += 1; }
-                    }
+                    for (c, s) in g.chars().zip(ss.iter()) { if s == "correct" || s == "present" { *current_g_counts.entry(c).or_insert(0) += 1; } }
                     for (c, count) in current_g_counts {
                         let entry = required_letters.entry(c).or_insert(0);
                         if count > *entry { *entry = count; }
@@ -427,11 +407,9 @@ fn App() -> impl IntoView {
                     }
                 }
             }
-
             let mut new_guesses = guesses.get();
             let mut new_ss_vec = guess_statuses.get();
             new_guesses.push(input.clone());
-
             let mut current_pattern = vec![];
             if is_ng_plus.get() {
                 let pool_val = serde_wasm_bindgen::to_value(&ai_pool.get()).unwrap();
@@ -440,34 +418,26 @@ fn App() -> impl IntoView {
                     current_pattern = res.pattern;
                     set_ai_pool.set(res.new_pool.clone());
                 }
-            } else {
-                current_pattern = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &input)).unwrap_or_default();
-            }
-            
+            } else { current_pattern = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &input)).unwrap_or_default(); }
             if current_pattern.is_empty() { return; }
-
             new_ss_vec.push(current_pattern.clone());
             set_guesses.set(new_guesses.clone());
             set_guess_statuses_vec.set(new_ss_vec.clone());
             set_current_input.set(String::new());
-
             if let Some(storage) = get_storage() {
-                let state = StoredState { 
-                    guesses: new_guesses.clone(), statuses: new_ss_vec.clone(), solution: sol.clone(), is_ng_plus: is_ng_plus.get(), ai_pool: ai_pool.get()
-                };
+                let state = StoredState { guesses: new_guesses.clone(), statuses: new_ss_vec.clone(), solution: sol.clone(), is_ng_plus: is_ng_plus.get(), ai_pool: ai_pool.get() };
                 let _ = storage.set_item("game-state", &serde_json::to_string(&state).unwrap());
             }
-
             set_is_revealing_row.set(true);
             set_timeout(move || set_is_revealing_row.set(false), std::time::Duration::from_millis(2000));
-            
             let is_win = current_pattern.iter().all(|s| s == "correct");
             let is_loss = new_guesses.len() >= 6 && !is_win;
             set_snarky_comment.set(get_80s_comment(new_guesses.len(), is_win, is_loss, hard_mode.get(), is_ng_plus.get()));
-
             if is_win {
                 set_game_won.set(true);
                 if !is_ng_plus.get() { set_daily_game_done.set(true); }
+                set_win_pulse_trigger.set(js_sys::Date::now().to_string());
+                set_timeout(move || set_win_pulse_trigger.set("".to_string()), std::time::Duration::from_millis(1000));
                 set_timeout(move || celebrate(&theme.get(), hard_mode.get(), is_ng_plus.get()), std::time::Duration::from_millis(1800));
                 set_stats.update(|s| {
                     s.total_games += 1; s.wins += 1; s.current_streak += 1;
@@ -490,11 +460,7 @@ fn App() -> impl IntoView {
             if len > 0 {
                 set_last_typed_index.set(len as i32 - 1);
                 set_destroy_trigger.set(js_sys::Date::now().to_string());
-                set_timeout(move || {
-                    set_current_input.update(|s| { s.pop(); });
-                    set_last_typed_index.set(-1);
-                    set_destroy_trigger.set("".to_string());
-                }, std::time::Duration::from_millis(150));
+                set_timeout(move || { set_current_input.update(|s| { s.pop(); }); set_last_typed_index.set(-1); set_destroy_trigger.set("".to_string()); }, std::time::Duration::from_millis(150));
             }
         } else if current_input.get().len() < 5 {
             let next_idx = current_input.get().len() as i32;
@@ -508,15 +474,8 @@ fn App() -> impl IntoView {
 
     let _ = window_event_listener(leptos::ev::keydown, move |ev| {
         let key = ev.key();
-        if show_stats.get() {
-            if key == "Enter" && (game_won.get() || game_lost.get()) {
-                share_results();
-                set_show_stats.set(false);
-            }
-            return;
-        }
+        if show_stats.get() { if key == "Enter" && (game_won.get() || game_lost.get()) { share_results(); set_show_stats.set(false); } return; }
         if show_help.get() { return; }
-        
         if key == "Enter" { on_key("ENTER".to_string()); }
         else if key == "Backspace" { on_key("DELETE".to_string()); }
         else if key.len() == 1 {
@@ -531,11 +490,7 @@ fn App() -> impl IntoView {
                 <div class="flex items-center gap-3">
                     <h1 class="text-3xl sm:text-5xl font-black tracking-tighter italic text-center title-text uppercase">"RUSTLE"</h1>
                     <Show when=move || is_ng_plus.get()>
-                        <button 
-                            on:click=move |_| start_ng_plus()
-                            title="Reset New Game+" 
-                            class="ai-active-pad w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-90 shadow-[0_0_15px_rgba(255,0,255,0.8)]"
-                        >
+                        <button on:click=move |_| start_ng_plus() title="Reset New Game+" class="ai-active-pad w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-90 shadow-[0_0_15px_rgba(255,0,255,0.8)]">
                             <span class="text-xl sm:text-2xl font-black text-white">"+"</span>
                         </button>
                     </Show>
@@ -552,57 +507,53 @@ fn App() -> impl IntoView {
                 }}
             </div>
 
-            <main class="flex-1 flex items-center justify-center w-full max-w-2xl mx-auto px-2 sm:px-4 min-h-0 pt-2">
-                <aside class="flex flex-col gap-4 py-4 shrink-0">
+            <main class="flex-1 flex items-center justify-center w-full max-w-2xl mx-auto px-2 sm:px-4 min-h-0 pt-2 relative">
+                <aside class="flex flex-col gap-4 py-4 shrink-0 absolute left-0">
                     <button on:click=move |_| set_show_stats.set(true) title="Score" class="btn-large correct-pad shadow-lg border-2 border-transparent transition-all active:scale-90">
                         <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                     </button>
                     <button on:click=move |_| set_show_help.set(true) title="How to Play" class="btn-large correct-pad shadow-lg border-2 border-transparent transition-all active:scale-90">
                         <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </button>
-                    <button 
-                        on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) } 
-                        title="Hard Mode" 
-                        class=move || format!("btn-large shadow-lg border-2 transition-all active:scale-90 {}", if hard_mode.get() || is_ng_plus.get() { "correct-pad border-transparent" } else { "cell-neutral border-current" })
-                    >
+                    <button on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) } title="Hard Mode" class=move || format!("btn-large shadow-lg border-2 transition-all active:scale-90 {}", if hard_mode.get() || is_ng_plus.get() { "correct-pad border-transparent" } else { "cell-neutral border-current" })>
                         <svg class=move || format!("w-6 h-6 sm:w-8 sm:h-8 transition-all {}", if hard_mode.get() || is_ng_plus.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_12px_rgba(253,224,71,1)]" } else { "text-current opacity-40" }) fill="currentColor" viewBox="0 0 24 24">
                             <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                         </svg>
                     </button>
                 </aside>
 
-                <div class="flex-1 flex flex-col items-center justify-center min-h-0 py-2 px-2 sm:px-8">
+                <div class="flex-1 flex flex-col items-center justify-center min-h-0 py-2 px-8">
                     <div class="flex flex-col gap-1 sm:gap-2 h-full max-h-[480px] aspect-[5/6]">
                         {move || {
-                            let gs = guesses.get();
-                            let ss = guess_statuses.get();
-                            let is_rev = is_revealing_row.get();
-                            let len = gs.len();
-                            let hard = hard_mode.get() || is_ng_plus.get();
+                            let gs = guesses.get(); let ss = guess_statuses.get(); let is_rev = is_revealing_row.get(); let len = gs.len(); let hard = hard_mode.get() || is_ng_plus.get();
                             gs.into_iter().zip(ss.into_iter()).enumerate().map(move |(i, (g, s))| { 
                                 view! { <Row guess=g.to_uppercase() statuses=s is_revealing=is_rev && i == len-1 is_completed=true is_jiggling=Signal::derive(|| false) destroy_trigger=destroy_trigger last_typed_index=-1 is_hard_mode=hard /> } 
                             }).collect_view()
                         }}
                         {move || if guesses.get().len() < 6 && !game_won.get() { 
-                            let current_input = current_input.get().to_uppercase();
-                            let last_idx = last_typed_index.get();
-                            let hard = hard_mode.get() || is_ng_plus.get();
-                            view! { <Row guess=current_input statuses=vec![] is_revealing=false is_completed=false is_jiggling=Signal::derive(move || jiggle_row.get()) destroy_trigger=destroy_trigger last_typed_index=last_idx is_hard_mode=hard /> }.into_view() 
+                            let input = current_input.get().to_uppercase(); let last = last_typed_index.get(); let hard = hard_mode.get() || is_ng_plus.get();
+                            view! { <Row guess=input statuses=vec![] is_revealing=false is_completed=false is_jiggling=Signal::derive(move || jiggle_row.get()) destroy_trigger=destroy_trigger last_typed_index=last is_hard_mode=hard /> }.into_view() 
                         } else { view! {}.into_view() }}
-                        {move || {
-                            let hard = hard_mode.get() || is_ng_plus.get();
-                            (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(move |_| { view! { <Row guess="".to_string() statuses=vec![] is_revealing=false is_completed=false is_jiggling=Signal::derive(|| false) destroy_trigger=destroy_trigger last_typed_index=-1 is_hard_mode=hard /> } }).collect_view()
-                        }}
+                        {move || { let hard = hard_mode.get() || is_ng_plus.get(); (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(move |_| { view! { <Row guess="".to_string() statuses=vec![] is_revealing=false is_completed=false is_jiggling=Signal::derive(|| false) destroy_trigger=destroy_trigger last_typed_index=-1 is_hard_mode=hard /> } }).collect_view() }}
                     </div>
                 </div>
 
-                <aside class="flex flex-col gap-3 py-4 shrink-0 px-2">
+                <aside class="flex flex-col gap-3 py-4 shrink-0 absolute right-0">
                     <div class="flex flex-col gap-4">
-                        <button on:click=move |_| set_theme.set("dark".to_string()) title="Dark Theme" class=move || format!("theme-square bg-black active:scale-125 {}", if theme.get() == "dark" { "active ring-2 ring-white ring-offset-2 ring-offset-black" } else { "" }) />
-                        <button on:click=move |_| set_theme.set("red".to_string()) title="Red Theme" class=move || format!("theme-square bg-red-600 active:scale-125 {}", if theme.get() == "red" { "active ring-2 ring-white ring-offset-2 ring-offset-red-600" } else { "" }) />
-                        <button on:click=move |_| set_theme.set("green".to_string()) title="Green Theme" class=move || format!("theme-square bg-green-600 active:scale-125 {}", if theme.get() == "green" { "active ring-2 ring-white ring-offset-2 ring-offset-green-600" } else { "" }) />
-                        <button on:click=move |_| set_theme.set("blue".to_string()) title="Blue Theme" class=move || format!("theme-square bg-blue-600 active:scale-125 {}", if theme.get() == "blue" { "active ring-2 ring-white ring-offset-2 ring-offset-blue-600" } else { "" }) />
-                        <button on:click=move |_| set_theme.set("white".to_string()) title="White Theme" class=move || format!("theme-square bg-white active:scale-125 {}", if theme.get() == "white" { "active ring-2 ring-gray-400 ring-offset-2 ring-offset-white" } else { "" }) />
+                        {move || {
+                            let themes = vec![("dark", "bg-black", "dark"), ("red", "bg-red-600", "red"), ("green", "bg-green-600", "green"), ("blue", "bg-blue-600", "blue"), ("white", "bg-white", "white")];
+                            let cur = theme.get();
+                            let pulse = win_pulse_trigger.get();
+                            themes.into_iter().map(move |(t, bg, label)| {
+                                let t_str = t.to_string(); let is_act = cur == t; let pulse_val = pulse.clone();
+                                view! {
+                                    <button on:click=move |_| set_theme.set(t_str.clone()) title=format!("{} Theme", label) class=format!("theme-square {} active:scale-125 {}", bg, if is_act { "active ring-2 ring-white ring-offset-2" } else { "" })>
+                                        <Show when={let pv = pulse_val.clone(); move || !pv.is_empty() && is_act}> <div key=pulse_val.clone() class="win-pulse">"+"</div> </Show>
+                                        <div class="theme-count">{move || { let s = global_stats_res.get().unwrap_or_default(); match t { "dark" => s.dark, "red" => s.red, "green" => s.green, "blue" => s.blue, _ => s.white } }}</div>
+                                    </button>
+                                }
+                            }).collect_view()
+                        }}
                     </div>
                 </aside>
             </main>
@@ -621,13 +572,7 @@ fn App() -> impl IntoView {
                                     let hard = hard_mode.get() || is_ng_plus.get();
                                     view! { 
                                         <button class=move || format!("key-large relative rounded-xl font-black flex-1 min-w-[30px] transition-all duration-300 hover:brightness-110 active:scale-90 shadow-lg border-2 border-transparent {}", status_class()) on:click=move |_| on_key(c.to_string())> 
-                                            {move || { 
-                                                let id = pulse(); 
-                                                if !id.is_empty() { 
-                                                    if hard { view! { <div key=id class="power-ring" /> }.into_view() }
-                                                    else { view! { <div key=id class="power-underline" /> }.into_view() }
-                                                } else { view! {}.into_view() } 
-                                            }}
+                                            {move || { let id = pulse(); if !id.is_empty() { if hard { view! { <div key=id class="power-ring" /> }.into_view() } else { view! { <div key=id class="power-underline" /> }.into_view() } } else { view! {}.into_view() } }}
                                             {c.to_string()} 
                                         </button> 
                                     }
@@ -639,45 +584,6 @@ fn App() -> impl IntoView {
                 }}
             </footer>
 
-            <Modal title="How to Play".to_string() is_open=show_help set_is_open=set_show_help>
-                <div class="flex flex-col gap-6 text-white text-center">
-                    <div class="space-y-4">
-                        <div class="space-y-3">
-                            <div class="flex flex-col items-center gap-1">
-                                <div class="flex">
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent correct font-black text-white">"R"</div>
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"U"</div>
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"S"</div>
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"T"</div>
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"S"</div>
-                                </div>
-                                <div class="text-[10px] opacity-70 text-center">"R is in the word and in the correct spot."</div>
-                            </div>
-                            <div class="flex flex-col items-center gap-1">
-                                <div class="flex">
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral font-bold">"W"</div>
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent present mx-0.5 font-black text-black">"O"</div>
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"R"</div>
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"D"</div>
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"S"</div>
-                                </div>
-                                <div class="text-[10px] opacity-70 text-center">"O is in the word but in the wrong spot."</div>
-                            </div>
-                            <div class="flex flex-col items-center gap-1">
-                                <div class="flex">
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral font-bold">"V"</div>
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"A"</div>
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"G"</div>
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent absent mx-0.5 font-black text-white">"U"</div>
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"E"</div>
-                                </div>
-                                <div class="text-[10px] opacity-70 text-center">"U is not in the word in any spot."</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </Modal>
-
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
                 <div class="flex flex-col items-center text-center text-white p-2 rounded-xl bg-black bg-opacity-40">
                     <div class="grid grid-cols-4 w-full gap-4 mb-8">
@@ -686,7 +592,6 @@ fn App() -> impl IntoView {
                         <div class="flex flex-col"><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Streak"</div></div>
                         <div class="flex flex-col"><div class="text-3xl font-black">{move || stats.get().best_streak}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Best"</div></div>
                     </div>
-                    
                     <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary text-center">"Guess Distribution"</h3>
                     <div class="w-full space-y-1.5 mb-8 text-left">
                         {move || stats.get().distribution.iter().enumerate().map(|(i, count)| {
@@ -695,16 +600,17 @@ fn App() -> impl IntoView {
                             view! { <div class="flex items-center gap-2 text-xs text-white"><div class="w-2">{i+1}</div><div class="bg-gray-600 text-white font-black p-0.5 rounded text-right pr-2 transition-all duration-1000" style=format!("width: {}%", width)>{*count}</div></div> }
                         }).collect_view()}
                     </div>
-
                     <div class="w-full border-t border-white border-opacity-10 pt-6 mb-6 text-center">
-                        <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary">"Global Statistics"</h3>
-                        <div class="grid grid-cols-3 w-full gap-2">
-                            <div class="flex flex-col p-2 rounded-lg bg-white bg-opacity-5"><div class="text-xl font-black">{move || global_stats_res.get().map(|s| s.cracked).unwrap_or("1.2M".to_string())}</div><div class="text-[7px] uppercase opacity-50">"Cracked"</div></div>
-                            <div class="flex flex-col p-2 rounded-lg bg-white bg-opacity-5"><div class="text-xl font-black">{move || global_stats_res.get().map(|s| s.avg_ops).unwrap_or("4.2".to_string())}</div><div class="text-[7px] uppercase opacity-50">"Avg Ops"</div></div>
-                            <div class="flex flex-col p-2 rounded-lg bg-white bg-opacity-5"><div class="text-xl font-black">{move || global_stats_res.get().map(|s| s.efficiency).unwrap_or("88%".to_string())}</div><div class="text-[7px] uppercase opacity-50">"Efficiency"</div></div>
+                        <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary">"Winning Themes"</h3>
+                        <div class="grid grid-cols-5 w-full gap-1">
+                            {move || {
+                                let s = global_stats_res.get().unwrap_or_default();
+                                vec![(s.dark, "bg-black", "D"), (s.red, "bg-red-600", "R"), (s.green, "bg-green-600", "G"), (s.blue, "bg-blue-600", "B"), (s.white, "bg-white", "W")].into_iter().map(|(count, bg, label)| {
+                                    view! { <div class="flex flex-col items-center p-1 rounded bg-white bg-opacity-5"> <div class=format!("w-3 h-3 rounded-full mb-1 {}", bg) /> <div class="text-[10px] font-black leading-none">{count}</div> <div class="text-[6px] uppercase opacity-50 mt-1">{label}</div> </div> }
+                                }).collect_view()
+                            }}
                         </div>
                     </div>
-
                     <Show when=move || game_won.get() || game_lost.get()>
                         <button on:click=move |_| share_results() class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest"> "SHARE" </button>
                     </Show>

@@ -5,10 +5,10 @@
 :root {
   --animation-speed: 1000ms;
   --animation-speed-fast: 250ms;
-  --default-cell-bg-color: rgba(0, 0, 0, 0.5);
-  --default-cell-border-color: rgba(255, 255, 255, 0.1);
-  --default-cell-text-color: #ffffff;
-  --absent-cell-bg-color: #334155;
+  --default-cell-bg-color: rgba(0, 0, 0, 0.1);
+  --default-cell-border-color: var(--theme-primary);
+  --default-cell-text-color: var(--theme-primary);
+  --absent-cell-bg-color: #1e293b;
   --correct-cell-bg-color: #22c55e;
   --present-cell-bg-color: #eab308;
   --app-bg: #0f172a;
@@ -32,14 +32,14 @@ body {
 }
 
 /* THEMES */
-.theme-dark { --app-bg: #020617; --app-text: #f8fafc; --default-cell-text-color: #38bdf8; --key-text: #38bdf8; --theme-primary: #38bdf8; --absent-cell-bg-color: #1e293b; --correct-cell-bg-color: #38bdf8; --present-cell-bg-color: #facc15; }
-.theme-red { --app-bg: #180000; --app-text: #ffffff; --default-cell-text-color: #ff4444; --key-text: #ff4444; --theme-primary: #ff4444; --absent-cell-bg-color: #450a0a; --correct-cell-bg-color: #ff4444; --present-cell-bg-color: #facc15; }
-.theme-orange { --app-bg: #1a0a00; --app-text: #ffffff; --default-cell-text-color: #fb923c; --key-text: #fb923c; --theme-primary: #fb923c; --absent-cell-bg-color: #431407; --correct-cell-bg-color: #fb923c; --present-cell-bg-color: #fef08a; }
-.theme-yellow { --app-bg: #1a1400; --app-text: #ffffff; --default-cell-text-color: #facc15; --key-text: #facc15; --theme-primary: #facc15; --absent-cell-bg-color: #422006; --correct-cell-bg-color: #facc15; --present-cell-bg-color: #ffffff; }
-.theme-green { --app-bg: #001a0a; --app-text: #ffffff; --default-cell-text-color: #4ade80; --key-text: #4ade80; --theme-primary: #4ade80; --absent-cell-bg-color: #064e3b; --correct-cell-bg-color: #4ade80; --present-cell-bg-color: #facc15; }
-.theme-blue { --app-bg: #000a1a; --app-text: #ffffff; --default-cell-text-color: #60a5fa; --key-text: #60a5fa; --theme-primary: #60a5fa; --absent-cell-bg-color: #1e3a8a; --correct-cell-bg-color: #60a5fa; --present-cell-bg-color: #facc15; }
-.theme-purple { --app-bg: #0a001a; --app-text: #ffffff; --default-cell-text-color: #c084fc; --key-text: #c084fc; --theme-primary: #c084fc; --absent-cell-bg-color: #4c1d95; --correct-cell-bg-color: #c084fc; --present-cell-bg-color: #facc15; }
-.theme-light { --app-bg: #f8fafc; --app-text: #0f172a; --default-cell-bg-color: #e2e8f0; --default-cell-border-color: #cbd5e1; --default-cell-text-color: #0f172a; --key-bg: #e2e8f0; --key-text: #0f172a; --theme-primary: #10b981; --absent-cell-bg-color: #94a3b8; --correct-cell-bg-color: #10b981; --present-cell-bg-color: #f59e0b; }
+.theme-dark { --app-bg: #020617; --app-text: #f8fafc; --theme-primary: #38bdf8; --absent-cell-bg-color: #0f172a; --correct-cell-bg-color: #38bdf8; --present-cell-bg-color: #facc15; }
+.theme-red { --app-bg: #180000; --app-text: #ffffff; --theme-primary: #ff4444; --absent-cell-bg-color: #2d0000; --correct-cell-bg-color: #ff4444; --present-cell-bg-color: #facc15; }
+.theme-orange { --app-bg: #1a0a00; --app-text: #ffffff; --theme-primary: #fb923c; --absent-cell-bg-color: #2d1200; --correct-cell-bg-color: #fb923c; --present-cell-bg-color: #fef08a; }
+.theme-yellow { --app-bg: #1a1400; --app-text: #ffffff; --theme-primary: #facc15; --absent-cell-bg-color: #2d2200; --correct-cell-bg-color: #facc15; --present-cell-bg-color: #ffffff; }
+.theme-green { --app-bg: #001a0a; --app-text: #ffffff; --theme-primary: #4ade80; --absent-cell-bg-color: #002d11; --correct-cell-bg-color: #4ade80; --present-cell-bg-color: #facc15; }
+.theme-blue { --app-bg: #000a1a; --app-text: #ffffff; --theme-primary: #60a5fa; --absent-cell-bg-color: #001a3d; --correct-cell-bg-color: #60a5fa; --present-cell-bg-color: #facc15; }
+.theme-purple { --app-bg: #0a001a; --app-text: #ffffff; --theme-primary: #c084fc; --absent-cell-bg-color: #1a003d; --correct-cell-bg-color: #c084fc; --present-cell-bg-color: #facc15; }
+.theme-light { --app-bg: #f8fafc; --app-text: #0f172a; --theme-primary: #10b981; --absent-cell-bg-color: #cbd5e1; --correct-cell-bg-color: #10b981; --present-cell-bg-color: #f59e0b; }
 
 .glass-pad {
   background: rgba(0, 0, 0, 0.3);
@@ -57,7 +57,7 @@ body {
   transition: all 0.3s ease;
 }
 
-/* POWER RING (Hard Mode) */
+/* POWER EFFECTS */
 .power-ring {
   position: absolute;
   inset: -2px;
@@ -69,7 +69,6 @@ body {
   z-index: 50;
 }
 
-/* POWER UNDERLINE (Normal Mode) */
 .power-underline {
   position: absolute;
   bottom: 4px;
@@ -94,7 +93,7 @@ body {
   100% { transform: scaleX(1.2); opacity: 0; }
 }
 
-/* DELETION SHATTER */
+/* DELETION */
 .destroyed-puff {
   position: absolute;
   inset: 0;
@@ -111,7 +110,7 @@ body {
   100% { transform: scale(0); opacity: 0; filter: brightness(5) blur(10px); }
 }
 
-/* REVEAL: X-AXIS FLIP */
+/* CLASSIC REVEAL */
 .cell-reveal {
   animation: flip-x 0.6s ease-in-out;
   animation-fill-mode: forwards;
@@ -126,14 +125,36 @@ body {
 
 .cell-reveal > div { transform: rotateX(180deg); }
 
-/* POP: ON LETTER ENTRY */
+/* POP */
 .cell-pop { animation: pop 0.1s ease-in-out; }
 @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
-.absent { background-color: var(--absent-cell-bg-color) !important; border-color: var(--absent-cell-bg-color) !important; color: rgba(255, 255, 255, 0.4) !important; }
-.correct { background-color: var(--correct-cell-bg-color) !important; border-color: var(--correct-cell-bg-color) !important; color: white !important; }
-.present { background-color: var(--present-cell-bg-color) !important; border-color: var(--present-cell-bg-color) !important; color: #000000 !important; font-weight: 900 !important; }
-.cell-neutral, .key-neutral { background-color: var(--default-cell-bg-color) !important; border-color: var(--default-cell-border-color) !important; color: var(--default-cell-text-color) !important; }
+/* STATUS COLORS - Refined for "Hollow" Unused vs "Solid" Used */
+.absent {
+  background-color: var(--absent-cell-bg-color) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.correct {
+  background-color: var(--correct-cell-bg-color) !important;
+  border-color: var(--correct-cell-bg-color) !important;
+  color: white !important;
+}
+
+.present {
+  background-color: var(--present-cell-bg-color) !important;
+  border-color: var(--present-cell-bg-color) !important;
+  color: #000000 !important;
+  font-weight: 900 !important;
+}
+
+/* UNUSED STATE: Hollow Neon */
+.cell-neutral, .key-neutral {
+  background-color: rgba(0, 0, 0, 0.15) !important;
+  border-color: var(--theme-primary) !important;
+  color: var(--theme-primary) !important;
+}
 
 .jiggle { animation: jiggle 0.2s linear; }
 @keyframes jiggle { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); } }

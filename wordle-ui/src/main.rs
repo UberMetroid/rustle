@@ -226,7 +226,7 @@ fn App() -> impl IntoView {
                     <button on:click=move |_| set_show_stats.set(true)>
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                     </button>
-                    <h1 class="text-2xl sm:text-3xl font-black tracking-tighter">"WORDLE RUST"</h1>
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-tighter">"RUSTLE"</h1>
                     <div class="flex gap-1.5">
                         {vec!["retro", "cyberpunk", "nord", "default", "solarized"].into_iter().map(|t| {
                             let color = match t {

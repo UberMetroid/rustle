@@ -76,7 +76,7 @@ fn Modal(title: String, is_open: ReadSignal<bool>, set_is_open: WriteSignal<bool
     view! {
         <Show when=move || is_open.get()>
             <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50" on:click=move |_| set_is_open.set(false)>
-                <div class="glass w-full max-w-sm rounded-2xl p-6 shadow-2xl transition-all scale-up border border-gray-500 border-opacity-30" on:click=move |ev| ev.stop_propagation()>
+                <div class="glass-pad w-full max-w-sm rounded-2xl p-6 shadow-2xl transition-all scale-up" on:click=move |ev| ev.stop_propagation()>
                     <div class="flex justify-between items-center mb-4 text-white">
                         <h2 class="text-2xl font-black tracking-tighter"> {title_clone.clone()} </h2>
                         <button on:click=move |_| set_is_open.set(false) class="text-2xl font-bold hover:text-red-500"> "×" </button>
@@ -271,9 +271,9 @@ fn App() -> impl IntoView {
     });
 
     view! {
-        <div class="flex h-screen flex-col items-center justify-between py-4 sm:py-8 overflow-hidden transition-all duration-500 text-black dark:text-white">
+        <div class="flex h-screen flex-col items-center justify-between py-4 sm:py-8 overflow-hidden transition-all duration-500 text-black dark:text-white px-2">
             <div class="w-full max-w-[500px] flex flex-col items-center">
-                <nav class="w-full flex justify-between items-center px-4 mb-4 sm:mb-8 border-b border-gray-500 border-opacity-30 pb-2 glass rounded-b-xl shadow-lg">
+                <nav class="w-full flex justify-between items-center px-4 mb-4 sm:mb-8 pb-2 glass-pad rounded-xl">
                     <div class="flex gap-3">
                         <button on:click=move |_| set_show_stats.set(true) class="hover:scale-110 transition-transform">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
@@ -282,30 +282,30 @@ fn App() -> impl IntoView {
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
-                    <h1 class="text-2xl sm:text-3xl font-black tracking-tighter italic">"RUSTLE"</h1>
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-tighter italic mr-4">"RUSTLE"</h1>
                     
-                    // Sliding Theme Toggle
                     <div class="theme-slider-track">
-                        {let themes = vec!["retro", "cyberpunk", "nord", "default", "solarized"];
-                         let theme_val = theme.get();
-                         let index = themes.iter().position(|&t| t == theme_val).unwrap_or(3);
-                         view! {
-                            <div class="theme-slider-thumb" style=format!("left: {}px", 4 + (index * 30)) />
-                            {themes.into_iter().map(|t| {
-                                view! {
-                                    <button 
-                                        class="z-10 w-[28px] h-6 rounded-full"
-                                        on:click=move |_| set_theme.set(t.to_string())
-                                        title=t
-                                    />
-                                }
-                            }).collect_view()}
-                         }
-                        }
+                        {move || {
+                            let themes = vec!["retro", "cyberpunk", "nord", "default", "solarized"];
+                            let theme_val = theme.get();
+                            let index = themes.iter().position(|&t| t == theme_val).unwrap_or(3);
+                            view! {
+                                <div class="theme-slider-thumb" style=format!("left: {}px", 4 + (index * 30)) />
+                                {themes.into_iter().map(|t| {
+                                    view! {
+                                        <button 
+                                            class="z-10 w-[28px] h-6 rounded-full"
+                                            on:click=move |_| set_theme.set(t.to_string())
+                                            title=t
+                                        />
+                                    }
+                                }).collect_view()}
+                            }
+                        }}
                     </div>
                 </nav>
 
-                <div class="game-backdrop">
+                <div class="glass-pad rounded-3xl p-4 sm:p-8">
                     <div class="flex flex-col gap-1 sm:gap-2">
                         {move || guesses.get().into_iter().map(|g| { view! { <Row guess=g solution=solution_data.get().solution is_revealing=true is_jiggling=Signal::derive(|| false) /> } }).collect_view()}
                         {move || if guesses.get().len() < 6 && !game_won.get() { 
@@ -318,14 +318,14 @@ fn App() -> impl IntoView {
                 </div>
             </div>
 
-            <div class="mt-4 w-full max-w-[500px] px-2 flex flex-col items-center text-white">
+            <div class="mt-4 w-full max-w-[550px] px-4 py-4 glass-pad rounded-t-3xl flex flex-col items-center text-white">
                 {move || {
                     let rows = vec![vec!['Q','W','E','R','T','Y','U','I','O','P'], vec!['A','S','D','F','G','H','J','K','L'], vec!['Z','X','C','V','B','N','M']];
                     rows.into_iter().enumerate().map(|(i, row)| {
                         view! {
                             <div class="flex justify-center mb-2 w-full">
                                 {if i == 2 { view! { 
-                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded font-bold bg-gray-500 text-white flex-[1.5] flex items-center justify-center hover:bg-gray-400 active:scale-95 transition-all" on:click=move |_| on_key.call("ENTER".to_string())> 
+                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded font-bold bg-gray-500 text-white flex-[1.5] flex items-center justify-center hover:bg-gray-400 active:scale-95 transition-all shadow-lg" on:click=move |_| on_key.call("ENTER".to_string())> 
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
                                     </button> 
                                 }.into_view() } else { view! {}.into_view() }}
@@ -333,11 +333,11 @@ fn App() -> impl IntoView {
                                 {row.into_iter().map(|c| {
                                     let status = move || char_statuses.get().get(&c).cloned().unwrap_or_default();
                                     let bg = move || match status().as_str() { "correct" => "bg-green-500", "present" => "bg-yellow-500", "absent" => "bg-gray-700 shadow-inner opacity-60", _ => "bg-gray-400" };
-                                    view! { <button class=move || format!("h-12 sm:h-14 mx-0.5 rounded font-bold text-white flex-1 min-w-[25px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-sm {}", bg()) on:click=move |_| on_key.call(c.to_string())> {c.to_string()} </button> }
+                                    view! { <button class=move || format!("h-12 sm:h-14 mx-0.5 rounded font-bold text-white flex-1 min-w-[25px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg {}", bg()) on:click=move |_| on_key.call(c.to_string())> {c.to_string()} </button> }
                                 }).collect_view()}
                                 
                                 {if i == 2 { view! { 
-                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded font-bold bg-gray-500 text-white flex-[1.5] flex items-center justify-center hover:bg-gray-400 active:scale-95 transition-all" on:click=move |_| on_key.call("DELETE".to_string())> 
+                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded font-bold bg-gray-500 text-white flex-[1.5] flex items-center justify-center hover:bg-gray-400 active:scale-95 transition-all shadow-lg" on:click=move |_| on_key.call("DELETE".to_string())> 
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg>
                                     </button> 
                                 }.into_view() } else { view! {}.into_view() }}

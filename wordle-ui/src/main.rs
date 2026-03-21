@@ -1,9 +1,8 @@
 use leptos::*;
-use word_engine::{get_solution, is_word_in_list, get_guess_statuses, get_ai_word_list, get_adversarial_step};
+use word_engine::{get_solution, is_word_in_list, get_ai_word_list, get_adversarial_step};
 use serde::{Serialize, Deserialize};
 use wasm_bindgen::prelude::*;
 use std::collections::HashMap;
-use leptos::ev::keydown;
 use wasm_bindgen::JsCast;
 
 mod word_engine {
@@ -83,12 +82,12 @@ fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool, is_
     if is_loss { return "Poseur.".to_string(); }
     if is_win {
         let win_msgs = match tries {
-            1 => vec!["HACKER!", "Pure Luck.", "Sus physics."],
-            2 => vec!["Radical!", "Tubular!", "Showoff."],
-            3 => vec!["Righteous.", "Choice.", "Solid mid."],
-            4 => vec!["Finally.", "Getting slow?"],
-            5 => vec!["Sweaty.", "Close one."],
-            6 => vec!["Barely.", "Scrub tier."],
+            1 => vec!["HACKER!", "Pure Luck.", "Sus physics.", "God Mode active.", "Keyboard Cowboy."],
+            2 => vec!["Radical!", "Tubular!", "Showoff.", "Maximum Overdrive.", "Excellent!", "Righteous."],
+            3 => vec!["Righteous.", "Choice.", "Solid mid.", "Right on.", "Righteous.", "Stay gold."],
+            4 => vec!["Finally.", "Took your time.", "Getting slow?", "Analog brain.", "Manual override."],
+            5 => vec!["Panic yet?", "Sweaty.", "Close one.", "Danger Zone.", "Tracking error.", "Static..."],
+            6 => vec!["Barely.", "Yikes.", "Scrub tier.", "Bogus win.", "Poseur alert.", "Last life."],
             _ => vec!["Win."],
         };
         let mut msg = win_msgs[js_sys::Math::floor(js_sys::Math::random() * win_msgs.len() as f64) as usize].to_string();
@@ -352,7 +351,7 @@ fn App() -> impl IntoView {
                 current_pattern = serde_wasm_bindgen::from_value(word_engine::get_guess_statuses(&sol, &input)).unwrap_or_default();
             }
             
-            if current_pattern.is_empty() { return; } // Safety belt
+            if current_pattern.is_empty() { return; }
 
             new_ss_vec.push(current_pattern.clone());
             set_guesses.set(new_guesses.clone());
@@ -463,9 +462,9 @@ fn App() -> impl IntoView {
                             on:click=start_ai_mode
                             disabled=move || !daily_game_done.get() || is_ai_mode.get()
                             title="AI Mode" 
-                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if is_ai_mode.get() { "correct-pad border-transparent shadow-[0_0_20px_rgba(255,0,255,0.8)]" } else if daily_game_done.get() { "cell-neutral border-current" } else { "opacity-30 grayscale cursor-not-allowed border-current" })
+                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if is_ai_mode.get() { "ai-active-pad border-transparent" } else if daily_game_done.get() { "cell-neutral border-current" } else { "opacity-30 grayscale cursor-not-allowed border-current" })
                         >
-                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if is_ai_mode.get() { "text-[#ff00ff] scale-110 drop-shadow-[0_0_12px_rgba(255,0,255,1)]" } else { "text-current opacity-40" }) fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if is_ai_mode.get() { "text-white scale-110 drop-shadow-[0_0_12px_rgba(255,0,255,1)]" } else { "text-current opacity-40" }) fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                             </svg>
                         </button>

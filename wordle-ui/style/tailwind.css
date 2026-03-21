@@ -31,23 +31,8 @@ body {
   transition: background-color 0.5s ease, color 0.5s ease;
 }
 
-/* THEMES - REFINED FOR VISIBILITY */
-.theme-dark { 
-  --app-bg: #000000; 
-  --app-text: #ffffff; 
-  --theme-primary: #e2e8f0; /* Neon Silver/White */
-  --absent-cell-bg-color: #111111; 
-  --correct-cell-bg-color: #f8fafc; 
-  --present-cell-bg-color: #fbbf24; 
-}
-
-/* Fix visibility for Dark theme: Dark text on White/Silver pads */
-.theme-dark .correct, 
-.theme-dark .correct-pad,
-.theme-dark .cell-reveal.correct > div {
-  color: #000000 !important;
-}
-
+/* THEMES */
+.theme-dark { --app-bg: #000000; --app-text: #ffffff; --theme-primary: #e2e8f0; --absent-cell-bg-color: #111111; --correct-cell-bg-color: #f8fafc; --present-cell-bg-color: #fbbf24; }
 .theme-red { --app-bg: #180000; --app-text: #ffffff; --theme-primary: #ff4444; --absent-cell-bg-color: #2d0000; --correct-cell-bg-color: #ff4444; --present-cell-bg-color: #facc15; }
 .theme-orange { --app-bg: #1a0a00; --app-text: #ffffff; --theme-primary: #fb923c; --absent-cell-bg-color: #2d1200; --correct-cell-bg-color: #fb923c; --present-cell-bg-color: #fef08a; }
 .theme-yellow { --app-bg: #1a1400; --app-text: #ffffff; --theme-primary: #facc15; --absent-cell-bg-color: #2d2200; --correct-cell-bg-color: #facc15; --present-cell-bg-color: #ffffff; }
@@ -55,6 +40,8 @@ body {
 .theme-blue { --app-bg: #000a1a; --app-text: #ffffff; --theme-primary: #2563eb; --absent-cell-bg-color: #001a3d; --correct-cell-bg-color: #3b82f6; --present-cell-bg-color: #facc15; }
 .theme-purple { --app-bg: #0a001a; --app-text: #ffffff; --theme-primary: #c084fc; --absent-cell-bg-color: #1a003d; --correct-cell-bg-color: #c084fc; --present-cell-bg-color: #facc15; }
 .theme-light { --app-bg: #f8fafc; --app-text: #0f172a; --theme-primary: #10b981; --absent-cell-bg-color: #cbd5e1; --correct-cell-bg-color: #10b981; --present-cell-bg-color: #f59e0b; }
+
+.theme-dark .correct, .theme-dark .correct-pad { color: #000 !important; }
 
 .glass-pad {
   background: rgba(0, 0, 0, 0.4);
@@ -67,8 +54,17 @@ body {
 .correct-pad {
   background-color: var(--correct-cell-bg-color) !important;
   border-color: var(--correct-cell-bg-color) !important;
-  color: #ffffff !important;
+  color: white !important;
   box-shadow: 0 0 15px var(--correct-cell-bg-color);
+  transition: all 0.3s ease;
+}
+
+/* AI MODE ACTIVE GLOW */
+.ai-active-pad {
+  background-color: #ff00ff !important;
+  border-color: #ff00ff !important;
+  color: white !important;
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.8);
   transition: all 0.3s ease;
 }
 
@@ -86,10 +82,7 @@ body {
 
 .power-underline {
   position: absolute;
-  bottom: 4px;
-  left: 10%;
-  right: 10%;
-  height: 3px;
+  bottom: 4px; left: 10%; right: 10%; height: 3px;
   background-color: var(--theme-primary);
   border-radius: 2px;
   opacity: 0;
@@ -135,48 +128,23 @@ body {
 .cell-reveal::after {
   content: "";
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 100%;
+  bottom: 0; left: 0; right: 0; height: 100%;
   background-color: inherit;
   z-index: -1;
   animation: wipe-up 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-@keyframes wipe-up {
-  0% { transform: translateY(100%); }
-  100% { transform: translateY(0); }
-}
-
-@keyframes flicker-on {
-  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
-  20%, 22%, 24%, 55% { opacity: 0.4; filter: brightness(2); }
-}
+@keyframes wipe-up { 0% { transform: translateY(100%); } 100% { transform: translateY(0); } }
+@keyframes flicker-on { 0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; } 20%, 22%, 24%, 55% { opacity: 0.4; filter: brightness(2); } }
 
 /* POP */
 .cell-pop { animation: pop 0.1s ease-in-out; }
 @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
 /* STATUS COLORS */
-.absent {
-  background-color: var(--absent-cell-bg-color) !important;
-  border-color: rgba(255, 255, 255, 0.05) !important;
-  color: rgba(255, 255, 255, 0.15) !important;
-}
-
-.correct {
-  background-color: var(--correct-cell-bg-color) !important;
-  border-color: var(--correct-cell-bg-color) !important;
-  color: white !important;
-}
-
-.present {
-  background-color: var(--present-cell-bg-color) !important;
-  border-color: var(--present-cell-bg-color) !important;
-  color: #000000 !important;
-  font-weight: 900 !important;
-}
+.absent { background-color: var(--absent-cell-bg-color) !important; border-color: rgba(255, 255, 255, 0.05) !important; color: rgba(255, 255, 255, 0.15) !important; }
+.correct { background-color: var(--correct-cell-bg-color) !important; border-color: var(--correct-cell-bg-color) !important; color: white !important; }
+.present { background-color: var(--present-cell-bg-color) !important; border-color: var(--present-cell-bg-color) !important; color: #000000 !important; font-weight: 900 !important; }
 
 /* UNUSED STATE */
 .cell-neutral, .key-neutral {
@@ -223,7 +191,4 @@ body {
   line-height: 1.2;
 }
 
-@keyframes snarky-slide {
-  0% { transform: translateY(-5px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
-}
+@keyframes snarky-slide { 0% { transform: translateY(-5px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }

@@ -76,7 +76,7 @@ fn Modal(title: String, is_open: ReadSignal<bool>, set_is_open: WriteSignal<bool
     view! {
         <Show when=move || is_open.get()>
             <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50" on:click=move |_| set_is_open.set(false)>
-                <div class="glass-pad w-full max-w-sm rounded-2xl p-6 shadow-2xl transition-all scale-up" on:click=move |ev| ev.stop_propagation()>
+                <div class="glass-pad w-full max-w-sm rounded-3xl p-6 shadow-2xl transition-all scale-up" on:click=move |ev| ev.stop_propagation()>
                     <div class="flex justify-between items-center mb-4 text-white">
                         <h2 class="text-2xl font-black tracking-tighter"> {title_clone.clone()} </h2>
                         <button on:click=move |_| set_is_open.set(false) class="text-2xl font-bold hover:text-red-500"> "×" </button>
@@ -116,7 +116,9 @@ fn App() -> impl IntoView {
     let now = js_sys::Date::now();
     let solution_data = create_memo(move |_| {
         let val = get_solution(now as u64);
-        let s: SolutionData = serde_wasm_bindgen::from_value(val).unwrap();
+        let s: SolutionData = serde_wasm_bindgen::from_value(val).unwrap_or_else(|_| {
+            SolutionData { solution: "APPLE".to_string(), solution_game_date: 0, solution_index: 0, tomorrow: 0 }
+        });
         s
     });
 
@@ -261,7 +263,8 @@ fn App() -> impl IntoView {
 
     create_effect(move |_| {
         let t = theme.get();
-        let _ = document().document_element().unwrap().set_attribute("class", &format!("theme-{}", t));
+        let el = document().document_element().unwrap();
+        let _ = el.set_attribute("class", &format!("theme-{}", t));
         let _ = window().local_storage().unwrap().unwrap().set_item("color-theme", &t);
     });
 
@@ -272,8 +275,8 @@ fn App() -> impl IntoView {
 
     view! {
         <div class="flex h-screen flex-col items-center justify-between py-4 sm:py-8 overflow-hidden transition-all duration-500 text-black dark:text-white px-2">
-            <div class="w-full max-w-[500px] flex flex-col items-center">
-                <nav class="w-full flex justify-between items-center px-4 mb-4 sm:mb-8 pb-2 glass-pad rounded-xl">
+            <div class="w-full max-w-[550px] flex flex-col items-center">
+                <nav class="w-full flex justify-between items-center px-4 mb-4 sm:mb-8 py-2 glass-pad rounded-3xl">
                     <div class="flex gap-3">
                         <button on:click=move |_| set_show_stats.set(true) class="hover:scale-110 transition-transform">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
@@ -282,7 +285,7 @@ fn App() -> impl IntoView {
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
-                    <h1 class="text-2xl sm:text-3xl font-black tracking-tighter italic mr-4">"RUSTLE"</h1>
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-tighter italic mr-4 title-text transition-colors duration-500">"RUSTLE"</h1>
                     
                     <div class="theme-slider-track">
                         {move || {
@@ -294,7 +297,7 @@ fn App() -> impl IntoView {
                                 {themes.into_iter().map(|t| {
                                     view! {
                                         <button 
-                                            class="z-10 w-[28px] h-6 rounded-full"
+                                            class="z-10 w-[28px] h-6 rounded-full cursor-pointer"
                                             on:click=move |_| set_theme.set(t.to_string())
                                             title=t
                                         />
@@ -318,14 +321,14 @@ fn App() -> impl IntoView {
                 </div>
             </div>
 
-            <div class="mt-4 w-full max-w-[550px] px-4 py-4 glass-pad rounded-t-3xl flex flex-col items-center text-white">
+            <div class="mt-4 w-full max-w-[550px] px-4 py-4 glass-pad rounded-3xl flex flex-col items-center text-white">
                 {move || {
                     let rows = vec![vec!['Q','W','E','R','T','Y','U','I','O','P'], vec!['A','S','D','F','G','H','J','K','L'], vec!['Z','X','C','V','B','N','M']];
                     rows.into_iter().enumerate().map(|(i, row)| {
                         view! {
                             <div class="flex justify-center mb-2 w-full">
                                 {if i == 2 { view! { 
-                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded font-bold bg-gray-500 text-white flex-[1.5] flex items-center justify-center hover:bg-gray-400 active:scale-95 transition-all shadow-lg" on:click=move |_| on_key.call("ENTER".to_string())> 
+                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded-xl font-bold bg-gray-500 text-white flex-[1.5] flex items-center justify-center hover:bg-gray-400 active:scale-95 transition-all shadow-lg" on:click=move |_| on_key.call("ENTER".to_string())> 
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
                                     </button> 
                                 }.into_view() } else { view! {}.into_view() }}
@@ -333,11 +336,11 @@ fn App() -> impl IntoView {
                                 {row.into_iter().map(|c| {
                                     let status = move || char_statuses.get().get(&c).cloned().unwrap_or_default();
                                     let bg = move || match status().as_str() { "correct" => "bg-green-500", "present" => "bg-yellow-500", "absent" => "bg-gray-700 shadow-inner opacity-60", _ => "bg-gray-400" };
-                                    view! { <button class=move || format!("h-12 sm:h-14 mx-0.5 rounded font-bold text-white flex-1 min-w-[25px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg {}", bg()) on:click=move |_| on_key.call(c.to_string())> {c.to_string()} </button> }
+                                    view! { <button class=move || format!("h-12 sm:h-14 mx-0.5 rounded-xl font-bold text-white flex-1 min-w-[25px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg {}", bg()) on:click=move |_| on_key.call(c.to_string())> {c.to_string()} </button> }
                                 }).collect_view()}
                                 
                                 {if i == 2 { view! { 
-                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded font-bold bg-gray-500 text-white flex-[1.5] flex items-center justify-center hover:bg-gray-400 active:scale-95 transition-all shadow-lg" on:click=move |_| on_key.call("DELETE".to_string())> 
+                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded-xl font-bold bg-gray-500 text-white flex-[1.5] flex items-center justify-center hover:bg-gray-400 active:scale-95 transition-all shadow-lg" on:click=move |_| on_key.call("DELETE".to_string())> 
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg>
                                     </button> 
                                 }.into_view() } else { view! {}.into_view() }}
@@ -350,17 +353,17 @@ fn App() -> impl IntoView {
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
                 <div class="flex flex-col items-center text-center">
                     <div class="flex w-full justify-around mb-6">
-                        <div><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70">"Played"</div></div>
-                        <div><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70">"Win %"</div></div>
-                        <div><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70">"Streak"</div></div>
-                        <div><div class="text-3xl font-black">{move || stats.get().best_streak}</div><div class="text-xs uppercase opacity-70">"Best"</div></div>
+                        <div><div class="text-3xl font-black text-white">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70">"Played"</div></div>
+                        <div><div class="text-3xl font-black text-white">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70">"Win %"</div></div>
+                        <div><div class="text-3xl font-black text-white">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70">"Streak"</div></div>
+                        <div><div class="text-3xl font-black text-white">{move || stats.get().best_streak}</div><div class="text-xs uppercase opacity-70">"Best"</div></div>
                     </div>
-                    <h3 class="text-sm font-bold uppercase mb-2">"Guess Distribution"</h3>
+                    <h3 class="text-sm font-bold uppercase mb-2 text-white">"Guess Distribution"</h3>
                     <div class="w-full space-y-1 mb-6 text-left">
                         {move || stats.get().distribution.iter().enumerate().map(|(i, count)| {
                             let wins = stats.get().wins;
                             let width = if wins > 0 { (*count as f32 * 100.0 / wins as f32).max(10.0) } else { 10.0 };
-                            view! { <div class="flex items-center gap-2 text-xs"><div class="w-2">{i+1}</div><div class="bg-gray-500 text-white font-bold p-0.5 rounded text-right pr-2 transition-all duration-1000" style=format!("width: {}%", width)>{*count}</div></div> }
+                            view! { <div class="flex items-center gap-2 text-xs text-white"><div class="w-2">{i+1}</div><div class="bg-gray-500 text-white font-bold p-0.5 rounded text-right pr-2 transition-all duration-1000" style=format!("width: {}%", width)>{*count}</div></div> }
                         }).collect_view()}
                     </div>
                     <Show when=move || game_won.get() || game_lost.get()>
@@ -373,7 +376,7 @@ fn App() -> impl IntoView {
 
             <Modal title="Settings".to_string() is_open=show_settings set_is_open=set_show_settings>
                 <div class="flex flex-col gap-4">
-                    <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30">
+                    <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30 text-white">
                         <div>
                             <div class="font-bold">"Hard Mode"</div>
                             <div class="text-xs opacity-70">"Strict validation of clues"</div>
@@ -385,12 +388,12 @@ fn App() -> impl IntoView {
                             <div class=move || format!("absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 {}", if hard_mode.get() { "left-7" } else { "left-1" }) />
                         </button>
                     </div>
-                    <div class="text-xs opacity-50 italic">"Rustle Version 1.0.0 (Pure Rust)"</div>
+                    <div class="text-xs opacity-50 italic text-white">"Rustle Version 1.0.0 (Pure Rust)"</div>
                 </div>
             </Modal>
 
             {move || if !alert_message.get().is_empty() {
-                view! { <div class="fixed top-24 px-4 py-2 rounded bg-black text-white font-bold shadow-xl glass z-[100] animate-bounce toast-slide"> {alert_message.get()} </div> }.into_view()
+                view! { <div class="fixed top-24 px-4 py-2 rounded-xl bg-black text-white font-bold shadow-xl glass z-[100] animate-bounce toast-slide"> {alert_message.get()} </div> }.into_view()
             } else if game_won.get() {
                 view! { <div class="fixed top-24 px-6 py-3 rounded-full bg-green-500 text-white font-black text-xl shadow-2xl animate-bounce glass"> "AMAZING! YOU WON!" </div> }.into_view() 
             } else if game_lost.get() {

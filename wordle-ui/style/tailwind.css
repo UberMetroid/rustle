@@ -15,6 +15,7 @@
   --app-text: theme('colors.black');
   --key-bg: theme('colors.slate.200');
   --key-text: theme('colors.black');
+  --theme-primary: #10b981;
 }
 
 /* Ensure body takes full height and centers content */
@@ -56,6 +57,7 @@ body {
   --app-text: #00ff41;
   --key-bg: #003b00;
   --key-text: #00ff41;
+  --theme-primary: #00ff41;
   font-family: 'Courier New', Courier, monospace;
 }
 
@@ -77,6 +79,7 @@ body {
   --app-text: #00f3ff;
   --key-bg: #2a1b3d;
   --key-text: #00f3ff;
+  --theme-primary: #ff007f;
 }
 
 .theme-cyberpunk .correct {
@@ -94,6 +97,7 @@ body {
   --app-text: #eceff4;
   --key-bg: #4c566a;
   --key-text: #eceff4;
+  --theme-primary: #88c0d0;
 }
 
 .theme-solarized {
@@ -107,6 +111,11 @@ body {
   --app-text: #657b83;
   --key-bg: #eee8d5;
   --key-text: #657b83;
+  --theme-primary: #b58900;
+}
+
+.theme-default {
+  --theme-primary: #10b981;
 }
 
 /* Unified "Pad" Glass Style */
@@ -116,6 +125,7 @@ body {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: inset 0 0 20px rgba(0,0,0,0.2), 0 4px 15px rgba(0,0,0,0.3);
+  border-radius: 1.5rem !important; /* Force all corners rounded */
 }
 
 .theme-default .glass-pad {
@@ -195,4 +205,17 @@ body {
 @keyframes slide-in {
   from { transform: translateY(-100%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+.title-text {
+  color: var(--theme-primary);
+  text-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+.theme-cyberpunk .title-text {
+  text-shadow: 0 0 15px #ff007f;
+}
+
+.theme-retro .title-text {
+  text-shadow: 0 0 10px #00ff41;
 }

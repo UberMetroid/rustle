@@ -1,23 +1,19 @@
 # React Wordle
 
-![Docker Pulls](https://img.shields.io/docker/pulls/modem7/wordle)
-![Docker Image Size (tag)](https://img.shields.io/docker/image-size/modem7/wordle/latest)
-[![Build Status](https://drone.modem7.com/api/badges/modem7/react-wordle/status.svg)](https://drone.modem7.com/modem7/react-wordle)
-[![GitHub last commit](https://img.shields.io/github/last-commit/modem7/react-wordle)](react-wordle)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/modem7/react-wordle/React%20app%20deployement?label=gh%20pages)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/UberMetroid/rust-wordle/Latest%20Docker%20CI.yml?label=Latest%20Docker%20Build)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/UberMetroid/rust-wordle/Legacy%20Docker%20CI.yml?label=Legacy%20Docker%20Build)
+[![GitHub last commit](https://img.shields.io/github/last-commit/UberMetroid/rust-wordle)](rust-wordle)
 
 This is a clone project of the popular word guessing game we all know and love. Made using React, Typescript, and Tailwind.
 
-Modified by [modem7](https://github.com/modem7) for github-pages. 
-
-[**Try it out!**](https://modem7.github.io/react-wordle/)
+[**Try it out!**](https://ubermetroid.github.io/rust-wordle/)
 
 # Breaking changes note
 This repo has now been merged with the old Worlde repo which had the old NYT container. 
 
 The reasoning for this is to lower maintenance across multiple repos and reduce build time. 
 
-There is also a [Github pages](https://modem7.github.io/react-wordle/) version of "latest".
+There is also a [Github pages](https://ubermetroid.github.io/rust-wordle/) version of "latest".
 
 As such, there is a new configuration: 
 
@@ -44,7 +40,7 @@ version: "2.4"
 services:
 
   wordle:
-    image: modem7/wordle:latest
+    image: ghcr.io/ubermetroid/rust-wordle/latest:latest
     container_name: Wordle
     ports:
       - 80:8080
@@ -58,7 +54,7 @@ version: "2.4"
 services:
 
   wordle:
-    image: modem7/wordle:legacy
+    image: ghcr.io/ubermetroid/rust-wordle/legacy:latest
     container_name: Wordle
     ports:
       - 80:80

@@ -310,8 +310,6 @@ function App() {
               setIsMigrateStatsModalOpen(true)
             }}
             isHardMode={isHardMode}
-            isDarkMode={false}
-            isHighContrastMode={false}
             numberOfGuessesMade={guesses.length}
           />
           <DatePickerModal

@@ -258,6 +258,7 @@ fn App() -> impl IntoView {
             text.push('\n');
         }
         let _ = window().navigator().clipboard().write_text(&text);
+        show_alert("COPIED TO CLIPBOARD".to_string());
     };
 
     create_effect(move |_| {

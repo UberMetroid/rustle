@@ -41,15 +41,20 @@ struct StoredState {
 }
 
 #[component]
-fn Cell(value: char, status: String, position: usize, is_revealing: bool) -> impl IntoView {
+fn Cell(value: char, status: String, position: usize, is_revealing: bool, is_completed: bool) -> impl IntoView {
     let delay = position * 350;
     let classes = move || {
         let mut base = "w-12 h-12 sm:w-14 sm:h-14 border-solid border-2 flex items-center justify-center mx-0.5 text-2xl sm:text-4xl font-bold rounded-xl transition-all duration-300".to_string();
+        
+        // ONLY apply the status color if the row is completed or currently revealing
+        if is_completed || is_revealing {
+            if !status.is_empty() {
+                base.push_str(&format!(" {}", status));
+            }
+        }
+        
         if is_revealing {
             base.push_str(" cell-reveal");
-        }
-        if !status.is_empty() {
-            base.push_str(&format!(" {}", status));
         }
         base
     };
@@ -58,8 +63,8 @@ fn Cell(value: char, status: String, position: usize, is_revealing: bool) -> imp
 }
 
 #[component]
-fn Row(guess: String, solution: String, is_revealing: bool, is_jiggling: Signal<bool>) -> impl IntoView {
-    let statuses: Vec<String> = if !guess.is_empty() && !solution.is_empty() {
+fn Row(guess: String, solution: String, is_revealing: bool, is_completed: bool, is_jiggling: Signal<bool>) -> impl IntoView {
+    let statuses: Vec<String> = if is_completed || is_revealing {
         serde_wasm_bindgen::from_value(get_guess_statuses(&solution, &guess)).unwrap_or_default()
     } else {
         vec!["".to_string(); 5]
@@ -67,7 +72,7 @@ fn Row(guess: String, solution: String, is_revealing: bool, is_jiggling: Signal<
     view! {
         <div class=move || format!("flex justify-center mb-1 {}", if is_jiggling.get() { "jiggle" } else { "" })>
             {guess.chars().chain(std::iter::repeat(' ')).take(5).zip(statuses.into_iter().chain(std::iter::repeat("".to_string()))).enumerate().map(|(i, (c, s))| {
-                view! { <Cell value=c status=s position=i is_revealing=is_revealing /> }
+                view! { <Cell value=c status=s position=i is_revealing=is_revealing is_completed=is_completed /> }
             }).collect_view()}
         </div>
     }
@@ -81,9 +86,9 @@ fn Modal(title: String, is_open: ReadSignal<bool>, set_is_open: WriteSignal<bool
         <Show when=move || is_open.get()>
             <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50" on:click=move |_| set_is_open.set(false)>
                 <div class="glass-pad w-full max-w-sm p-6 shadow-2xl transition-all scale-up" on:click=move |ev| ev.stop_propagation()>
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-black tracking-tighter text-white uppercase"> {title_clone.clone()} </h2>
-                        <button on:click=move |_| set_is_open.set(false) class="text-2xl font-bold text-white hover:text-red-500 transition-colors"> "×" </button>
+                    <div class="flex justify-between items-center mb-4 text-white uppercase">
+                        <h2 class="text-2xl font-black tracking-tighter"> {title_clone.clone()} </h2>
+                        <button on:click=move |_| set_is_open.set(false) class="text-2xl font-bold hover:text-red-500 transition-colors"> "×" </button>
                     </div>
                     <div>
                         {children.with_value(|children| children())}
@@ -288,7 +293,6 @@ fn App() -> impl IntoView {
         <div class="flex h-screen flex-col items-center justify-between py-4 sm:py-8 overflow-hidden transition-all duration-500 text-black dark:text-white px-2">
             <div class="w-full max-w-[600px] flex flex-col items-center">
                 <nav class="w-full grid grid-cols-3 items-center px-4 mb-4 sm:mb-8">
-                    // Left Buttons (Now using correct-pad style and exact letter-pad size)
                     <div class="flex gap-2 justify-start">
                         <button on:click=move |_| set_show_stats.set(true) class="correct-pad w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl shadow-lg border-2">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
@@ -301,7 +305,7 @@ fn App() -> impl IntoView {
                     <h1 class="text-2xl sm:text-4xl font-black tracking-tighter italic text-center title-text">"RUSTLE"</h1>
                     
                     <div class="flex justify-end">
-                        <div class="glass-pad p-2 rounded-3xl flex items-center shadow-lg">
+                        <div class="glass-pad p-2 rounded-2xl flex items-center shadow-lg">
                             {move || {
                                 let themes = vec!["dark", "red", "orange", "yellow", "green", "blue", "purple", "light"];
                                 let current = theme.get();
@@ -333,17 +337,17 @@ fn App() -> impl IntoView {
                             let is_rev = is_revealing_row.get();
                             let len = gs.len();
                             gs.into_iter().enumerate().map(move |(i, g)| { 
-                                view! { <Row guess=g.to_uppercase() solution=sol.clone() is_revealing=is_rev && i == len-1 is_jiggling=Signal::derive(|| false) /> } 
+                                view! { <Row guess=g.to_uppercase() solution=sol.clone() is_revealing=is_rev && i == len-1 is_completed=true is_jiggling=Signal::derive(|| false) /> } 
                             }).collect_view()
                         }}
                         
                         {move || if guesses.get().len() < 6 && !game_won.get() { 
                             let current_input = current_input.get().to_uppercase();
                             let solution = solution_data.get().solution.to_uppercase();
-                            view! { <Row guess=current_input solution=solution is_revealing=false is_jiggling=Signal::derive(move || jiggle_row.get()) /> }.into_view() 
+                            view! { <Row guess=current_input solution=solution is_revealing=false is_completed=false is_jiggling=Signal::derive(move || jiggle_row.get()) /> }.into_view() 
                         } else { view! {}.into_view() }}
                         
-                        {move || (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(|_| { view! { <Row guess="".to_string() solution="".to_string() is_revealing=false is_jiggling=Signal::derive(|| false) /> } }).collect_view()}
+                        {move || (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(|_| { view! { <Row guess="".to_string() solution="".to_string() is_revealing=false is_completed=false is_jiggling=Signal::derive(|| false) /> } }).collect_view()}
                     </div>
                 </div>
             </div>
@@ -410,8 +414,8 @@ fn App() -> impl IntoView {
                 <div class="flex flex-col gap-4 text-white">
                     <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30">
                         <div>
-                            <div class="font-bold">"Hard Mode"</div>
-                            <div class="text-xs opacity-70">"Strict validation of clues"</div>
+                            <div class="font-bold text-white">"Hard Mode"</div>
+                            <div class="text-xs opacity-70 text-white">"Strict validation of clues"</div>
                         </div>
                         <button 
                             on:click=move |_| set_hard_mode.update(|h| *h = !*h)
@@ -420,7 +424,7 @@ fn App() -> impl IntoView {
                             <div class=move || format!("absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 {}", if hard_mode.get() { "left-7" } else { "left-1" }) />
                         </button>
                     </div>
-                    <div class="text-xs opacity-50 italic text-center mt-2">"Rustle Version 1.0.0 (Pure Rust)"</div>
+                    <div class="text-xs opacity-50 italic text-center mt-2 text-white">"Rustle Version 1.0.0 (Pure Rust)"</div>
                 </div>
             </Modal>
 

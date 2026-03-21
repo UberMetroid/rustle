@@ -35,8 +35,6 @@ type Props = {
   handleShareFailure: () => void
   handleMigrateStatsButton: () => void
   isHardMode: boolean
-  isDarkMode: boolean
-  isHighContrastMode: boolean
   numberOfGuessesMade: number
 }
 
@@ -53,8 +51,6 @@ export const StatsModal = ({
   handleShareFailure,
   handleMigrateStatsButton,
   isHardMode,
-  isDarkMode,
-  isHighContrastMode,
   numberOfGuessesMade,
 }: Props) => {
   if (gameStats.totalGames <= 0) {
@@ -78,7 +74,7 @@ export const StatsModal = ({
       handleClose={handleClose}
     >
       <StatBar gameStats={gameStats} />
-      <h4 className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
+      <h4 className="text-lg font-medium leading-6">
         {GUESS_DISTRIBUTION_TEXT}
       </h4>
       <Histogram
@@ -88,13 +84,13 @@ export const StatsModal = ({
         numberOfGuessesMade={numberOfGuessesMade}
       />
       {(isGameLost || isGameWon) && (
-        <div className="mt-5 columns-2 items-center items-stretch justify-center text-center dark:text-white sm:mt-6">
+        <div className="mt-5 columns-2 items-center items-stretch justify-center text-center sm:mt-6">
           <div className="inline-block w-full text-left">
             {(!ENABLE_ARCHIVED_GAMES || isLatestGame) && (
               <div>
                 <h5>{NEW_WORD_TEXT}</h5>
                 <Countdown
-                  className="text-lg font-medium text-gray-900 dark:text-gray-100"
+                  className="text-lg font-medium"
                   date={tomorrow}
                   daysInHours={true}
                 />
@@ -102,7 +98,7 @@ export const StatsModal = ({
             )}
             {ENABLE_ARCHIVED_GAMES && !isLatestGame && (
               <div className="mt-2 inline-flex">
-                <ClockIcon className="mr-1 mt-2 mt-1 h-5 w-5 stroke-black dark:stroke-white" />
+                <ClockIcon className="mr-1 mt-2 h-5 w-5 stroke-current" />
                 <div className="mt-1 ml-1 text-center text-sm sm:text-base">
                   <strong>{ARCHIVE_GAMEDATE_TEXT}:</strong>
                   <br />
@@ -123,14 +119,14 @@ export const StatsModal = ({
                   guesses,
                   isGameLost,
                   isHardMode,
-                  isDarkMode,
-                  isHighContrastMode,
+                  false, // isDarkMode (deprecated)
+                  false, // isHighContrastMode (deprecated)
                   handleShareToClipboard,
                   handleShareFailure
                 )
               }}
             >
-              <ShareIcon className="mr-2 h-6 w-6 cursor-pointer dark:stroke-white" />
+              <ShareIcon className="mr-2 h-6 w-6 cursor-pointer stroke-white" />
               {SHARE_TEXT}
             </button>
           </div>
@@ -138,7 +134,7 @@ export const StatsModal = ({
       )}
       {ENABLE_MIGRATE_STATS && (
         <div>
-          <hr className="mt-4 -mb-4 border-gray-500" />
+          <hr className="mt-4 -mb-4 border-gray-500 opacity-30" />
           <MigrationIntro handleMigrateStatsButton={handleMigrateStatsButton} />
         </div>
       )}

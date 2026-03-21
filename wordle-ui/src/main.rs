@@ -190,7 +190,6 @@ fn App() -> impl IntoView {
                 let prev_guess = guesses.get().last().cloned().unwrap();
                 let prev_statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &prev_guess)).unwrap_or_default();
                 
-                // Rule 1: Correct letters must be in the same spot
                 for (i, (c, s)) in prev_guess.chars().zip(prev_statuses.iter()).enumerate() {
                     if s == "correct" && input.chars().nth(i).unwrap() != c {
                         show_alert(format!("MUST USE {} IN SPOT {}", c.to_uppercase(), i + 1));
@@ -198,7 +197,6 @@ fn App() -> impl IntoView {
                     }
                 }
 
-                // Rule 2: Present letters must be used
                 for (c, s) in prev_guess.chars().zip(prev_statuses.iter()) {
                     if s == "present" && !input.contains(c) {
                         show_alert(format!("MUST CONTAIN {}", c.to_uppercase()));
@@ -284,28 +282,39 @@ fn App() -> impl IntoView {
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
-                    <h1 class="text-2xl sm:text-3xl font-black tracking-tighter">"RUSTLE"</h1>
-                    <div class="flex gap-1.5">
-                        {vec!["retro", "cyberpunk", "nord", "default", "solarized"].into_iter().map(|t| {
-                            let color = match t {
-                                "retro" => "#00ff41", "cyberpunk" => "#ff007f", "nord" => "#88c0d0", "default" => "#10b981", _ => "#b58900",
-                            };
-                            view! {
-                                <button class=move || format!("w-5 h-5 rounded-full border-2 transition-all hover:scale-125 {}", if theme.get() == t { "border-white scale-110 shadow-lg" } else { "border-gray-500" })
-                                    style=format!("background-color: {}", color) on:click=move |_| set_theme.set(t.to_string()) />
-                            }
-                        }).collect_view()}
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-tighter italic">"RUSTLE"</h1>
+                    
+                    // Sliding Theme Toggle
+                    <div class="theme-slider-track">
+                        {let themes = vec!["retro", "cyberpunk", "nord", "default", "solarized"];
+                         let theme_val = theme.get();
+                         let index = themes.iter().position(|&t| t == theme_val).unwrap_or(3);
+                         view! {
+                            <div class="theme-slider-thumb" style=format!("left: {}px", 4 + (index * 30)) />
+                            {themes.into_iter().map(|t| {
+                                view! {
+                                    <button 
+                                        class="z-10 w-[28px] h-6 rounded-full"
+                                        on:click=move |_| set_theme.set(t.to_string())
+                                        title=t
+                                    />
+                                }
+                            }).collect_view()}
+                         }
+                        }
                     </div>
                 </nav>
 
-                <div class="flex flex-col gap-1 sm:gap-2 px-2">
-                    {move || guesses.get().into_iter().map(|g| { view! { <Row guess=g solution=solution_data.get().solution is_revealing=true is_jiggling=Signal::derive(|| false) /> } }).collect_view()}
-                    {move || if guesses.get().len() < 6 && !game_won.get() { 
-                        let current_input = current_input.get();
-                        let solution = solution_data.get().solution;
-                        view! { <Row guess=current_input solution=solution is_revealing=false is_jiggling=Signal::derive(move || jiggle_row.get()) /> }.into_view() 
-                    } else { view! {}.into_view() }}
-                    {move || (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(|_| { view! { <Row guess="".to_string() solution="".to_string() is_revealing=false is_jiggling=Signal::derive(|| false) /> } }).collect_view()}
+                <div class="game-backdrop">
+                    <div class="flex flex-col gap-1 sm:gap-2">
+                        {move || guesses.get().into_iter().map(|g| { view! { <Row guess=g solution=solution_data.get().solution is_revealing=true is_jiggling=Signal::derive(|| false) /> } }).collect_view()}
+                        {move || if guesses.get().len() < 6 && !game_won.get() { 
+                            let current_input = current_input.get();
+                            let solution = solution_data.get().solution;
+                            view! { <Row guess=current_input solution=solution is_revealing=false is_jiggling=Signal::derive(move || jiggle_row.get()) /> }.into_view() 
+                        } else { view! {}.into_view() }}
+                        {move || (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(|_| { view! { <Row guess="".to_string() solution="".to_string() is_revealing=false is_jiggling=Signal::derive(|| false) /> } }).collect_view()}
+                    </div>
                 </div>
             </div>
 
@@ -315,13 +324,23 @@ fn App() -> impl IntoView {
                     rows.into_iter().enumerate().map(|(i, row)| {
                         view! {
                             <div class="flex justify-center mb-2 w-full">
-                                {if i == 2 { view! { <button class="h-12 sm:h-14 px-2 mx-0.5 rounded font-bold bg-gray-400 text-white flex-[1.5] text-xs" on:click=move |_| on_key.call("ENTER".to_string())> "ENTER" </button> }.into_view() } else { view! {}.into_view() }}
+                                {if i == 2 { view! { 
+                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded font-bold bg-gray-500 text-white flex-[1.5] flex items-center justify-center hover:bg-gray-400 active:scale-95 transition-all" on:click=move |_| on_key.call("ENTER".to_string())> 
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                                    </button> 
+                                }.into_view() } else { view! {}.into_view() }}
+                                
                                 {row.into_iter().map(|c| {
                                     let status = move || char_statuses.get().get(&c).cloned().unwrap_or_default();
-                                    let bg = move || match status().as_str() { "correct" => "bg-green-500", "present" => "bg-yellow-500", "absent" => "bg-gray-700", _ => "bg-gray-400" };
-                                    view! { <button class=move || format!("h-12 sm:h-14 mx-0.5 rounded font-bold text-white flex-1 min-w-[25px] transition-colors duration-500 {}", bg()) on:click=move |_| on_key.call(c.to_string())> {c.to_string()} </button> }
+                                    let bg = move || match status().as_str() { "correct" => "bg-green-500", "present" => "bg-yellow-500", "absent" => "bg-gray-700 shadow-inner opacity-60", _ => "bg-gray-400" };
+                                    view! { <button class=move || format!("h-12 sm:h-14 mx-0.5 rounded font-bold text-white flex-1 min-w-[25px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-sm {}", bg()) on:click=move |_| on_key.call(c.to_string())> {c.to_string()} </button> }
                                 }).collect_view()}
-                                {if i == 2 { view! { <button class="h-12 sm:h-14 px-2 mx-0.5 rounded font-bold bg-gray-400 text-white flex-[1.5] text-xs" on:click=move |_| on_key.call("DELETE".to_string())> "DEL" </button> }.into_view() } else { view! {}.into_view() }}
+                                
+                                {if i == 2 { view! { 
+                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded font-bold bg-gray-500 text-white flex-[1.5] flex items-center justify-center hover:bg-gray-400 active:scale-95 transition-all" on:click=move |_| on_key.call("DELETE".to_string())> 
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg>
+                                    </button> 
+                                }.into_view() } else { view! {}.into_view() }}
                             </div>
                         }
                     }).collect_view()
@@ -371,7 +390,7 @@ fn App() -> impl IntoView {
             </Modal>
 
             {move || if !alert_message.get().is_empty() {
-                view! { <div class="fixed top-24 px-4 py-2 rounded bg-black text-white font-bold shadow-xl glass z-[100] animate-bounce"> {alert_message.get()} </div> }.into_view()
+                view! { <div class="fixed top-24 px-4 py-2 rounded bg-black text-white font-bold shadow-xl glass z-[100] animate-bounce toast-slide"> {alert_message.get()} </div> }.into_view()
             } else if game_won.get() {
                 view! { <div class="fixed top-24 px-6 py-3 rounded-full bg-green-500 text-white font-black text-xl shadow-2xl animate-bounce glass"> "AMAZING! YOU WON!" </div> }.into_view() 
             } else if game_lost.get() {

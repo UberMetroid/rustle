@@ -5,7 +5,6 @@ use wasm_bindgen::prelude::*;
 use std::collections::HashMap;
 use leptos::ev::keydown;
 
-// Re-exporting for convenience
 mod word_engine {
     pub use wordle_engine::*;
 }
@@ -50,7 +49,6 @@ fn Cell(value: char, status: String, position: usize, is_revealing: bool, is_com
     let delay = position * 350;
     let classes = move || {
         let mut base = "w-12 h-12 sm:w-14 sm:h-14 border-solid border-2 flex items-center justify-center mx-0.5 text-2xl sm:text-4xl font-bold rounded-xl transition-all duration-300".to_string();
-        
         if is_completed || is_revealing {
             if !status.is_empty() {
                 base.push_str(&format!(" {}", status));
@@ -60,7 +58,6 @@ fn Cell(value: char, status: String, position: usize, is_revealing: bool, is_com
         } else {
             base.push_str(" cell-neutral");
         }
-        
         if is_revealing {
             base.push_str(" cell-reveal");
         }
@@ -98,7 +95,7 @@ fn Modal(title: String, is_open: ReadSignal<bool>, set_is_open: WriteSignal<bool
                         <h2 class="text-2xl font-black tracking-tighter"> {title_clone.clone()} </h2>
                         <button on:click=move |_| set_is_open.set(false) class="text-2xl font-bold hover:text-red-500 transition-colors"> "×" </button>
                     </div>
-                    <div>
+                    <div class="text-white">
                         {children.with_value(|children| children())}
                     </div>
                 </div>
@@ -119,16 +116,10 @@ fn App() -> impl IntoView {
     let (alert_message, set_alert_message) = create_signal(String::new());
     let (is_revealing_row, set_is_revealing_row) = create_signal(false);
     
-    let initial_theme = get_storage()
-        .and_then(|s| s.get_item("color-theme").ok().flatten())
-        .unwrap_or_else(|| "dark".to_string());
-    let (theme, set_theme) = create_signal(initial_theme);
+    let (theme, set_theme) = create_signal("dark".to_string());
+    let (hard_mode, set_hard_mode) = create_signal(false);
+    let (stats, set_stats) = create_signal(GameStats::default());
 
-    let initial_hard_mode = get_storage()
-        .and_then(|s| s.get_item("hard-mode").ok().flatten())
-        .map(|v| v == "true").unwrap_or(false);
-    let (hard_mode, set_hard_mode) = create_signal(initial_hard_mode);
-    
     let now = js_sys::Date::now();
     let solution_data = create_memo(move |_| {
         let val = get_solution(now as u64);
@@ -138,16 +129,16 @@ fn App() -> impl IntoView {
         s
     });
 
-    let initial_stats = get_storage()
-        .and_then(|s| s.get_item("game-stats").ok().flatten())
-        .and_then(|s| serde_json::from_str::<GameStats>(&s).ok())
-        .unwrap_or_default();
-    let (stats, set_stats) = create_signal(initial_stats);
-
-    // Initial Load
+    // Handle LocalStorage only inside create_effect to prevent hydration/initialization issues
     create_effect(move |_| {
-        let sol = solution_data.get().solution;
         if let Some(storage) = get_storage() {
+            if let Ok(Some(t)) = storage.get_item("color-theme") { set_theme.set(t); }
+            if let Ok(Some(h)) = storage.get_item("hard-mode") { set_hard_mode.set(h == "true"); }
+            if let Ok(Some(s)) = storage.get_item("game-stats") {
+                if let Ok(parsed) = serde_json::from_str::<GameStats>(&s) { set_stats.set(parsed); }
+            }
+            
+            let sol = solution_data.get().solution;
             if let Ok(Some(saved)) = storage.get_item("game-state") {
                 if let Ok(state) = serde_json::from_str::<StoredState>(&saved) {
                     if state.solution == sol {
@@ -179,47 +170,42 @@ fn App() -> impl IntoView {
         map
     });
 
-    let show_alert = move |msg: String| {
-        set_alert_message.set(msg);
-        set_jiggle_row.set(true);
-        set_timeout(move || {
-            set_alert_message.set(String::new());
-            set_jiggle_row.set(false);
-        }, std::time::Duration::from_millis(2000));
-    };
-
-    let on_key = Callback::new(move |key: String| {
+    let on_key = move |key: String| {
         if game_won.get() || game_lost.get() { return; }
         
         if key == "ENTER" {
             let input = current_input.get().to_uppercase();
             let sol = solution_data.get().solution.to_uppercase();
-            
             if input.len() < 5 {
-                show_alert("NOT ENOUGH LETTERS".to_string());
+                set_alert_message.set("NOT ENOUGH LETTERS".to_string());
+                set_jiggle_row.set(true);
+                set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
             }
-
             if !is_word_in_list(&input) {
-                show_alert("NOT IN WORD LIST".to_string());
+                set_alert_message.set("NOT IN WORD LIST".to_string());
+                set_jiggle_row.set(true);
+                set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
             }
 
-            // Hard Mode Logic
+            // Hard Mode
             if hard_mode.get() && !guesses.get().is_empty() {
                 let prev_guess = guesses.get().last().cloned().unwrap().to_uppercase();
                 let prev_statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &prev_guess)).unwrap_or_default();
-                
                 for (i, (c, s)) in prev_guess.chars().zip(prev_statuses.iter()).enumerate() {
                     if s == "correct" && input.chars().nth(i).unwrap() != c {
-                        show_alert(format!("MUST USE {} IN SPOT {}", c, i + 1));
+                        set_alert_message.set(format!("MUST USE {} IN SPOT {}", c, i + 1));
+                        set_jiggle_row.set(true);
+                        set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                         return;
                     }
                 }
-
                 for (c, s) in prev_guess.chars().zip(prev_statuses.iter()) {
                     if s == "present" && !input.contains(c) {
-                        show_alert(format!("MUST CONTAIN {}", c));
+                        set_alert_message.set(format!("MUST CONTAIN {}", c));
+                        set_jiggle_row.set(true);
+                        set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                         return;
                     }
                 }
@@ -254,10 +240,7 @@ fn App() -> impl IntoView {
                 set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3000));
             } else if new_guesses.len() >= 6 {
                 set_game_lost.set(true);
-                set_stats.update(|s| {
-                    s.total_games += 1;
-                    s.current_streak = 0;
-                });
+                set_stats.update(|s| { s.total_games += 1; s.current_streak = 0; });
                 if let Some(storage) = get_storage() {
                     let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap());
                 }
@@ -268,68 +251,50 @@ fn App() -> impl IntoView {
         } else if current_input.get().len() < 5 {
             set_current_input.update(|s| s.push_str(&key.to_uppercase()));
         }
-    });
+    };
 
-    // Robust Physical Keyboard Support
-    create_effect(move |_| {
-        let key_handle = window_event_listener(keydown, move |ev| {
-            if show_stats.get() || show_settings.get() { return; }
-            let key = ev.key();
-            if key == "Enter" {
-                on_key.call("ENTER".to_string());
-            } else if key == "Backspace" {
-                on_key.call("DELETE".to_string());
-            } else if key.len() == 1 {
-                let c = key.chars().next().unwrap();
-                if c.is_ascii_alphabetic() {
-                    on_key.call(c.to_uppercase().to_string());
-                }
-            }
-        });
-        on_cleanup(move || key_handle.remove());
+    let _ = window_event_listener(keydown, move |ev| {
+        if show_stats.get() || show_settings.get() { return; }
+        let key = ev.key();
+        if key == "Enter" { on_key("ENTER".to_string()); }
+        else if key == "Backspace" { on_key("DELETE".to_string()); }
+        else if key.len() == 1 {
+            let c = key.chars().next().unwrap();
+            if c.is_ascii_alphabetic() { on_key(c.to_uppercase().to_string()); }
+        }
     });
 
     let on_share = move |_| {
         let sol = solution_data.get().solution.to_uppercase();
         let mut text = format!("Rustle {} {}/6\n\n", solution_data.get().solution_index, if game_won.get() { guesses.get().len().to_string() } else { "X".to_string() });
         for g in guesses.get() {
-            let guess_upper = g.to_uppercase();
-            let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &guess_upper)).unwrap_or_default();
+            let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &g.to_uppercase())).unwrap_or_default();
             for s in statuses {
-                text.push_str(match s.as_str() {
-                    "correct" => "🟩",
-                    "present" => "🟨",
-                    _ => "⬛",
-                });
+                text.push_str(match s.as_str() { "correct" => "🟩", "present" => "🟨", _ => "⬛" });
             }
             text.push('\n');
         }
         let _ = window().navigator().clipboard().write_text(&text);
-        show_alert("COPIED TO CLIPBOARD".to_string());
+        set_alert_message.set("COPIED TO CLIPBOARD".to_string());
+        set_timeout(move || set_alert_message.set(String::new()), std::time::Duration::from_millis(2000));
     };
 
     create_effect(move |_| {
         let t = theme.get();
-        if let Some(el) = document().document_element() {
-            let _ = el.set_attribute("class", &format!("theme-{}", t));
-        }
-        if let Some(storage) = get_storage() {
-            let _ = storage.set_item("color-theme", &t);
-        }
+        if let Some(el) = document().document_element() { let _ = el.set_attribute("class", &format!("theme-{}", t)); }
+        if let Some(storage) = get_storage() { let _ = storage.set_item("color-theme", &t); }
     });
 
     create_effect(move |_| {
         let h = hard_mode.get();
-        if let Some(storage) = get_storage() {
-            let _ = storage.set_item("hard-mode", if h { "true" } else { "false" });
-        }
+        if let Some(storage) = get_storage() { let _ = storage.set_item("hard-mode", if h { "true" } else { "false" }); }
     });
 
     view! {
         <div class="flex min-h-screen flex-col items-center py-4 sm:py-8 transition-all duration-500 text-black dark:text-white px-2">
             <div class="w-full max-w-[600px] flex flex-col items-center">
                 <nav class="w-full grid grid-cols-3 items-center px-4 mb-4 sm:mb-8 glass-pad py-2">
-                    <div class="flex gap-2 justify-start text-white">
+                    <div class="flex gap-2 justify-start">
                         <button on:click=move |_| set_show_stats.set(true) class="correct-pad w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
@@ -337,9 +302,7 @@ fn App() -> impl IntoView {
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
-                    
                     <h1 class="text-2xl sm:text-4xl font-black tracking-tighter italic text-center title-text">"RUSTLE"</h1>
-                    
                     <div class="flex justify-end">
                         <div class="glass-pad p-2 rounded-2xl flex items-center shadow-lg">
                             {move || {
@@ -347,13 +310,7 @@ fn App() -> impl IntoView {
                                 let current = theme.get();
                                 let index = themes.iter().position(|&t| t == current).unwrap_or(0);
                                 view! {
-                                    <input 
-                                        type="range" 
-                                        min="0" 
-                                        max="7" 
-                                        step="1" 
-                                        value=index
-                                        class="theme-slider"
+                                    <input type="range" min="0" max="7" step="1" value=index class="theme-slider"
                                         on:input=move |ev| {
                                             let val = event_target_value(&ev).parse::<usize>().unwrap_or(0);
                                             set_theme.set(themes[val].to_string());
@@ -376,13 +333,11 @@ fn App() -> impl IntoView {
                                 view! { <Row guess=g.to_uppercase() solution=sol.clone() is_revealing=is_rev && i == len-1 is_completed=true is_jiggling=Signal::derive(|| false) /> } 
                             }).collect_view()
                         }}
-                        
                         {move || if guesses.get().len() < 6 && !game_won.get() { 
                             let current_input = current_input.get().to_uppercase();
                             let solution = solution_data.get().solution.to_uppercase();
                             view! { <Row guess=current_input solution=solution is_revealing=false is_completed=false is_jiggling=Signal::derive(move || jiggle_row.get()) /> }.into_view() 
                         } else { view! {}.into_view() }}
-                        
                         {move || (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(|_| { view! { <Row guess="".to_string() solution="".to_string() is_revealing=false is_completed=false is_jiggling=Signal::derive(|| false) /> } }).collect_view()}
                     </div>
                 </div>
@@ -395,24 +350,17 @@ fn App() -> impl IntoView {
                         view! {
                             <div class="flex justify-center mb-2 w-full">
                                 {if i == 2 { view! { 
-                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] flex items-center justify-center key-neutral" on:click=move |_| on_key.call("ENTER".to_string())> 
+                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] flex items-center justify-center key-neutral" on:click=move |_| on_key("ENTER".to_string())> 
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
                                     </button> 
                                 }.into_view() } else { view! {}.into_view() }}
-                                
                                 {row.into_iter().map(|c| {
                                     let status = move || char_statuses.get().get(&c).cloned().unwrap_or_default();
-                                    let status_class = move || match status().as_str() { 
-                                        "correct" => "correct", 
-                                        "present" => "present", 
-                                        "absent" => "absent", 
-                                        _ => "key-neutral" 
-                                    };
-                                    view! { <button class=move || format!("h-12 sm:h-14 mx-0.5 rounded-xl font-bold flex-1 min-w-[25px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg border-2 border-transparent {}", status_class()) on:click=move |_| on_key.call(c.to_string())> {c.to_string()} </button> }
+                                    let status_class = move || match status().as_str() { "correct" => "correct", "present" => "present", "absent" => "absent", _ => "key-neutral" };
+                                    view! { <button class=move || format!("h-12 sm:h-14 mx-0.5 rounded-xl font-bold flex-1 min-w-[25px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg border-2 border-transparent {}", status_class()) on:click=move |_| on_key(c.to_string())> {c.to_string()} </button> }
                                 }).collect_view()}
-                                
                                 {if i == 2 { view! { 
-                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] flex items-center justify-center key-neutral" on:click=move |_| on_key.call("DELETE".to_string())> 
+                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] flex items-center justify-center key-neutral" on:click=move |_| on_key("DELETE".to_string())> 
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg>
                                     </button> 
                                 }.into_view() } else { view! {}.into_view() }}
@@ -439,9 +387,7 @@ fn App() -> impl IntoView {
                         }).collect_view()}
                     </div>
                     <Show when=move || game_won.get() || game_lost.get()>
-                        <button on:click=on_share class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase">
-                            "SHARE RESULT"
-                        </button>
+                        <button on:click=on_share class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase"> "SHARE RESULT" </button>
                     </Show>
                 </div>
             </Modal>
@@ -452,27 +398,16 @@ fn App() -> impl IntoView {
                         <div>
                             <div class="font-bold text-white">"Hard Mode"</div>
                             <div class="text-xs opacity-70 text-white">"Strict validation of clues"</div>
-                            {move || if !guesses.get().is_empty() {
-                                view! { <div class="text-[10px] text-red-400 mt-1 font-bold uppercase tracking-tighter italic">"Game in progress"</div> }.into_view()
-                            } else {
-                                view! {}.into_view()
-                            }}
+                            {move || if !guesses.get().is_empty() { view! { <div class="text-[10px] text-red-400 mt-1 font-bold uppercase tracking-tighter italic">"Game in progress"</div> }.into_view() } else { view! {}.into_view() }}
                         </div>
-                        <button 
-                            on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) }
-                            class=move || format!("w-12 h-6 rounded-full transition-colors duration-300 relative {} {}", 
-                                if hard_mode.get() { "bg-green-500" } else { "bg-gray-600" },
-                                if !guesses.get().is_empty() { "opacity-50 cursor-not-allowed" } else { "cursor-pointer" }
-                            )
-                        >
+                        <button on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) }
+                            class=move || format!("w-12 h-6 rounded-full transition-colors duration-300 relative {} {}", if hard_mode.get() { "bg-green-500" } else { "bg-gray-600" }, if !guesses.get().is_empty() { "opacity-50 cursor-not-allowed" } else { "cursor-pointer" })>
                             <div class=move || format!("absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 {}", if hard_mode.get() { "left-7" } else { "left-1" }) />
                         </button>
                     </div>
-
                     <div class="space-y-4">
                         <h3 class="text-sm font-black uppercase tracking-widest text-center opacity-80 text-white">"How to Play"</h3>
-                        
-                        <div class="space-y-3">
+                        <div class="space-y-3 text-white">
                             <div class="flex flex-col items-center gap-1">
                                 <div class="flex">
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent correct font-black">"R"</div>
@@ -481,9 +416,8 @@ fn App() -> impl IntoView {
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"T"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"S"</div>
                                 </div>
-                                <div class="text-[10px] opacity-70 text-white">"R is in the word and in the correct spot."</div>
+                                <div class="text-[10px] opacity-70">"R is in the word and in the correct spot."</div>
                             </div>
-
                             <div class="flex flex-col items-center gap-1">
                                 <div class="flex">
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral font-bold">"W"</div>
@@ -492,9 +426,8 @@ fn App() -> impl IntoView {
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"D"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"S"</div>
                                 </div>
-                                <div class="text-[10px] opacity-70 text-white">"O is in the word but in the wrong spot."</div>
+                                <div class="text-[10px] opacity-70">"O is in the word but in the wrong spot."</div>
                             </div>
-
                             <div class="flex flex-col items-center gap-1">
                                 <div class="flex">
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral font-bold">"V"</div>
@@ -503,12 +436,11 @@ fn App() -> impl IntoView {
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent absent mx-0.5 font-black">"U"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"E"</div>
                                 </div>
-                                <div class="text-[10px] opacity-70 text-white">"U is not in the word in any spot."</div>
+                                <div class="text-[10px] opacity-70">"U is not in the word in any spot."</div>
                             </div>
                         </div>
                     </div>
-
-                    <div class="text-[10px] opacity-40 italic text-center mt-2 text-white">"Rustle Version 1.0.0 (Pure Rust)"</div>
+                    <div class="text-[10px] opacity-40 italic text-center mt-2">"Rustle Version 1.0.0 (Pure Rust)"</div>
                 </div>
             </Modal>
 

@@ -46,27 +46,22 @@ fn get_storage() -> Option<web_sys::Storage> {
 }
 
 fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool) -> String {
-    if is_loss { return "Game Over, Poseur.".to_string(); }
+    if is_loss { return "Poseur.".to_string(); }
     if is_win {
-        let mut win_msgs = match tries {
-            1 => vec!["HACK THE PLANET!", "Pure Luck.", "Sus physics."],
+        let win_msgs = match tries {
+            1 => vec!["HACKER!", "Pure Luck.", "Sus physics."],
             2 => vec!["Radical!", "Tubular!", "Showoff."],
             3 => vec!["Righteous.", "Choice.", "Solid mid."],
-            4 => vec!["Finally.", "Took your time.", "Getting slow?"],
-            5 => vec!["Panic yet?", "Sweaty.", "Close one."],
-            6 => vec!["Barely.", "Yikes.", "Scrub tier."],
+            4 => vec!["Finally.", "Getting slow?"],
+            5 => vec!["Sweaty.", "Close one."],
+            6 => vec!["Barely.", "Scrub tier."],
             _ => vec!["Win."],
         };
         let mut msg = win_msgs[js_sys::Math::floor(js_sys::Math::random() * win_msgs.len() as f64) as usize].to_string();
-        if is_hard { msg.push_str(" (Hard Mode simp)"); }
+        if is_hard { msg.push_str(" (Hard Mode)"); }
         return msg;
     }
-    
-    let comments = vec![
-        "Gnarly.", "Like, totally.", "Gag me with a spoon.", "Groovy.", 
-        "Cyberpunk'd.", "Neon Nights.", "Pixel Perfect.", "Digital Love.",
-        "Error 404: Skill.", "Loading...", "Retro Reboot.", "Processing..."
-    ];
+    let comments = vec!["Gnarly.", "Totally.", "Groovy.", "Neon.", "Retro.", "Bogus?"];
     comments[js_sys::Math::floor(js_sys::Math::random() * comments.len() as f64) as usize].to_string()
 }
 
@@ -153,9 +148,11 @@ fn Modal(title: String, is_open: ReadSignal<bool>, set_is_open: WriteSignal<bool
         <Show when=move || is_open.get()>
             <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black bg-opacity-50" on:click=move |_| set_is_open.set(false)>
                 <div class="glass-pad w-full max-w-sm p-6 shadow-2xl transition-all scale-up overflow-y-auto max-h-[90vh]" on:click=move |ev| ev.stop_propagation()>
-                    <div class="flex justify-between items-center mb-4 uppercase text-white">
-                        <h2 class="text-2xl font-black tracking-tighter"> {title_clone.clone()} </h2>
-                        <button on:click=move |_| set_is_open.set(false) class="text-2xl font-bold hover:text-red-500 transition-colors"> "×" </button>
+                    <div class="flex flex-col items-center mb-6 uppercase text-white">
+                        <div class="w-full flex justify-end -mb-6">
+                            <button on:click=move |_| set_is_open.set(false) class="text-2xl font-bold hover:text-red-500 transition-colors"> "×" </button>
+                        </div>
+                        <h2 class="text-2xl font-black tracking-tighter text-center"> {title_clone.clone()} </h2>
                     </div>
                     <div class="text-white"> {children.with_value(|children| children())} </div>
                 </div>
@@ -173,7 +170,6 @@ fn App() -> impl IntoView {
     let (show_stats, set_show_stats) = create_signal(false);
     let (show_help, set_show_help) = create_signal(false);
     let (jiggle_row, set_jiggle_row) = create_signal(false);
-    let (alert_message, set_alert_message) = create_signal(String::new());
     let (is_revealing_row, set_is_revealing_row) = create_signal(false);
     let (destroy_trigger, set_destroy_trigger) = create_signal(String::new());
     let (last_typed_index, set_last_typed_index) = create_signal(-1_i32);
@@ -235,13 +231,13 @@ fn App() -> impl IntoView {
             let input = current_input.get().to_uppercase();
             let sol = solution_data.get().solution.to_uppercase();
             if input.len() < 5 {
-                set_snarky_comment.set("Way harsh! Needs 5.".to_string());
+                set_snarky_comment.set("Too short, poseur.".to_string());
                 set_jiggle_row.set(true);
                 set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
             }
             if !is_word_in_list(&input) {
-                set_snarky_comment.set("Not a word, poser.".to_string());
+                set_snarky_comment.set("What a dweeb.".to_string());
                 set_jiggle_row.set(true);
                 set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
@@ -260,7 +256,7 @@ fn App() -> impl IntoView {
                 for (i, &req) in required_spots.iter().enumerate() {
                     if let Some(c) = req {
                         if input.chars().nth(i).unwrap() != c {
-                            set_snarky_comment.set(format!("Poser! {} goes at spot {}", c, i + 1));
+                            set_snarky_comment.set(format!("{} goes at {}", c, i + 1));
                             set_jiggle_row.set(true);
                             set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                             return;
@@ -386,21 +382,25 @@ fn App() -> impl IntoView {
                         <button on:click=move |_| set_show_help.set(true) title="How to Play" class="correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </button>
-                        <button on:click=move |_| if guesses.get().is_empty() || game_won.get() || game_lost.get() { set_hard_mode.update(|h| *h = !*h) } title="Hard Mode" class=move || format!("correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95 {}", if !guesses.get().is_empty() && !game_won.get() && !game_lost.get() { "cursor-not-allowed" } else { "cursor-pointer" })>
-                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if hard_mode.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_12px_rgba(253,224,71,1)]" } else { "text-white opacity-40" }) fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        <button 
+                            on:click=move |_| if guesses.get().is_empty() || game_won.get() || game_lost.get() { set_hard_mode.update(|h| *h = !*h) } 
+                            title="Hard Mode" 
+                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if hard_mode.get() { "correct-pad border-transparent" } else { "cell-neutral border-current" })
+                        >
+                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if hard_mode.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_12px_rgba(253,224,71,1)]" } else { "text-current opacity-40" }) fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                         </button>
                         <button disabled=move || !game_won.get() && !game_lost.get() title="AI Mode" class=move || format!("correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95 {}", if !game_won.get() && !game_lost.get() { "opacity-30 grayscale cursor-not-allowed" } else { "cursor-pointer" })>
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
                         </button>
                     </div>
-                    <div class="flex flex-col items-center">
-                        <h1 class="text-xl sm:text-4xl font-black tracking-tighter italic text-center title-text uppercase shrink-0">"RUSTLE"</h1>
-                        <div class="h-6 flex items-center justify-center">
+                    <div class="flex flex-col items-center w-full max-w-[150px] sm:max-w-[200px]">
+                        <h1 class="text-xl sm:text-4xl font-black tracking-tighter italic text-center title-text uppercase shrink-0 w-full">"RUSTLE"</h1>
+                        <div class="h-6 flex items-center justify-center w-full">
                             {move || {
                                 let snark = snarky_comment.get();
                                 if !snark.is_empty() {
                                     let color = if game_won.get() { "text-green-400" } else if game_lost.get() { "text-red-400" } else { "text-theme-primary" };
-                                    view! { <div key=snark.clone() class=format!("text-[10px] sm:text-xs font-black uppercase tracking-widest {} snarky-toast", color)> {snark} </div> }.into_view()
+                                    view! { <div key=snark.clone() class=format!("text-[10px] sm:text-xs font-black uppercase tracking-widest {} snarky-toast text-center w-full px-1", color)> {snark} </div> }.into_view()
                                 } else { view! {}.into_view() }
                             }}
                         </div>
@@ -488,7 +488,7 @@ fn App() -> impl IntoView {
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"T"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"S"</div>
                                 </div>
-                                <div class="text-[10px] opacity-70">"R is in the word and in the correct spot."</div>
+                                <div class="text-[10px] opacity-70 text-center">"R is in the word and in the correct spot."</div>
                             </div>
                             <div class="flex flex-col items-center gap-1">
                                 <div class="flex">
@@ -498,7 +498,7 @@ fn App() -> impl IntoView {
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"D"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"S"</div>
                                 </div>
-                                <div class="text-[10px] opacity-70">"O is in the word but in the wrong spot."</div>
+                                <div class="text-[10px] opacity-70 text-center">"O is in the word but in the wrong spot."</div>
                             </div>
                             <div class="flex flex-col items-center gap-1">
                                 <div class="flex">
@@ -508,7 +508,7 @@ fn App() -> impl IntoView {
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent absent mx-0.5 font-black text-white">"U"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"E"</div>
                                 </div>
-                                <div class="text-[10px] opacity-70">"U is not in the word in any spot."</div>
+                                <div class="text-[10px] opacity-70 text-center">"U is not in the word in any spot."</div>
                             </div>
                         </div>
                     </div>
@@ -517,20 +517,31 @@ fn App() -> impl IntoView {
 
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
                 <div class="flex flex-col items-center text-center text-white text-white">
-                    <div class="flex w-full justify-around mb-6 text-white text-white">
-                        <div><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70">"Played"</div></div>
-                        <div><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70">"Win %"</div></div>
-                        <div><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70">"Streak"</div></div>
-                        <div><div class="text-3xl font-black">{move || stats.get().best_streak}</div><div class="text-xs uppercase opacity-70">"Best"</div></div>
+                    <div class="grid grid-cols-4 w-full gap-4 mb-8">
+                        <div class="flex flex-col"><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Played"</div></div>
+                        <div class="flex flex-col"><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Win %"</div></div>
+                        <div class="flex flex-col"><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Streak"</div></div>
+                        <div class="flex flex-col"><div class="text-3xl font-black">{move || stats.get().best_streak}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Best"</div></div>
                     </div>
-                    <h3 class="text-sm font-bold uppercase mb-2 text-white">"Guess Distribution"</h3>
-                    <div class="w-full space-y-1 mb-6 text-left">
+                    
+                    <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary">"Guess Distribution"</h3>
+                    <div class="w-full space-y-1.5 mb-8 text-left">
                         {move || stats.get().distribution.iter().enumerate().map(|(i, count)| {
                             let wins = stats.get().wins;
                             let width = if wins > 0 { (*count as f32 * 100.0 / wins as f32).max(10.0) } else { 10.0 };
-                            view! { <div class="flex items-center gap-2 text-xs text-white"><div class="w-2">{i+1}</div><div class="bg-gray-500 text-white font-bold p-0.5 rounded text-right pr-2 transition-all duration-1000" style=format!("width: {}%", width)>{*count}</div></div> }
+                            view! { <div class="flex items-center gap-2 text-xs text-white"><div class="w-2">{i+1}</div><div class="bg-gray-600 text-white font-black p-0.5 rounded text-right pr-2 transition-all duration-1000" style=format!("width: {}%", width)>{*count}</div></div> }
                         }).collect_view()}
                     </div>
+
+                    <div class="w-full border-t border-white border-opacity-10 pt-6 mb-6 text-center">
+                        <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary">"Global Intel"</h3>
+                        <div class="grid grid-cols-3 w-full gap-2">
+                            <div class="flex flex-col p-2 rounded-lg bg-white bg-opacity-5"><div class="text-xl font-black">"1.2M"</div><div class="text-[7px] uppercase opacity-50">"Cracked"</div></div>
+                            <div class="flex flex-col p-2 rounded-lg bg-white bg-opacity-5"><div class="text-xl font-black">"4.2"</div><div class="text-[7px] uppercase opacity-50">"Avg Ops"</div></div>
+                            <div class="flex flex-col p-2 rounded-lg bg-white bg-opacity-5"><div class="text-xl font-black">"88%"</div><div class="text-[7px] uppercase opacity-50">"Efficiency"</div></div>
+                        </div>
+                    </div>
+
                     <Show when=move || game_won.get() || game_lost.get()>
                         <button on:click=move |_| {
                             let sol = solution_data.get().solution.to_uppercase();
@@ -541,9 +552,9 @@ fn App() -> impl IntoView {
                                 text.push('\n');
                             }
                             let _ = window().navigator().clipboard().write_text(&text);
-                            set_snarky_comment.set("Copied, poser.".to_string());
+                            set_snarky_comment.set("Intel Saved, poseur.".to_string());
                             set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));
-                        } class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase"> "SHARE RESULT" </button>
+                        } class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest"> "TRANSMIT INTEL" </button>
                     </Show>
                 </div>
             </Modal>

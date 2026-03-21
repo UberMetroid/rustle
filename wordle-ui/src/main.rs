@@ -57,7 +57,6 @@ fn Cell(
 ) -> impl IntoView {
     let delay = position * 350;
     
-    // Local trigger for single letter entry power ring
     let ring_trigger = create_memo(move |_| {
         if is_last_typed && value != ' ' && !is_completed && !is_revealing {
             js_sys::Date::now().to_string()
@@ -87,32 +86,17 @@ fn Cell(
     
     view! { 
         <div class=classes style=style>
-            // Single Letter Entry Ring
             {move || {
                 let id = ring_trigger.get();
-                if !id.is_empty() {
-                    view! { <div key=id class="power-ring" /> }.into_view()
-                } else {
-                    view! {}.into_view()
-                }
+                if !id.is_empty() { view! { <div key=id class="power-ring" /> }.into_view() } else { view! {}.into_view() }
             }}
-            // Entire Word Surge (Enter)
             {move || {
                 let id = surge_trigger.get();
-                if !id.is_empty() && !is_completed && !is_revealing {
-                    view! { <div key=id class="surge-ring" /> }.into_view()
-                } else {
-                    view! {}.into_view()
-                }
+                if !id.is_empty() && !is_completed && !is_revealing { view! { <div key=id class="surge-ring" /> }.into_view() } else { view! {}.into_view() }
             }}
-            // Deletion Shatter
             {move || {
                 let id = destroy_trigger.get();
-                if !id.is_empty() && is_last_typed {
-                    view! { <div key=id class="destroyed-puff" /> }.into_view()
-                } else {
-                    view! {}.into_view()
-                }
+                if !id.is_empty() && is_last_typed { view! { <div key=id class="destroyed-puff" /> }.into_view() } else { view! {}.into_view() }
             }}
             <div>{value.to_uppercase().to_string()}</div>
         </div> 
@@ -176,8 +160,6 @@ fn App() -> impl IntoView {
     let (jiggle_row, set_jiggle_row) = create_signal(false);
     let (alert_message, set_alert_message) = create_signal(String::new());
     let (is_revealing_row, set_is_revealing_row) = create_signal(false);
-    
-    // Trigger signals for effects
     let (surge_trigger, set_surge_trigger) = create_signal(String::new());
     let (destroy_trigger, set_destroy_trigger) = create_signal(String::new());
     let (last_typed_index, set_last_typed_index) = create_signal(-1_i32);
@@ -234,6 +216,12 @@ fn App() -> impl IntoView {
         map
     });
 
+    let show_alert = move |msg: String| {
+        set_alert_message.set(msg);
+        set_jiggle_row.set(true);
+        set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
+    };
+
     let on_key = move |key: String| {
         if game_won.get() || game_lost.get() { return; }
         
@@ -241,42 +229,74 @@ fn App() -> impl IntoView {
             let input = current_input.get().to_uppercase();
             let sol = solution_data.get().solution.to_uppercase();
             if input.len() < 5 {
-                set_alert_message.set("NOT ENOUGH LETTERS".to_string());
-                set_jiggle_row.set(true);
-                set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
+                show_alert("NOT ENOUGH LETTERS".to_string());
                 return;
             }
             if !is_word_in_list(&input) {
-                set_alert_message.set("NOT IN WORD LIST".to_string());
-                set_jiggle_row.set(true);
-                set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
+                show_alert("NOT IN WORD LIST".to_string());
                 return;
             }
 
+            // ENHANCED HARD MODE VALIDATION
             if hard_mode.get() && !guesses.get().is_empty() {
-                let prev_guess = guesses.get().last().cloned().unwrap().to_uppercase();
-                let prev_statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &prev_guess)).unwrap_or_default();
-                for (i, (c, s)) in prev_guess.chars().zip(prev_statuses.iter()).enumerate() {
-                    if s == "correct" && input.chars().nth(i).unwrap() != c {
-                        set_alert_message.set(format!("MUST USE {} IN SPOT {}", c, i + 1));
-                        set_jiggle_row.set(true);
-                        set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
+                let sol_upper = sol.to_uppercase();
+                let current_guesses = guesses.get();
+                
+                // 1. Check for Correct letters (Green) must be in the same spot
+                let mut required_spots: [Option<char>; 5] = [None; 5];
+                for g in &current_guesses {
+                    let g_upper = g.to_uppercase();
+                    let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol_upper, &g_upper)).unwrap_or_default();
+                    for (i, (c, s)) in g_upper.chars().zip(statuses.iter()).enumerate() {
+                        if s == "correct" { required_spots[i] = Some(c); }
+                    }
+                }
+                for (i, &req) in required_spots.iter().enumerate() {
+                    if let Some(c) = req {
+                        if input.chars().nth(i).unwrap() != c {
+                            show_alert(format!("MUST USE {} IN SPOT {}", c, i + 1));
+                            return;
+                        }
+                    }
+                }
+
+                // 2. Check for Present letters (Yellow) must be used somewhere
+                let mut required_letters: HashMap<char, usize> = HashMap::new();
+                for g in &current_guesses {
+                    let g_upper = g.to_uppercase();
+                    let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol_upper, &g_upper)).unwrap_or_default();
+                    let mut current_g_counts: HashMap<char, usize> = HashMap::new();
+                    for (c, s) in g_upper.chars().zip(statuses.iter()) {
+                        if s == "correct" || s == "present" {
+                            *current_g_counts.entry(c).or_insert(0) += 1;
+                        }
+                    }
+                    for (c, count) in current_g_counts {
+                        let entry = required_letters.entry(c).or_insert(0);
+                        if count > *entry { *entry = count; }
+                    }
+                }
+                for (c, &req_count) in &required_letters {
+                    let input_count = input.chars().filter(|&ic| ic == *c).count();
+                    if input_count < req_count {
+                        show_alert(format!("MUST CONTAIN {}", c));
                         return;
                     }
                 }
-                for (c, s) in prev_guess.chars().zip(prev_statuses.iter()) {
-                    if s == "present" && !input.contains(c) {
-                        set_alert_message.set(format!("MUST CONTAIN {}", c));
-                        set_jiggle_row.set(true);
-                        set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
-                        return;
+
+                // 3. Block Absent letters (Gray) - User explicit requirement
+                let statuses_map = char_statuses.get();
+                for c in input.chars() {
+                    if let Some(status) = statuses_map.get(&c) {
+                        if status == "absent" {
+                            show_alert(format!("{} IS NOT IN THE WORD", c));
+                            return;
+                        }
                     }
                 }
             }
 
-            // Word Surge Trigger
             set_surge_trigger.set(js_sys::Date::now().to_string());
-
             let mut new_guesses = guesses.get();
             new_guesses.push(input.clone());
             set_guesses.set(new_guesses.clone());
@@ -294,34 +314,24 @@ fn App() -> impl IntoView {
                 set_game_won.set(true);
                 set_timeout(move || confetti(), std::time::Duration::from_millis(1800));
                 set_stats.update(|s| {
-                    s.total_games += 1;
-                    s.wins += 1;
-                    s.current_streak += 1;
+                    s.total_games += 1; s.wins += 1; s.current_streak += 1;
                     if s.current_streak > s.best_streak { s.best_streak = s.current_streak; }
                     s.distribution[new_guesses.len() - 1] += 1;
                 });
-                if let Some(storage) = get_storage() {
-                    let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap());
-                }
+                if let Some(storage) = get_storage() { let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap()); }
                 set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3000));
             } else if new_guesses.len() >= 6 {
                 set_game_lost.set(true);
                 set_stats.update(|s| { s.total_games += 1; s.current_streak = 0; });
-                if let Some(storage) = get_storage() {
-                    let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap());
-                }
+                if let Some(storage) = get_storage() { let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap()); }
                 set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3000));
             }
         } else if key == "DELETE" {
             let len = current_input.get().len();
             if len > 0 {
-                // Destroy Trigger
                 set_last_typed_index.set(len as i32 - 1);
                 set_destroy_trigger.set(js_sys::Date::now().to_string());
-                set_timeout(move || {
-                    set_current_input.update(|s| { s.pop(); });
-                    set_last_typed_index.set(-1);
-                }, std::time::Duration::from_millis(150));
+                set_timeout(move || { set_current_input.update(|s| { s.pop(); }); set_last_typed_index.set(-1); }, std::time::Duration::from_millis(150));
             }
         } else if current_input.get().len() < 5 {
             let next_idx = current_input.get().len() as i32;
@@ -346,9 +356,7 @@ fn App() -> impl IntoView {
         let mut text = format!("Rustle {} {}/6\n\n", solution_data.get().solution_index, if game_won.get() { guesses.get().len().to_string() } else { "X".to_string() });
         for g in guesses.get() {
             let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &g.to_uppercase())).unwrap_or_default();
-            for s in statuses {
-                text.push_str(match s.as_str() { "correct" => "🟩", "present" => "🟨", _ => "⬛" });
-            }
+            for s in statuses { text.push_str(match s.as_str() { "correct" => "🟩", "present" => "🟨", _ => "⬛" }); }
             text.push('\n');
         }
         let _ = window().navigator().clipboard().write_text(&text);
@@ -371,7 +379,7 @@ fn App() -> impl IntoView {
         <div class="flex min-h-screen flex-col items-center py-4 sm:py-8 transition-all duration-500 px-2 overflow-x-hidden">
             <div class="w-full max-w-[600px] flex flex-col items-center">
                 <nav class="w-full grid grid-cols-3 items-center px-4 mb-4 sm:mb-8 glass-pad py-2">
-                    <div class="flex gap-2 justify-start">
+                    <div class="flex gap-2 justify-start text-white">
                         <button on:click=move |_| set_show_stats.set(true) class="correct-pad w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
@@ -471,11 +479,11 @@ fn App() -> impl IntoView {
             </Modal>
 
             <Modal title="Settings".to_string() is_open=show_settings set_is_open=set_show_settings>
-                <div class="flex flex-col gap-6 text-white text-white">
+                <div class="flex flex-col gap-6 text-white">
                     <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30">
                         <div>
-                            <div class="font-bold">"Hard Mode"</div>
-                            <div class="text-xs opacity-70">"Strict validation of clues"</div>
+                            <div class="font-bold text-white">"Hard Mode"</div>
+                            <div class="text-xs opacity-70 text-white">"Strict validation of clues"</div>
                             {move || if !guesses.get().is_empty() { view! { <div class="text-[10px] text-red-400 mt-1 font-bold uppercase tracking-tighter italic">"Game in progress"</div> }.into_view() } else { view! {}.into_view() }}
                         </div>
                         <button on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) }
@@ -484,11 +492,11 @@ fn App() -> impl IntoView {
                         </button>
                     </div>
                     <div class="space-y-4">
-                        <h3 class="text-sm font-black uppercase tracking-widest text-center opacity-80">"How to Play"</h3>
+                        <h3 class="text-sm font-black uppercase tracking-widest text-center opacity-80 text-white">"How to Play"</h3>
                         <div class="space-y-3">
                             <div class="flex flex-col items-center gap-1">
                                 <div class="flex">
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent correct font-black">"R"</div>
+                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent correct font-black text-white">"R"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"U"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"S"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"T"</div>
@@ -511,14 +519,14 @@ fn App() -> impl IntoView {
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral font-bold">"V"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"A"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"G"</div>
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent absent mx-0.5 font-black">"U"</div>
+                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent absent mx-0.5 font-black text-white">"U"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"E"</div>
                                 </div>
                                 <div class="text-[10px] opacity-70">"U is not in the word in any spot."</div>
                             </div>
                         </div>
                     </div>
-                    <div class="text-[10px] opacity-40 italic text-center mt-2">"Rustle Version 1.0.0 (Pure Rust)"</div>
+                    <div class="text-[10px] opacity-40 italic text-center mt-2 text-white">"Rustle Version 1.0.0 (Pure Rust)"</div>
                 </div>
             </Modal>
 

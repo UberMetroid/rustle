@@ -67,15 +67,15 @@ function App() {
   const [currentRowClass, setCurrentRowClass] = useState('')
   const [isGameLost, setIsGameLost] = useState(false)
   const [isWasmReady, setIsWasmReady] = useState(false)
+  const [didShowInfoModal, setDidShowInfoModal] = useState(false)
 
-  // Provide a safe fallback so the UI never crashes if Wasm is slow or fails
   const [solutionData, setSolutionData] = useState<{
     solution: string
     solutionGameDate: Date
     solutionIndex: number
     tomorrow: number
   }>({
-    solution: '.....', // 5 spaces to ensure grid renders
+    solution: '.....',
     solutionGameDate: new Date(),
     solutionIndex: 0,
     tomorrow: 0,
@@ -120,8 +120,6 @@ function App() {
       })
       .catch((e) => {
         console.error('Wasm Init Failed:', e)
-        // We could show an alert here, but for now we'll just fail silently
-        // so the user sees the grid at least.
       })
 
     return () => {
@@ -130,12 +128,17 @@ function App() {
   }, [gameDate, isLatestGame])
 
   useEffect(() => {
-    if (isWasmReady && !loadGameStateFromLocalStorage(true)) {
+    if (
+      isWasmReady &&
+      !didShowInfoModal &&
+      !loadGameStateFromLocalStorage(true)
+    ) {
+      setDidShowInfoModal(true)
       setTimeout(() => {
         setIsInfoModalOpen(true)
       }, WELCOME_INFO_MODAL_MS)
     }
-  }, [isWasmReady])
+  }, [isWasmReady, didShowInfoModal])
 
   useEffect(() => {
     DISCOURAGE_INAPP_BROWSERS &&
@@ -283,7 +286,7 @@ function App() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-screen flex-col">
       <Navbar
         setIsInfoModalOpen={setIsInfoModalOpen}
         setIsStatsModalOpen={setIsStatsModalOpen}

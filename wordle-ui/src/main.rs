@@ -78,12 +78,12 @@ fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool, is_
     if is_loss { return "Poseur.".to_string(); }
     if is_win {
         let win_msgs = match tries {
-            1 => vec!["HACKER!", "Pure Luck.", "Sus physics.", "God Mode."],
-            2 => vec!["Radical!", "Tubular!", "Showoff.", "Excellent!"],
-            3 => vec!["Solid mid.", "Typical.", "Choice.", "Right on."],
-            4 => vec!["Finally.", "Getting slow?", "Analog brain."],
-            5 => vec!["Panic yet?", "Sweaty.", "Close one.", "Danger Zone."],
-            6 => vec!["Barely.", "Yikes.", "Scrub tier.", "Bogus win."],
+            1 => vec!["HACKER!", "Pure Luck.", "Sus physics.", "God Mode active.", "Keyboard Cowboy."],
+            2 => vec!["Radical!", "Tubular!", "Showoff.", "Maximum Overdrive.", "Excellent!", "Righteous."],
+            3 => vec!["Solid mid.", "Typical.", "Choice.", "Right on.", "Righteous.", "Stay gold."],
+            4 => vec!["Finally.", "Took your time.", "Getting slow?", "Analog brain.", "Manual override."],
+            5 => vec!["Panic yet?", "Sweaty.", "Close one.", "Danger Zone.", "Tracking error.", "Static..."],
+            6 => vec!["Barely.", "Yikes.", "Scrub tier.", "Bogus win.", "Poseur alert.", "Last life."],
             _ => vec!["Win."],
         };
         let mut msg = win_msgs[js_sys::Math::floor(js_sys::Math::random() * win_msgs.len() as f64) as usize].to_string();
@@ -247,6 +247,17 @@ fn App() -> impl IntoView {
         }
     });
 
+    // THEME SYNC EFFECT
+    create_effect(move |_| {
+        let t = theme.get();
+        if let Some(el) = document().document_element() {
+            let _ = el.set_attribute("class", &format!("theme-{}", t));
+        }
+        if let Some(storage) = get_storage() {
+            let _ = storage.set_item("color-theme", &t);
+        }
+    });
+
     let char_statuses = create_memo(move |_| {
         let mut map = HashMap::new();
         let gs = guesses.get();
@@ -357,7 +368,7 @@ fn App() -> impl IntoView {
                     set_ai_pool.set(res.new_pool.clone());
                 }
             } else {
-                current_pattern = serde_wasm_bindgen::from_value(wordle_engine::get_guess_statuses(&sol, &input)).unwrap_or_default();
+                current_pattern = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &input)).unwrap_or_default();
             }
             
             if current_pattern.is_empty() { return; }
@@ -433,12 +444,6 @@ fn App() -> impl IntoView {
             let c = key.chars().next().unwrap();
             if c.is_ascii_alphabetic() { on_key(c.to_uppercase().to_string()); }
         }
-    });
-
-    create_effect(move |_| {
-        let t = theme.get();
-        if let Some(el) = document().document_element() { let _ = el.set_attribute("class", &format!("theme-{}", t)); }
-        if let Some(storage) = get_storage() { let _ = storage.set_item("color-theme", &t); }
     });
 
     create_effect(move |_| {
@@ -644,10 +649,7 @@ fn App() -> impl IntoView {
                             set_snarky_comment.set("Results Copied, poseur.".to_string());
                             set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));
                             
-                            // AUTO-TRIGGER AI MODE AFTER SHARING
-                            if !is_ai_mode.get() {
-                                start_ai_mode_internal();
-                            }
+                            if !is_ai_mode.get() { start_ai_mode_internal(); }
                         } class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest"> "SHARE" </button>
                     </Show>
                 </div>

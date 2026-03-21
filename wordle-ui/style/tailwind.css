@@ -125,7 +125,7 @@ body {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: inset 0 0 20px rgba(0,0,0,0.2), 0 4px 15px rgba(0,0,0,0.3);
-  border-radius: 1.5rem !important; /* Force all corners rounded */
+  border-radius: 1.5rem !important;
 }
 
 .theme-default .glass-pad {
@@ -174,28 +174,34 @@ body {
   100% { transform: translateX(0); }
 }
 
-/* Slidding Toggle Styling */
-.theme-slider-track {
-  width: 160px;
-  height: 32px;
-  background: rgba(0,0,0,0.3);
-  border-radius: 16px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  padding: 0 4px;
-  border: 1px solid rgba(255,255,255,0.1);
+/* Fancy Dashboard Style Range Slider */
+.theme-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 120px;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #0f172a 0%, #dc2626 16%, #ea580c 33%, #eab308 50%, #22c55e 60%, #2563eb 75%, #a855f7 90%, #fdf6e3 100%);
+  outline: none;
+  cursor: pointer;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
 }
 
-.theme-slider-thumb {
-  width: 28px;
-  height: 24px;
-  background: white;
-  border-radius: 12px;
-  position: absolute;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-  z-index: 5;
+.theme-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--theme-primary);
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
 }
 
 .toast-slide {

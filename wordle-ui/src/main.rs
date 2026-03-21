@@ -44,7 +44,7 @@ struct StoredState {
 fn Cell(value: char, status: String, position: usize, is_revealing: bool) -> impl IntoView {
     let delay = position * 350;
     let classes = move || {
-        let mut base = "w-12 h-12 sm:w-14 sm:h-14 border-solid border-2 flex items-center justify-center mx-0.5 text-2xl sm:text-4xl font-bold rounded transition-all duration-300".to_string();
+        let mut base = "w-12 h-12 sm:w-14 sm:h-14 border-solid border-2 flex items-center justify-center mx-0.5 text-2xl sm:text-4xl font-bold rounded-xl transition-all duration-300".to_string();
         if !status.is_empty() { base.push_str(&format!(" {}", status)); }
         if is_revealing { base.push_str(" cell-reveal"); }
         base
@@ -76,7 +76,7 @@ fn Modal(title: String, is_open: ReadSignal<bool>, set_is_open: WriteSignal<bool
     view! {
         <Show when=move || is_open.get()>
             <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50" on:click=move |_| set_is_open.set(false)>
-                <div class="glass-pad w-full max-w-sm rounded-3xl p-6 shadow-2xl transition-all scale-up" on:click=move |ev| ev.stop_propagation()>
+                <div class="glass-pad w-full max-w-sm p-6 shadow-2xl transition-all scale-up" on:click=move |ev| ev.stop_propagation()>
                     <div class="flex justify-between items-center mb-4 text-white">
                         <h2 class="text-2xl font-black tracking-tighter"> {title_clone.clone()} </h2>
                         <button on:click=move |_| set_is_open.set(false) class="text-2xl font-bold hover:text-red-500"> "×" </button>
@@ -276,7 +276,7 @@ fn App() -> impl IntoView {
     view! {
         <div class="flex h-screen flex-col items-center justify-between py-4 sm:py-8 overflow-hidden transition-all duration-500 text-black dark:text-white px-2">
             <div class="w-full max-w-[550px] flex flex-col items-center">
-                <nav class="w-full flex justify-between items-center px-4 mb-4 sm:mb-8 py-2 glass-pad rounded-3xl">
+                <nav class="w-full flex justify-between items-center px-4 mb-4 sm:mb-8 py-3 glass-pad">
                     <div class="flex gap-3">
                         <button on:click=move |_| set_show_stats.set(true) class="hover:scale-110 transition-transform">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
@@ -285,30 +285,31 @@ fn App() -> impl IntoView {
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
-                    <h1 class="text-2xl sm:text-3xl font-black tracking-tighter italic mr-4 title-text transition-colors duration-500">"RUSTLE"</h1>
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-tighter italic mr-4 title-text transition-all duration-500">"RUSTLE"</h1>
                     
-                    <div class="theme-slider-track">
-                        {move || {
-                            let themes = vec!["retro", "cyberpunk", "nord", "default", "solarized"];
-                            let theme_val = theme.get();
-                            let index = themes.iter().position(|&t| t == theme_val).unwrap_or(3);
-                            view! {
-                                <div class="theme-slider-thumb" style=format!("left: {}px", 4 + (index * 30)) />
-                                {themes.into_iter().map(|t| {
-                                    view! {
-                                        <button 
-                                            class="z-10 w-[28px] h-6 rounded-full cursor-pointer"
-                                            on:click=move |_| set_theme.set(t.to_string())
-                                            title=t
-                                        />
-                                    }
-                                }).collect_view()}
-                            }
-                        }}
-                    </div>
+                    // Fancy Range Slider from Dashboard
+                    {move || {
+                        let themes = vec!["retro", "cyberpunk", "nord", "default", "solarized"];
+                        let current = theme.get();
+                        let index = themes.iter().position(|&t| t == current).unwrap_or(3);
+                        view! {
+                            <input 
+                                type="range" 
+                                min="0" 
+                                max="4" 
+                                step="1" 
+                                value=index
+                                class="theme-slider"
+                                on:input=move |ev| {
+                                    let val = event_target_value(&ev).parse::<usize>().unwrap_or(3);
+                                    set_theme.set(themes[val].to_string());
+                                }
+                            />
+                        }
+                    }}
                 </nav>
 
-                <div class="glass-pad rounded-3xl p-4 sm:p-8">
+                <div class="glass-pad p-4 sm:p-8">
                     <div class="flex flex-col gap-1 sm:gap-2">
                         {move || guesses.get().into_iter().map(|g| { view! { <Row guess=g solution=solution_data.get().solution is_revealing=true is_jiggling=Signal::derive(|| false) /> } }).collect_view()}
                         {move || if guesses.get().len() < 6 && !game_won.get() { 
@@ -321,7 +322,7 @@ fn App() -> impl IntoView {
                 </div>
             </div>
 
-            <div class="mt-4 w-full max-w-[550px] px-4 py-4 glass-pad rounded-3xl flex flex-col items-center text-white">
+            <div class="mt-4 w-full max-w-[550px] px-4 py-4 glass-pad flex flex-col items-center text-white">
                 {move || {
                     let rows = vec![vec!['Q','W','E','R','T','Y','U','I','O','P'], vec!['A','S','D','F','G','H','J','K','L'], vec!['Z','X','C','V','B','N','M']];
                     rows.into_iter().enumerate().map(|(i, row)| {
@@ -395,9 +396,9 @@ fn App() -> impl IntoView {
             {move || if !alert_message.get().is_empty() {
                 view! { <div class="fixed top-24 px-4 py-2 rounded-xl bg-black text-white font-bold shadow-xl glass z-[100] animate-bounce toast-slide"> {alert_message.get()} </div> }.into_view()
             } else if game_won.get() {
-                view! { <div class="fixed top-24 px-6 py-3 rounded-full bg-green-500 text-white font-black text-xl shadow-2xl animate-bounce glass"> "AMAZING! YOU WON!" </div> }.into_view() 
+                view! { <div class="fixed top-24 px-6 py-3 rounded-full bg-green-500 text-white font-black text-xl shadow-2xl animate-bounce glass text-center"> "AMAZING! YOU WON!" </div> }.into_view() 
             } else if game_lost.get() {
-                view! { <div class="fixed top-24 px-6 py-3 rounded-full bg-red-500 text-white font-black text-xl shadow-2xl glass uppercase font-black"> {format!("The word was: {}", solution_data.get().solution)} </div> }.into_view() 
+                view! { <div class="fixed top-24 px-6 py-3 rounded-full bg-red-500 text-white font-black text-xl shadow-2xl glass uppercase font-black text-center"> {format!("The word was: {}", solution_data.get().solution)} </div> }.into_view() 
             } else { view! {}.into_view() }}
         </div>
     }

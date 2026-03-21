@@ -1,5 +1,5 @@
 use leptos::*;
-use word_engine::{get_solution, is_word_in_list, get_ai_word_list, get_adversarial_step};
+use word_engine::{get_solution, is_word_in_list, get_guess_statuses, get_ai_word_list, get_adversarial_step};
 use serde::{Serialize, Deserialize};
 use wasm_bindgen::prelude::*;
 use std::collections::HashMap;
@@ -72,22 +72,18 @@ fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool, is_
     if is_ai {
         if is_win { return "SYSTEM BREACHED. IMPRESSIVE.".to_string(); }
         if is_loss { return "THE SYSTEM WINS. LOG OFF.".to_string(); }
-        return vec![
-            "CALCULATING ENTROPY...", "I AM THE SYSTEM.", "GLITCH DETECTED.",
-            "SHALL WE PLAY A GAME?", "ACCESS DENIED.", "DATA CORRUPTION...",
-            "TRON CALLED.", "DIGITAL ENTROPY MAXIMIZED."
-        ][js_sys::Math::floor(js_sys::Math::random() * 8.0) as usize].to_string();
+        let msgs = vec!["CALCULATING...", "I AM THE SYSTEM.", "GLITCH DETECTED.", "PLAY A GAME?", "ACCESS DENIED.", "DATA CORRUPTION...", "TRON CALLED.", "MAX ENTROPY."];
+        return msgs[js_sys::Math::floor(js_sys::Math::random() * msgs.len() as f64) as usize].to_string();
     }
-
     if is_loss { return "Poseur.".to_string(); }
     if is_win {
         let win_msgs = match tries {
-            1 => vec!["HACKER!", "Pure Luck.", "Sus physics.", "God Mode active.", "Keyboard Cowboy."],
-            2 => vec!["Radical!", "Tubular!", "Showoff.", "Maximum Overdrive.", "Excellent!", "Righteous."],
-            3 => vec!["Righteous.", "Choice.", "Solid mid.", "Right on.", "Righteous.", "Stay gold."],
-            4 => vec!["Finally.", "Took your time.", "Getting slow?", "Analog brain.", "Manual override."],
-            5 => vec!["Panic yet?", "Sweaty.", "Close one.", "Danger Zone.", "Tracking error.", "Static..."],
-            6 => vec!["Barely.", "Yikes.", "Scrub tier.", "Bogus win.", "Poseur alert.", "Last life."],
+            1 => vec!["HACKER!", "Pure Luck.", "Sus physics.", "God Mode."],
+            2 => vec!["Radical!", "Tubular!", "Showoff.", "Excellent!"],
+            3 => vec!["Solid mid.", "Typical.", "Choice.", "Right on."],
+            4 => vec!["Finally.", "Getting slow?", "Analog brain."],
+            5 => vec!["Panic yet?", "Sweaty.", "Close one.", "Danger Zone."],
+            6 => vec!["Barely.", "Yikes.", "Scrub tier.", "Bogus win."],
             _ => vec!["Win."],
         };
         let mut msg = win_msgs[js_sys::Math::floor(js_sys::Math::random() * win_msgs.len() as f64) as usize].to_string();
@@ -266,6 +262,18 @@ fn App() -> impl IntoView {
         map
     });
 
+    let start_ai_mode_internal = move || {
+        set_is_ai_mode.set(true);
+        set_guesses.set(vec![]);
+        set_guess_statuses_vec.set(vec![]);
+        set_game_won.set(false);
+        set_game_lost.set(false);
+        set_snarky_comment.set("THE SYSTEM IS ONLINE.".to_string());
+        let list: Vec<String> = serde_wasm_bindgen::from_value(get_ai_word_list()).unwrap_or_default();
+        set_ai_pool.set(list);
+        if let Some(storage) = get_storage() { let _ = storage.remove_item("game-state"); }
+    };
+
     let on_key = move |key: String| {
         if game_won.get() || game_lost.get() { return; }
         if key == "ENTER" {
@@ -342,13 +350,14 @@ fn App() -> impl IntoView {
 
             let mut current_pattern = vec![];
             if is_ai_mode.get() {
-                let val = get_adversarial_step(&input, serde_wasm_bindgen::to_value(&ai_pool.get()).unwrap());
+                let pool_val = serde_wasm_bindgen::to_value(&ai_pool.get()).unwrap();
+                let val = get_adversarial_step(&input, pool_val);
                 if let Ok(res) = serde_wasm_bindgen::from_value::<AdversarialResult>(val) {
                     current_pattern = res.pattern;
-                    set_ai_pool.set(res.new_pool);
+                    set_ai_pool.set(res.new_pool.clone());
                 }
             } else {
-                current_pattern = serde_wasm_bindgen::from_value(word_engine::get_guess_statuses(&sol, &input)).unwrap_or_default();
+                current_pattern = serde_wasm_bindgen::from_value(wordle_engine::get_guess_statuses(&sol, &input)).unwrap_or_default();
             }
             
             if current_pattern.is_empty() { return; }
@@ -426,17 +435,16 @@ fn App() -> impl IntoView {
         }
     });
 
-    let start_ai_mode = move |_| {
-        set_is_ai_mode.set(true);
-        set_guesses.set(vec![]);
-        set_guess_statuses_vec.set(vec![]);
-        set_game_won.set(false);
-        set_game_lost.set(false);
-        set_snarky_comment.set("THE SYSTEM IS ONLINE.".to_string());
-        let list: Vec<String> = serde_wasm_bindgen::from_value(get_ai_word_list()).unwrap_or_default();
-        set_ai_pool.set(list);
-        if let Some(storage) = get_storage() { let _ = storage.remove_item("game-state"); }
-    };
+    create_effect(move |_| {
+        let t = theme.get();
+        if let Some(el) = document().document_element() { let _ = el.set_attribute("class", &format!("theme-{}", t)); }
+        if let Some(storage) = get_storage() { let _ = storage.set_item("color-theme", &t); }
+    });
+
+    create_effect(move |_| {
+        let h = hard_mode.get();
+        if let Some(storage) = get_storage() { let _ = storage.set_item("hard-mode", if h { "true" } else { "false" }); }
+    });
 
     view! {
         <div class="flex flex-col h-full transition-all duration-500 px-2 bg-app-bg text-app-text">
@@ -459,10 +467,10 @@ fn App() -> impl IntoView {
                             </svg>
                         </button>
                         <button 
-                            on:click=start_ai_mode
+                            on:click=move |_| start_ai_mode_internal()
                             disabled=move || !daily_game_done.get() || is_ai_mode.get()
                             title="AI Mode" 
-                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if is_ai_mode.get() { "ai-active-pad border-transparent" } else if daily_game_done.get() { "cell-neutral border-current" } else { "opacity-30 grayscale cursor-not-allowed border-current" })
+                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if is_ai_mode.get() { "ai-active-pad border-transparent shadow-[0_0_20px_rgba(255,0,255,0.8)]" } else if daily_game_done.get() { "cell-neutral border-current" } else { "opacity-30 grayscale cursor-not-allowed border-current" })
                         >
                             <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if is_ai_mode.get() { "text-white scale-110 drop-shadow-[0_0_12px_rgba(255,0,255,1)]" } else { "text-current opacity-40" }) fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
@@ -635,6 +643,11 @@ fn App() -> impl IntoView {
                             let _ = window().navigator().clipboard().write_text(&text);
                             set_snarky_comment.set("Results Copied, poseur.".to_string());
                             set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));
+                            
+                            // AUTO-TRIGGER AI MODE AFTER SHARING
+                            if !is_ai_mode.get() {
+                                start_ai_mode_internal();
+                            }
                         } class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest"> "SHARE" </button>
                     </Show>
                 </div>

@@ -189,15 +189,23 @@ body {
   }
 }
 
-/* THEME BUTTONS */
-.theme-dot {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+/* UNIFIED BUTTON SHAPE FOR THEMES */
+.theme-square {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  border: 2px solid rgba(255, 255, 255, 0.15);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
 }
 
-.theme-dot:hover { transform: scale(1.2); }
-.theme-dot.active { border-color: white; box-shadow: 0 0 12px currentColor; transform: scale(1.3); }
+@media (min-width: 640px) {
+  .theme-square {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 1rem;
+  }
+}
+
+.theme-square:hover { transform: scale(1.1); filter: brightness(1.2); }
+.theme-square.active { border-color: white; box-shadow: 0 0 15px currentColor; transform: scale(1.15); }

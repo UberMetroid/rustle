@@ -18,7 +18,7 @@
 
     <link data-trunk rel="tailwind-css" href="style/tailwind.css">
     <script>
-        function cyberpunkVictory(theme) {
+        function cyberpunkVictory(theme, isHard, isNGPlus) {
             const canvas = document.createElement('canvas');
             canvas.style.position = 'fixed';
             canvas.style.inset = '0';
@@ -30,100 +30,128 @@
             let width = canvas.width = window.innerWidth;
             let height = canvas.height = window.innerHeight;
 
+            // SCALING FACTORS
+            const powerMult = (isHard ? 1.5 : 1.0) * (isNGPlus ? 2.0 : 1.0);
+            const duration = 120 * powerMult;
+
             const effects = {
-                dark: () => { // STROBE FLICKER
+                dark: () => { // DIGITAL VOID - GLITCH STROBE
                     let frames = 0;
                     const run = () => {
                         ctx.clearRect(0, 0, width, height);
-                        if (frames % 4 < 2) {
-                            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-                            ctx.fillRect(0, 0, width, height);
+                        if (Math.random() < 0.3 * powerMult) {
+                            ctx.fillStyle = `rgba(255, 255, 255, ${0.1 * powerMult})`;
+                            ctx.fillRect(Math.random() * width, 0, Math.random() * 100, height);
+                            ctx.fillRect(0, Math.random() * height, width, Math.random() * 50);
                         }
                         frames++;
-                        if (frames < 120) requestAnimationFrame(run);
+                        if (frames < duration) requestAnimationFrame(run);
                         else canvas.remove();
                     };
                     run();
                 },
-                red: () => { // CRITICAL OVERLOAD
-                    let radius = 0;
+                red: () => { // EMERGENCY MELTDOWN - RADIAL SHOCKWAVES
+                    let rings = [];
+                    let frames = 0;
                     const run = () => {
-                        ctx.fillStyle = 'rgba(24, 0, 0, 0.1)';
+                        ctx.fillStyle = 'rgba(24, 0, 0, 0.2)';
                         ctx.fillRect(0, 0, width, height);
-                        ctx.strokeStyle = '#ff4444';
-                        ctx.lineWidth = 10;
-                        ctx.beginPath();
-                        ctx.arc(width/2, height/2, radius, 0, Math.PI * 2);
-                        ctx.stroke();
-                        radius += 25;
-                        if (radius < width) requestAnimationFrame(run);
+                        
+                        if (frames % Math.floor(10/powerMult) === 0) rings.push({ r: 0, a: 1 });
+                        
+                        rings.forEach((ring, i) => {
+                            ctx.strokeStyle = `rgba(255, 68, 68, ${ring.a})`;
+                            ctx.lineWidth = 15 * powerMult;
+                            ctx.beginPath();
+                            ctx.arc(width/2, height/2, ring.r, 0, Math.PI * 2);
+                            ctx.stroke();
+                            ring.r += 20 * powerMult;
+                            ring.a -= 0.02;
+                            if (ring.a <= 0) rings.splice(i, 1);
+                        });
+
+                        frames++;
+                        if (frames < duration * 1.5) requestAnimationFrame(run);
                         else canvas.remove();
                     };
                     run();
                 },
-                green: () => { // MATRIX RAIN
+                green: () => { // MATRIX OVERLOAD
                     const columns = Math.floor(width / 20);
                     const drops = Array(columns).fill(1);
                     let frames = 0;
                     const run = () => {
-                        ctx.fillStyle = 'rgba(0, 26, 10, 0.1)';
+                        ctx.fillStyle = 'rgba(0, 26, 10, 0.15)';
                         ctx.fillRect(0, 0, width, height);
                         ctx.fillStyle = '#39ff14';
-                        ctx.font = '20px monospace';
+                        ctx.font = `${Math.floor(20 * powerMult)}px monospace`;
+                        ctx.shadowBlur = 10 * powerMult;
+                        ctx.shadowColor = '#39ff14';
+
                         for(let i = 0; i < drops.length; i++) {
-                            const text = String.fromCharCode(Math.random() * 128);
+                            const text = String.fromCharCode(0x30A0 + Math.random() * 96);
                             ctx.fillText(text, i * 20, drops[i] * 20);
-                            if(drops[i] * 20 > height && Math.random() > 0.975) drops[i] = 0;
-                            drops[i]++;
+                            if(drops[i] * 20 > height && Math.random() > 0.95) drops[i] = 0;
+                            drops[i] += powerMult;
                         }
                         frames++;
-                        if (frames < 200) requestAnimationFrame(run);
+                        if (frames < duration * 2) requestAnimationFrame(run);
                         else canvas.remove();
                     };
                     run();
                 },
-                blue: () => { // DATA STREAM
-                    const particles = Array(50).fill().map(() => ({
-                        x: Math.random() * width,
-                        y: Math.random() * height,
-                        v: 10 + Math.random() * 20
+                blue: () => { // NEURAL UPLINK - FLYING HEXAGONS
+                    const hexes = Array(Math.floor(20 * powerMult)).fill().map(() => ({
+                        x: width/2, y: height/2, 
+                        vx: (Math.random() - 0.5) * 30 * powerMult,
+                        vy: (Math.random() - 0.5) * 30 * powerMult,
+                        s: 1, a: 1
                     }));
                     let frames = 0;
                     const run = () => {
                         ctx.fillStyle = 'rgba(0, 10, 26, 0.2)';
                         ctx.fillRect(0, 0, width, height);
-                        ctx.fillStyle = '#2563eb';
-                        particles.forEach(p => {
-                            ctx.fillRect(p.x, p.y, 2, 40);
-                            p.y += p.v;
-                            if (p.y > height) p.y = -40;
+                        
+                        hexes.forEach(h => {
+                            ctx.strokeStyle = `rgba(37, 99, 235, ${h.a})`;
+                            ctx.lineWidth = 3 * powerMult;
+                            ctx.beginPath();
+                            for(let i=0; i<6; i++) {
+                                let angle = i * Math.PI / 3;
+                                let px = h.x + Math.cos(angle) * 50 * h.s;
+                                let py = h.y + Math.sin(angle) * 50 * h.s;
+                                if(i===0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                            }
+                            ctx.closePath();
+                            ctx.stroke();
+                            h.x += h.vx; h.y += h.vy; h.s += 0.05 * powerMult; h.a -= 0.01;
                         });
+
                         frames++;
-                        if (frames < 150) requestAnimationFrame(run);
+                        if (frames < duration) requestAnimationFrame(run);
                         else canvas.remove();
                     };
                     run();
                 },
-                white: () => { // SYSTEM PURGE (WHITEOUT)
-                    let alpha = 0;
+                white: () => { // TOTAL SYSTEM PURGE - FRAGMENTATION
+                    let particles = Array(Math.floor(100 * powerMult)).fill().map(() => ({
+                        x: width/2, y: height/2,
+                        v: 10 + Math.random() * 20 * powerMult,
+                        angle: Math.random() * Math.PI * 2,
+                        size: 2 + Math.random() * 8
+                    }));
+                    let frames = 0;
                     const run = () => {
                         ctx.clearRect(0, 0, width, height);
-                        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-                        ctx.fillRect(0, 0, width, height);
-                        if (alpha < 1) {
-                            alpha += 0.05;
-                            requestAnimationFrame(run);
-                        } else {
-                            const fade = () => {
-                                alpha -= 0.05;
-                                ctx.clearRect(0, 0, width, height);
-                                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-                                ctx.fillRect(0, 0, width, height);
-                                if (alpha > 0) requestAnimationFrame(fade);
-                                else canvas.remove();
-                            };
-                            fade();
-                        }
+                        ctx.fillStyle = `rgba(255, 255, 255, ${1 - frames/duration})`;
+                        particles.forEach(p => {
+                            ctx.fillRect(p.x, p.y, p.size, p.size);
+                            p.x += Math.cos(p.angle) * p.v;
+                            p.y += Math.sin(p.angle) * p.v;
+                        });
+                        frames++;
+                        if (frames < duration) requestAnimationFrame(run);
+                        else canvas.remove();
                     };
                     run();
                 }

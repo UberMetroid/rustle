@@ -8,7 +8,7 @@ use wasm_bindgen::JsCast;
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_name = cyberpunkVictory)]
-    fn celebrate(theme: &str);
+    fn celebrate(theme: &str, is_hard: bool, is_ng_plus: bool);
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -431,7 +431,10 @@ fn App() -> impl IntoView {
             if is_win {
                 set_game_won.set(true);
                 if !is_ng_plus.get() { set_daily_game_done.set(true); }
-                set_timeout(move || celebrate(&theme.get()), std::time::Duration::from_millis(1800));
+                
+                // TRIGGER SCALED CYBERPUNK CELEBRATION
+                set_timeout(move || celebrate(&theme.get(), hard_mode.get(), is_ng_plus.get()), std::time::Duration::from_millis(1800));
+
                 set_stats.update(|s| {
                     s.total_games += 1; s.wins += 1; s.current_streak += 1;
                     if s.current_streak > s.best_streak { s.best_streak = s.current_streak; }
@@ -560,11 +563,11 @@ fn App() -> impl IntoView {
 
                 <aside class="flex flex-col gap-3 py-4 shrink-0 px-2">
                     <div class="glass-pad p-2 flex flex-col gap-4 shadow-xl">
-                        <button on:click=move |_| set_theme.set("dark".to_string()) title="Dark Theme" class=move || format!("theme-dot bg-black active:scale-125 {}", if theme.get() == "dark" { "active ring-2 ring-white ring-offset-2 ring-offset-black" } else { "" }) />
-                        <button on:click=move |_| set_theme.set("red".to_string()) title="Red Theme" class=move || format!("theme-dot bg-red-600 active:scale-125 {}", if theme.get() == "red" { "active ring-2 ring-white ring-offset-2 ring-offset-red-600" } else { "" }) />
-                        <button on:click=move |_| set_theme.set("green".to_string()) title="Green Theme" class=move || format!("theme-dot bg-green-600 active:scale-125 {}", if theme.get() == "green" { "active ring-2 ring-white ring-offset-2 ring-offset-green-600" } else { "" }) />
-                        <button on:click=move |_| set_theme.set("blue".to_string()) title="Blue Theme" class=move || format!("theme-dot bg-blue-600 active:scale-125 {}", if theme.get() == "blue" { "active ring-2 ring-white ring-offset-2 ring-offset-blue-600" } else { "" }) />
-                        <button on:click=move |_| set_theme.set("white".to_string()) title="White Theme" class=move || format!("theme-dot bg-white active:scale-125 {}", if theme.get() == "white" { "active ring-2 ring-gray-400 ring-offset-2 ring-offset-white" } else { "" }) />
+                        <button on:click=move |_| set_theme.set("dark".to_string()) title="Dark Theme" class=move || format!("theme-square bg-black active:scale-125 {}", if theme.get() == "dark" { "active ring-2 ring-white ring-offset-2 ring-offset-black" } else { "" }) />
+                        <button on:click=move |_| set_theme.set("red".to_string()) title="Red Theme" class=move || format!("theme-square bg-red-600 active:scale-125 {}", if theme.get() == "red" { "active ring-2 ring-white ring-offset-2 ring-offset-red-600" } else { "" }) />
+                        <button on:click=move |_| set_theme.set("green".to_string()) title="Green Theme" class=move || format!("theme-square bg-green-600 active:scale-125 {}", if theme.get() == "green" { "active ring-2 ring-white ring-offset-2 ring-offset-green-600" } else { "" }) />
+                        <button on:click=move |_| set_theme.set("blue".to_string()) title="Blue Theme" class=move || format!("theme-square bg-blue-600 active:scale-125 {}", if theme.get() == "blue" { "active ring-2 ring-white ring-offset-2 ring-offset-blue-600" } else { "" }) />
+                        <button on:click=move |_| set_theme.set("white".to_string()) title="White Theme" class=move || format!("theme-square bg-white active:scale-125 {}", if theme.get() == "white" { "active ring-2 ring-gray-400 ring-offset-2 ring-offset-white" } else { "" }) />
                     </div>
                 </aside>
             </main>

@@ -18,5 +18,5 @@ COPY --from=prod_builder /app/build /usr/share/nginx/html/react-wordle
 COPY docker/build_system.sh .
 RUN ./build_system.sh && rm ./build_system.sh
 # port use by Nginx within docker network.
-EXPOSE 8080
+EXPOSE 7583
 USER reactle

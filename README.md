@@ -8,67 +8,51 @@ This is a clone project of the popular word guessing game we all know and love. 
 
 [**Try it out!**](https://ubermetroid.github.io/rust-wordle/)
 
-# Breaking changes note
-This repo has now been merged with the old Worlde repo which had the old NYT container. 
+---
 
-The reasoning for this is to lower maintenance across multiple repos and reduce build time. 
+## 🚀 Installation & Setup
 
-There is also a [Github pages](https://ubermetroid.github.io/rust-wordle/) version of "latest".
+### 🐳 Running with Docker (Recommended)
 
-As such, there is a new configuration: 
+Images are automatically built and hosted on the GitHub Container Registry (**GHCR**).
 
-## Latest
-This is a new version of Wordle, created by [cwackerfuss](https://github.com/cwackerfuss/react-wordle), and as such, it will not match with the latest "Word of the day". 
+#### **Latest Version**
+The most up-to-date version of the React application.
+*   **Docker Run:**
+    ```bash
+    docker run -d -p 7583:7583 --name wordle-latest ghcr.io/ubermetroid/rust-wordle/latest:latest
+    ```
+*   **Docker Compose:**
+    ```yaml
+    version: "3"
+    services:
+      wordle:
+        image: ghcr.io/ubermetroid/rust-wordle/latest:latest
+        container_name: wordle-latest
+        ports:
+          - "7583:7583"
+    ```
 
-Please see the configuration below to set this up. 
-
-## Legacy
-This is the original Worlde, cloned from the orignal website, and shunted into an Nginx container. This is as close as you'll get to the NYT version, and it should be in line with the latest word of the day. 
-
-This will not be updated, except for security updates and Nginx updates.
-
-Please see the configuration below to set this up.
-
-# Configuration
-
-## Latest
-Note: Sharing feature requires this to be hosted via https as per [#331](https://github.com/cwackerfuss/react-wordle/issues/331#issuecomment-1073155476).
-
-```yaml
-version: "2.4"
-
-services:
-
-  wordle:
-    image: ghcr.io/ubermetroid/rust-wordle/latest:latest
-    container_name: Wordle
-    ports:
-      - 80:8080
-```
-
-## Legacy
-
-```yaml
-version: "2.4"
-
-services:
-
-  wordle:
-    image: ghcr.io/ubermetroid/rust-wordle/legacy:latest
-    container_name: Wordle
-    ports:
-      - 80:80
-```
-
-# Tags
-| Tag | Description |
-| :----: | --- |
-| latest | Latest version |
-| legacy | Legacy version |
+#### **Legacy Version**
+The original Wordle clone, closest to the classic experience.
+*   **Docker Run:**
+    ```bash
+    docker run -d -p 8081:80 --name wordle-legacy ghcr.io/ubermetroid/rust-wordle/legacy:latest
+    ```
+*   **Docker Compose:**
+    ```yaml
+    version: "3"
+    services:
+      wordle-legacy:
+        image: ghcr.io/ubermetroid/rust-wordle/legacy:latest
+        container_name: wordle-legacy
+        ports:
+          - "8081:80"
+    ```
 
 ---
 
-# 💻 Local Development
+### 💻 Local Development
 
 If you want to run or modify the code locally, follow these steps:
 
@@ -93,6 +77,18 @@ If you want to run or modify the code locally, follow these steps:
     ```bash
     npm run build
     ```
+
+---
+
+## 📖 About the Versions
+
+### Latest
+This version is based on the [cwackerfuss/react-wordle](https://github.com/cwackerfuss/react-wordle) project. It features a modern React architecture and is actively maintained. Note that the "Word of the Day" might differ from the NYT version.
+**Default Container Port: 7583**
+
+### Legacy
+This is the original clone of the Wordle website, served via Nginx. It is intended to remain as close to the original experience as possible and should align with the classic "Word of the Day".
+**Default Container Port: 80**
 
 ---
 

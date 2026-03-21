@@ -33,14 +33,11 @@ body {
 }
 
 /* HIGH DISTINCTION: Onyx Glass + Neon Glow Letters */
-
-/* Shared base for all colored themes */
 .theme-dark, .theme-red, .theme-orange, .theme-yellow, .theme-green, .theme-blue, .theme-purple {
-  --default-cell-bg-color: rgba(0, 0, 0, 0.6); /* Deep onyx glass */
+  --default-cell-bg-color: rgba(0, 0, 0, 0.6);
   --default-cell-border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* 0: Dark (Sky Blue Neon) */
 .theme-dark {
   --app-bg: #020617;
   --app-text: #f8fafc;
@@ -52,7 +49,6 @@ body {
   --present-cell-bg-color: #facc15;
 }
 
-/* 1: Red (Red Neon) */
 .theme-red {
   --app-bg: #180000;
   --app-text: #ffffff;
@@ -64,7 +60,6 @@ body {
   --present-cell-bg-color: #facc15;
 }
 
-/* 2: Orange (Orange Neon) */
 .theme-orange {
   --app-bg: #1a0a00;
   --app-text: #ffffff;
@@ -76,7 +71,6 @@ body {
   --present-cell-bg-color: #fef08a;
 }
 
-/* 3: Yellow (Yellow Neon) */
 .theme-yellow {
   --app-bg: #1a1400;
   --app-text: #ffffff;
@@ -88,7 +82,6 @@ body {
   --present-cell-bg-color: #ffffff;
 }
 
-/* 4: Green (Green Neon) */
 .theme-green {
   --app-bg: #001a0a;
   --app-text: #ffffff;
@@ -100,7 +93,6 @@ body {
   --present-cell-bg-color: #facc15;
 }
 
-/* 5: Blue (Blue Neon) */
 .theme-blue {
   --app-bg: #000a1a;
   --app-text: #ffffff;
@@ -112,7 +104,6 @@ body {
   --present-cell-bg-color: #facc15;
 }
 
-/* 6: Purple (Purple Neon) */
 .theme-purple {
   --app-bg: #0a001a;
   --app-text: #ffffff;
@@ -124,7 +115,6 @@ body {
   --present-cell-bg-color: #facc15;
 }
 
-/* 7: Light (Classic) */
 .theme-light {
   --app-bg: #f8fafc;
   --app-text: #0f172a;
@@ -176,6 +166,37 @@ body {
   background: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+/* HARD MODE: FLAME EFFECT */
+.hard-mode-flame {
+  animation: flame-pulse 0.1s infinite alternate, heat-vibration 0.2s infinite;
+  text-shadow: 
+    0 0 4px #fff,
+    0 -2px 4px #ff0,
+    1px -4px 6px #f80,
+    -1px -8px 10px #f40;
+}
+
+.correct.hard-mode-flame {
+  text-shadow: 
+    0 0 4px #fff,
+    0 -2px 8px #4ade80,
+    1px -4px 12px #22c55e,
+    -1px -8px 16px #166534;
+}
+
+@keyframes flame-pulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(1.05); filter: brightness(1.3); }
+}
+
+@keyframes heat-vibration {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(0.5px, -0.5px); }
+  50% { transform: translate(-0.5px, 0.5px); }
+  75% { transform: translate(0.5px, 0.5px); }
+  100% { transform: translate(0, 0); }
 }
 
 /* Status Classes */

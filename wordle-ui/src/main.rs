@@ -45,7 +45,7 @@ fn get_storage() -> Option<web_sys::Storage> {
 }
 
 #[component]
-fn Cell(value: char, status: String, position: usize, is_revealing: bool, is_completed: bool) -> impl IntoView {
+fn Cell(value: char, status: String, position: usize, is_revealing: bool, is_completed: bool, is_hard_mode: bool) -> impl IntoView {
     let delay = position * 350;
     let classes = move || {
         let mut base = "w-12 h-12 sm:w-14 sm:h-14 border-solid border-2 flex items-center justify-center mx-0.5 text-2xl sm:text-4xl font-bold rounded-xl transition-all duration-300".to_string();
@@ -61,6 +61,10 @@ fn Cell(value: char, status: String, position: usize, is_revealing: bool, is_com
         if is_revealing {
             base.push_str(" cell-reveal");
         }
+        // Apply Flame effect if Hard Mode is on and cell has a letter
+        if is_hard_mode && value != ' ' {
+            base.push_str(" hard-mode-flame");
+        }
         base
     };
     let style = move || format!("animation-delay: {}ms;", delay);
@@ -68,7 +72,7 @@ fn Cell(value: char, status: String, position: usize, is_revealing: bool, is_com
 }
 
 #[component]
-fn Row(guess: String, solution: String, is_revealing: bool, is_completed: bool, is_jiggling: Signal<bool>) -> impl IntoView {
+fn Row(guess: String, solution: String, is_revealing: bool, is_completed: bool, is_jiggling: Signal<bool>, is_hard_mode: bool) -> impl IntoView {
     let statuses: Vec<String> = if is_completed || is_revealing {
         serde_wasm_bindgen::from_value(get_guess_statuses(&solution, &guess)).unwrap_or_default()
     } else {
@@ -77,7 +81,7 @@ fn Row(guess: String, solution: String, is_revealing: bool, is_completed: bool, 
     view! {
         <div class=move || format!("flex justify-center mb-1 {}", if is_jiggling.get() { "jiggle" } else { "" })>
             {guess.chars().chain(std::iter::repeat(' ')).take(5).zip(statuses.into_iter().chain(std::iter::repeat("".to_string()))).enumerate().map(|(i, (c, s))| {
-                view! { <Cell value=c status=s position=i is_revealing=is_revealing is_completed=is_completed /> }
+                view! { <Cell value=c status=s position=i is_revealing=is_revealing is_completed=is_completed is_hard_mode=is_hard_mode /> }
             }).collect_view()}
         </div>
     }
@@ -297,7 +301,7 @@ fn App() -> impl IntoView {
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
                         <button on:click=move |_| set_show_settings.set(true) class="correct-pad w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
                     <h1 class="text-2xl sm:text-4xl font-black tracking-tighter italic text-center title-text">"RUSTLE"</h1>
@@ -327,16 +331,21 @@ fn App() -> impl IntoView {
                             let sol = solution_data.get().solution.to_uppercase();
                             let is_rev = is_revealing_row.get();
                             let len = gs.len();
+                            let hard = hard_mode.get();
                             gs.into_iter().enumerate().map(move |(i, g)| { 
-                                view! { <Row guess=g.to_uppercase() solution=sol.clone() is_revealing=is_rev && i == len-1 is_completed=true is_jiggling=Signal::derive(|| false) /> } 
+                                view! { <Row guess=g.to_uppercase() solution=sol.clone() is_revealing=is_rev && i == len-1 is_completed=true is_jiggling=Signal::derive(|| false) is_hard_mode=hard /> } 
                             }).collect_view()
                         }}
                         {move || if guesses.get().len() < 6 && !game_won.get() { 
                             let current_input = current_input.get().to_uppercase();
                             let solution = solution_data.get().solution.to_uppercase();
-                            view! { <Row guess=current_input solution=solution is_revealing=false is_completed=false is_jiggling=Signal::derive(move || jiggle_row.get()) /> }.into_view() 
+                            let hard = hard_mode.get();
+                            view! { <Row guess=current_input solution=solution is_revealing=false is_completed=false is_jiggling=Signal::derive(move || jiggle_row.get()) is_hard_mode=hard /> }.into_view() 
                         } else { view! {}.into_view() }}
-                        {move || (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(|_| { view! { <Row guess="".to_string() solution="".to_string() is_revealing=false is_completed=false is_jiggling=Signal::derive(|| false) /> } }).collect_view()}
+                        {move || {
+                            let hard = hard_mode.get();
+                            (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(move |_| { view! { <Row guess="".to_string() solution="".to_string() is_revealing=false is_completed=false is_jiggling=Signal::derive(|| false) is_hard_mode=hard /> } }).collect_view()
+                        }}
                     </div>
                 </div>
             </div>
@@ -370,7 +379,7 @@ fn App() -> impl IntoView {
 
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
                 <div class="flex flex-col items-center text-center">
-                    <div class="flex w-full justify-around mb-6 text-white">
+                    <div class="flex w-full justify-around mb-6 text-white text-white">
                         <div><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70">"Played"</div></div>
                         <div><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70">"Win %"</div></div>
                         <div><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70">"Streak"</div></div>
@@ -391,7 +400,7 @@ fn App() -> impl IntoView {
             </Modal>
 
             <Modal title="Settings".to_string() is_open=show_settings set_is_open=set_show_settings>
-                <div class="flex flex-col gap-6 text-white">
+                <div class="flex flex-col gap-6 text-white text-white">
                     <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30">
                         <div>
                             <div class="font-bold">"Hard Mode"</div>
@@ -403,7 +412,7 @@ fn App() -> impl IntoView {
                             <div class=move || format!("absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 {}", if hard_mode.get() { "left-7" } else { "left-1" }) />
                         </button>
                     </div>
-                    <div class="space-y-4">
+                    <div class="space-y-4 text-white">
                         <h3 class="text-sm font-black uppercase tracking-widest text-center opacity-80">"How to Play"</h3>
                         <div class="space-y-3">
                             <div class="flex flex-col items-center gap-1">
@@ -438,7 +447,7 @@ fn App() -> impl IntoView {
                             </div>
                         </div>
                     </div>
-                    <div class="text-[10px] opacity-40 italic text-center mt-2">"Rustle Version 1.0.0 (Pure Rust)"</div>
+                    <div class="text-[10px] opacity-40 italic text-center mt-2 text-white">"Rustle Version 1.0.0 (Pure Rust)"</div>
                 </div>
             </Modal>
 

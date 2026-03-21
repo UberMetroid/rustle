@@ -45,6 +45,26 @@ fn get_storage() -> Option<web_sys::Storage> {
     window().local_storage().ok().flatten()
 }
 
+fn get_snarky_comment(tries: usize, is_hard: bool, theme: &str) -> String {
+    let mut comments = match tries {
+        1 => vec!["Hacks.", "Bot behavior.", "Pure luck."],
+        2 => vec!["Showoff.", "Sus.", "Tryhard much?"],
+        3 => vec!["Solid mid.", "Typical.", "Average."],
+        4 => vec!["Finally.", "Took your time.", "Getting slow?"],
+        5 => vec!["Panic yet?", "Sweaty.", "Close one."],
+        6 => vec!["Barely.", "Yikes.", "Scrub tier."],
+        _ => vec!["How?"],
+    };
+    
+    let mut msg = comments[js_sys::Math::floor(js_sys::Math::random() * comments.len() as f64) as usize].to_string();
+    
+    if is_hard { msg.push_str(" (Hard Mode simp)"); }
+    else if theme == "red" { msg.push_str(" Rage much?"); }
+    else if theme == "dark" { msg.push_str(" So edgy."); }
+    
+    msg
+}
+
 #[component]
 fn Cell(
     value: char, 
@@ -57,23 +77,21 @@ fn Cell(
     is_hard_mode: bool
 ) -> impl IntoView {
     let (ring_id, set_ring_id) = create_signal("".to_string());
+    let (underline_id, set_underline_id) = create_signal("".to_string());
     let (destroy_id, set_destroy_id) = create_signal("".to_string());
     let (pop_trigger, set_pop_trigger) = create_signal("".to_string());
 
     create_effect(move |_| {
         if is_last_typed && value != ' ' && !is_completed && !is_revealing {
             set_pop_trigger.set(js_sys::Date::now().to_string());
-            if is_hard_mode {
-                set_ring_id.set(js_sys::Date::now().to_string());
-            }
+            if is_hard_mode { set_ring_id.set(js_sys::Date::now().to_string()); }
+            else { set_underline_id.set(js_sys::Date::now().to_string()); }
         }
     });
 
     create_effect(move |_| {
         let trigger = destroy_trigger.get();
-        if !trigger.is_empty() && is_last_typed {
-            set_destroy_id.set(trigger);
-        }
+        if !trigger.is_empty() && is_last_typed { set_destroy_id.set(trigger); }
     });
 
     let classes = move || {
@@ -92,6 +110,7 @@ fn Cell(
     view! { 
         <div class=classes style=style>
             {move || { let id = ring_id.get(); if !id.is_empty() { view! { <div key=id class="power-ring" /> }.into_view() } else { view! {}.into_view() } }}
+            {move || { let id = underline_id.get(); if !id.is_empty() { view! { <div key=id class="power-underline" /> }.into_view() } else { view! {}.into_view() } }}
             {move || { let id = destroy_id.get(); if !id.is_empty() { view! { <div key=id class="destroyed-puff" /> }.into_view() } else { view! {}.into_view() } }}
             <div>{value.to_uppercase().to_string()}</div>
         </div> 
@@ -158,6 +177,7 @@ fn App() -> impl IntoView {
     let (hard_mode, set_hard_mode) = create_signal(false);
     let (stats, set_stats) = create_signal(GameStats::default());
     let (keyboard_pulse, set_keyboard_pulse) = create_signal((' ', "".to_string()));
+    let (snarky_win_msg, set_snarky_win_msg) = create_signal(String::new());
 
     let now = js_sys::Date::now();
     let solution_data = create_memo(move |_| {
@@ -288,6 +308,7 @@ fn App() -> impl IntoView {
             set_timeout(move || set_is_revealing_row.set(false), std::time::Duration::from_millis(2000));
             if input == sol {
                 set_game_won.set(true);
+                set_snarky_win_msg.set(get_snarky_comment(new_guesses.len(), hard_mode.get(), &theme.get()));
                 set_timeout(move || confetti(), std::time::Duration::from_millis(1800));
                 set_stats.update(|s| {
                     s.total_games += 1; s.wins += 1; s.current_streak += 1;
@@ -295,12 +316,12 @@ fn App() -> impl IntoView {
                     s.distribution[new_guesses.len() - 1] += 1;
                 });
                 if let Some(storage) = get_storage() { let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap()); }
-                set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3000));
+                set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3500));
             } else if new_guesses.len() >= 6 {
                 set_game_lost.set(true);
                 set_stats.update(|s| { s.total_games += 1; s.current_streak = 0; });
                 if let Some(storage) = get_storage() { let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap()); }
-                set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3000));
+                set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3500));
             }
         } else if key == "DELETE" {
             let len = current_input.get().len();
@@ -318,7 +339,7 @@ fn App() -> impl IntoView {
             set_last_typed_index.set(next_idx);
             let k = key.to_uppercase();
             let c = k.chars().next().unwrap();
-            if hard_mode.get() { set_keyboard_pulse.set((c, js_sys::Date::now().to_string())); }
+            set_keyboard_pulse.set((c, js_sys::Date::now().to_string()));
             set_current_input.update(|s| s.push_str(&k));
         }
     };
@@ -363,7 +384,19 @@ fn App() -> impl IntoView {
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
                         </button>
                     </div>
-                    <h1 class="text-xl sm:text-4xl font-black tracking-tighter italic text-center title-text uppercase shrink-0">"RUSTLE"</h1>
+                    <div class="flex flex-col items-center">
+                        <h1 class="text-xl sm:text-4xl font-black tracking-tighter italic text-center title-text uppercase shrink-0">"RUSTLE"</h1>
+                        // INTEGRATED NOTIFICATION AREA
+                        <div class="h-6 flex items-center justify-center">
+                            {move || if !alert_message.get().is_empty() {
+                                view! { <div class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white snarky-toast"> {alert_message.get()} </div> }.into_view()
+                            } else if game_won.get() {
+                                view! { <div class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-green-400 snarky-toast"> {snarky_win_msg.get()} </div> }.into_view()
+                            } else if game_lost.get() {
+                                view! { <div class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-red-400 snarky-toast"> {format!("The word was: {}", solution_data.get().solution.to_uppercase())} </div> }.into_view()
+                            } else { view! {}.into_view() }}
+                        </div>
+                    </div>
                     <div class="flex justify-end items-center pointer-events-none">
                         <div class="glass-pad p-1.5 sm:p-2 rounded-2xl flex items-center shadow-lg pointer-events-auto relative z-[50]">
                             {move || {
@@ -408,19 +441,26 @@ fn App() -> impl IntoView {
                         rows.into_iter().enumerate().map(|(i, row)| {
                             view! {
                                 <div class="flex justify-center mb-1.5 w-full">
-                                    {if i == 2 { view! { <button class="h-10 sm:h-14 px-1.5 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] flex items-center justify-center key-neutral" on:click=move |_| on_key("ENTER".to_string())> <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg> </button> }.into_view() } else { view! {}.into_view() }}
+                                    {if i == 2 { view! { <button class="h-10 sm:h-14 px-1.5 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] key-neutral flex items-center justify-center" on:click=move |_| on_key("ENTER".to_string())> <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg> </button> }.into_view() } else { view! {}.into_view() }}
                                     {row.into_iter().map(|c| {
                                         let status = move || char_statuses.get().get(&c).cloned().unwrap_or_default();
                                         let status_class = move || match status().as_str() { "correct" => "correct", "present" => "present", "absent" => "absent", _ => "key-neutral" };
-                                        let ring_id = move || if keyboard_pulse.get().0 == c { keyboard_pulse.get().1 } else { "".to_string() };
+                                        let pulse = move || if keyboard_pulse.get().0 == c { keyboard_pulse.get().1 } else { "".to_string() };
+                                        let hard = hard_mode.get();
                                         view! { 
                                             <button class=move || format!("relative h-10 sm:h-14 mx-0.5 rounded-xl font-bold flex-1 min-w-[20px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg border-2 border-transparent text-sm sm:text-base {}", status_class()) on:click=move |_| on_key(c.to_string())> 
-                                                {move || { let id = ring_id(); if !id.is_empty() { view! { <div key=id class="power-ring" /> }.into_view() } else { view! {}.into_view() } }}
+                                                {move || { 
+                                                    let id = pulse(); 
+                                                    if !id.is_empty() { 
+                                                        if hard { view! { <div key=id class="power-ring" /> }.into_view() }
+                                                        else { view! { <div key=id class="power-underline" /> }.into_view() }
+                                                    } else { view! {}.into_view() } 
+                                                }}
                                                 {c.to_string()} 
                                             </button> 
                                         }
                                     }).collect_view()}
-                                    {if i == 2 { view! { <button class="h-10 sm:h-14 px-1.5 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] flex items-center justify-center key-neutral" on:click=move |_| on_key("DELETE".to_string())> <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg> </button> }.into_view() } else { view! {}.into_view() }}
+                                    {if i == 2 { view! { <button class="h-10 sm:h-14 px-1.5 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] key-neutral flex items-center justify-center" on:click=move |_| on_key("DELETE".to_string())> <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg> </button> }.into_view() } else { view! {}.into_view() }}
                                 </div>
                             }
                         }).collect_view()
@@ -499,14 +539,6 @@ fn App() -> impl IntoView {
                     </Show>
                 </div>
             </Modal>
-
-            {move || if !alert_message.get().is_empty() {
-                view! { <div class="fixed top-24 px-4 py-2 rounded-xl bg-black text-white font-bold shadow-xl glass z-[100] animate-bounce toast-slide text-center"> {alert_message.get()} </div> }.into_view()
-            } else if game_won.get() {
-                view! { <div class="fixed top-24 px-6 py-3 rounded-full bg-green-500 text-white font-black text-xl shadow-2xl animate-bounce glass text-center"> "AMAZING! YOU WON!" </div> }.into_view() 
-            } else if game_lost.get() {
-                view! { <div class="fixed top-24 px-6 py-3 rounded-full bg-red-500 text-white font-black text-xl shadow-2xl glass uppercase font-black text-center"> {format!("The word was: {}", solution_data.get().solution.to_uppercase())} </div> }.into_view() 
-            } else { view! {}.into_view() }}
         </div>
     }
 }

@@ -60,7 +60,7 @@ fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool, is_
             1 => vec!["HACKER!", "Pure Luck.", "Sus physics.", "God Mode."],
             2 => vec!["Radical!", "Tubular!", "Showoff.", "Excellent!"],
             3 => vec!["Solid mid.", "Typical.", "Choice.", "Right on."],
-            4 => vec!["Finally.", "Getting slow?", "Analog brain."],
+            4 => vec!["Finally.", "Took your time.", "Getting slow?", "Analog brain."],
             5 => vec!["Panic yet?", "Sweaty.", "Close one.", "Danger Zone."],
             6 => vec!["Barely.", "Yikes.", "Scrub tier.", "Bogus win."],
             _ => vec!["Win."],

@@ -62,9 +62,7 @@ fn Cell(
 
     create_effect(move |_| {
         if is_last_typed && value != ' ' && !is_completed && !is_revealing {
-            // Standard Pop
             set_pop_trigger.set(js_sys::Date::now().to_string());
-            // Hard Mode Power Ring
             if is_hard_mode {
                 set_ring_id.set(js_sys::Date::now().to_string());
             }
@@ -80,23 +78,12 @@ fn Cell(
 
     let classes = move || {
         let mut base = "relative w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 border-solid border-2 flex items-center justify-center mx-0.5 text-xl sm:text-4xl font-bold rounded-xl transition-all duration-300".to_string();
-        
         if is_completed || is_revealing {
             if !status.is_empty() { base.push_str(&format!(" {}", status)); }
             else { base.push_str(" cell-neutral"); }
-        } else {
-            base.push_str(" cell-neutral");
-        }
-
-        if is_revealing {
-            base.push_str(" cell-reveal");
-        } else if !pop_trigger.get().is_empty() && !is_completed {
-            base.push_str(" cell-pop");
-        }
-
-        if is_hard_mode && value != ' ' && !is_completed {
-            base.push_str(" ring-2 ring-white ring-opacity-50 shadow-[0_0_15px_rgba(255,255,255,0.5)]");
-        }
+        } else { base.push_str(" cell-neutral"); }
+        if is_revealing { base.push_str(" cell-reveal"); }
+        else if !pop_trigger.get().is_empty() && !is_completed { base.push_str(" cell-pop"); }
         base
     };
     
@@ -104,16 +91,8 @@ fn Cell(
     
     view! { 
         <div class=classes style=style>
-            // Single Letter Entry Ring (Hard Mode Only)
-            {move || {
-                let id = ring_id.get();
-                if !id.is_empty() { view! { <div key=id class="power-ring" /> }.into_view() } else { view! {}.into_view() }
-            }}
-            // Deletion Shatter
-            {move || {
-                let id = destroy_id.get();
-                if !id.is_empty() { view! { <div key=id class="destroyed-puff" /> }.into_view() } else { view! {}.into_view() }
-            }}
+            {move || { let id = ring_id.get(); if !id.is_empty() { view! { <div key=id class="power-ring" /> }.into_view() } else { view! {}.into_view() } }}
+            {move || { let id = destroy_id.get(); if !id.is_empty() { view! { <div key=id class="destroyed-puff" /> }.into_view() } else { view! {}.into_view() } }}
             <div>{value.to_uppercase().to_string()}</div>
         </div> 
     }
@@ -178,6 +157,7 @@ fn App() -> impl IntoView {
     let (theme, set_theme) = create_signal("dark".to_string());
     let (hard_mode, set_hard_mode) = create_signal(false);
     let (stats, set_stats) = create_signal(GameStats::default());
+    let (keyboard_pulse, set_keyboard_pulse) = create_signal((' ', "".to_string()));
 
     let now = js_sys::Date::now();
     let solution_data = create_memo(move |_| {
@@ -336,7 +316,10 @@ fn App() -> impl IntoView {
         } else if current_input.get().len() < 5 {
             let next_idx = current_input.get().len() as i32;
             set_last_typed_index.set(next_idx);
-            set_current_input.update(|s| s.push_str(&key.to_uppercase()));
+            let k = key.to_uppercase();
+            let c = k.chars().next().unwrap();
+            if hard_mode.get() { set_keyboard_pulse.set((c, js_sys::Date::now().to_string())); }
+            set_current_input.update(|s| s.push_str(&k));
         }
     };
 
@@ -373,8 +356,8 @@ fn App() -> impl IntoView {
                         <button on:click=move |_| set_show_help.set(true) title="How to Play" class="correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </button>
-                        <button on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) } title="Hard Mode" class=move || format!("correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95 {}", if !guesses.get().is_empty() { "opacity-50 grayscale cursor-not-allowed" } else { "cursor-pointer" })>
-                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if hard_mode.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_8px_rgba(253,224,71,0.8)]" } else { "text-white opacity-40" }) fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        <button on:click=move |_| if guesses.get().is_empty() || game_won.get() || game_lost.get() { set_hard_mode.update(|h| *h = !*h) } title="Hard Mode" class=move || format!("correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95 {}", if !guesses.get().is_empty() && !game_won.get() && !game_lost.get() { "cursor-not-allowed" } else { "cursor-pointer" })>
+                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if hard_mode.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_12px_rgba(253,224,71,1)]" } else { "text-white opacity-40" }) fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                         </button>
                         <button disabled=move || !game_won.get() && !game_lost.get() title="AI Mode" class=move || format!("correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95 {}", if !game_won.get() && !game_lost.get() { "opacity-30 grayscale cursor-not-allowed" } else { "cursor-pointer" })>
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
@@ -429,7 +412,13 @@ fn App() -> impl IntoView {
                                     {row.into_iter().map(|c| {
                                         let status = move || char_statuses.get().get(&c).cloned().unwrap_or_default();
                                         let status_class = move || match status().as_str() { "correct" => "correct", "present" => "present", "absent" => "absent", _ => "key-neutral" };
-                                        view! { <button class=move || format!("h-10 sm:h-14 mx-0.5 rounded-xl font-bold flex-1 min-w-[20px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg border-2 border-transparent text-sm sm:text-base {}", status_class()) on:click=move |_| on_key(c.to_string())> {c.to_string()} </button> }
+                                        let ring_id = move || if keyboard_pulse.get().0 == c { keyboard_pulse.get().1 } else { "".to_string() };
+                                        view! { 
+                                            <button class=move || format!("relative h-10 sm:h-14 mx-0.5 rounded-xl font-bold flex-1 min-w-[20px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg border-2 border-transparent text-sm sm:text-base {}", status_class()) on:click=move |_| on_key(c.to_string())> 
+                                                {move || { let id = ring_id(); if !id.is_empty() { view! { <div key=id class="power-ring" /> }.into_view() } else { view! {}.into_view() } }}
+                                                {c.to_string()} 
+                                            </button> 
+                                        }
                                     }).collect_view()}
                                     {if i == 2 { view! { <button class="h-10 sm:h-14 px-1.5 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] flex items-center justify-center key-neutral" on:click=move |_| on_key("DELETE".to_string())> <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg> </button> }.into_view() } else { view! {}.into_view() }}
                                 </div>
@@ -480,7 +469,7 @@ fn App() -> impl IntoView {
 
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
                 <div class="flex flex-col items-center text-center text-white text-white">
-                    <div class="flex w-full justify-around mb-6">
+                    <div class="flex w-full justify-around mb-6 text-white text-white">
                         <div><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70">"Played"</div></div>
                         <div><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70">"Win %"</div></div>
                         <div><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70">"Streak"</div></div>

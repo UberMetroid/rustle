@@ -32,96 +32,14 @@ body {
 }
 
 /* THEMES */
-.theme-dark {
-  --app-bg: #020617;
-  --app-text: #f8fafc;
-  --default-cell-text-color: #38bdf8;
-  --key-text: #38bdf8;
-  --theme-primary: #38bdf8;
-  --absent-cell-bg-color: #1e293b;
-  --correct-cell-bg-color: #38bdf8;
-  --present-cell-bg-color: #facc15;
-}
-
-.theme-red {
-  --app-bg: #180000;
-  --app-text: #ffffff;
-  --default-cell-text-color: #ff4444;
-  --key-text: #ff4444;
-  --theme-primary: #ff4444;
-  --absent-cell-bg-color: #450a0a;
-  --correct-cell-bg-color: #ff4444;
-  --present-cell-bg-color: #facc15;
-}
-
-.theme-orange {
-  --app-bg: #1a0a00;
-  --app-text: #ffffff;
-  --default-cell-text-color: #fb923c;
-  --key-text: #fb923c;
-  --theme-primary: #fb923c;
-  --absent-cell-bg-color: #431407;
-  --correct-cell-bg-color: #fb923c;
-  --present-cell-bg-color: #fef08a;
-}
-
-.theme-yellow {
-  --app-bg: #1a1400;
-  --app-text: #ffffff;
-  --default-cell-text-color: #facc15;
-  --key-text: #facc15;
-  --theme-primary: #facc15;
-  --absent-cell-bg-color: #422006;
-  --correct-cell-bg-color: #facc15;
-  --present-cell-bg-color: #ffffff;
-}
-
-.theme-green {
-  --app-bg: #001a0a;
-  --app-text: #ffffff;
-  --default-cell-text-color: #4ade80;
-  --key-text: #4ade80;
-  --theme-primary: #4ade80;
-  --absent-cell-bg-color: #064e3b;
-  --correct-cell-bg-color: #4ade80;
-  --present-cell-bg-color: #facc15;
-}
-
-.theme-blue {
-  --app-bg: #000a1a;
-  --app-text: #ffffff;
-  --default-cell-text-color: #60a5fa;
-  --key-text: #60a5fa;
-  --theme-primary: #60a5fa;
-  --absent-cell-bg-color: #1e3a8a;
-  --correct-cell-bg-color: #60a5fa;
-  --present-cell-bg-color: #facc15;
-}
-
-.theme-purple {
-  --app-bg: #0a001a;
-  --app-text: #ffffff;
-  --default-cell-text-color: #c084fc;
-  --key-text: #c084fc;
-  --theme-primary: #c084fc;
-  --absent-cell-bg-color: #4c1d95;
-  --correct-cell-bg-color: #c084fc;
-  --present-cell-bg-color: #facc15;
-}
-
-.theme-light {
-  --app-bg: #f8fafc;
-  --app-text: #0f172a;
-  --default-cell-bg-color: #e2e8f0;
-  --default-cell-border-color: #cbd5e1;
-  --default-cell-text-color: #0f172a;
-  --key-bg: #e2e8f0;
-  --key-text: #0f172a;
-  --theme-primary: #10b981;
-  --absent-cell-bg-color: #94a3b8;
-  --correct-cell-bg-color: #10b981;
-  --present-cell-bg-color: #f59e0b;
-}
+.theme-dark { --app-bg: #020617; --app-text: #f8fafc; --default-cell-text-color: #38bdf8; --key-text: #38bdf8; --theme-primary: #38bdf8; --absent-cell-bg-color: #1e293b; --correct-cell-bg-color: #38bdf8; --present-cell-bg-color: #facc15; }
+.theme-red { --app-bg: #180000; --app-text: #ffffff; --default-cell-text-color: #ff4444; --key-text: #ff4444; --theme-primary: #ff4444; --absent-cell-bg-color: #450a0a; --correct-cell-bg-color: #ff4444; --present-cell-bg-color: #facc15; }
+.theme-orange { --app-bg: #1a0a00; --app-text: #ffffff; --default-cell-text-color: #fb923c; --key-text: #fb923c; --theme-primary: #fb923c; --absent-cell-bg-color: #431407; --correct-cell-bg-color: #fb923c; --present-cell-bg-color: #fef08a; }
+.theme-yellow { --app-bg: #1a1400; --app-text: #ffffff; --default-cell-text-color: #facc15; --key-text: #facc15; --theme-primary: #facc15; --absent-cell-bg-color: #422006; --correct-cell-bg-color: #facc15; --present-cell-bg-color: #ffffff; }
+.theme-green { --app-bg: #001a0a; --app-text: #ffffff; --default-cell-text-color: #4ade80; --key-text: #4ade80; --theme-primary: #4ade80; --absent-cell-bg-color: #064e3b; --correct-cell-bg-color: #4ade80; --present-cell-bg-color: #facc15; }
+.theme-blue { --app-bg: #000a1a; --app-text: #ffffff; --default-cell-text-color: #60a5fa; --key-text: #60a5fa; --theme-primary: #60a5fa; --absent-cell-bg-color: #1e3a8a; --correct-cell-bg-color: #60a5fa; --present-cell-bg-color: #facc15; }
+.theme-purple { --app-bg: #0a001a; --app-text: #ffffff; --default-cell-text-color: #c084fc; --key-text: #c084fc; --theme-primary: #c084fc; --absent-cell-bg-color: #4c1d95; --correct-cell-bg-color: #c084fc; --present-cell-bg-color: #facc15; }
+.theme-light { --app-bg: #f8fafc; --app-text: #0f172a; --default-cell-bg-color: #e2e8f0; --default-cell-border-color: #cbd5e1; --default-cell-text-color: #0f172a; --key-bg: #e2e8f0; --key-text: #0f172a; --theme-primary: #10b981; --absent-cell-bg-color: #94a3b8; --correct-cell-bg-color: #10b981; --present-cell-bg-color: #f59e0b; }
 
 .glass-pad {
   background: rgba(0, 0, 0, 0.3);
@@ -139,7 +57,7 @@ body {
   transition: all 0.3s ease;
 }
 
-/* HARD MODE POWER RING */
+/* POWER RING: Used on Grid and Keyboard */
 .power-ring {
   position: absolute;
   inset: -2px;
@@ -148,12 +66,12 @@ body {
   opacity: 0;
   pointer-events: none;
   animation: power-ring-expand 0.4s cubic-bezier(0, 0, 0.2, 1);
-  z-index: 10;
+  z-index: 50;
 }
 
 @keyframes power-ring-expand {
   0% { transform: scale(0.8); opacity: 1; border-width: 4px; }
-  100% { transform: scale(1.4); opacity: 0; border-width: 1px; }
+  100% { transform: scale(1.5); opacity: 0; border-width: 1px; }
 }
 
 /* DELETION SHATTER */
@@ -165,7 +83,7 @@ body {
   opacity: 0;
   pointer-events: none;
   animation: destroy-shatter 0.3s ease-out;
-  z-index: 30;
+  z-index: 60;
 }
 
 @keyframes destroy-shatter {
@@ -173,7 +91,7 @@ body {
   100% { transform: scale(0); opacity: 0; filter: brightness(5) blur(10px); }
 }
 
-/* STANDARD WORDLE REVEAL: X-AXIS FLIP */
+/* REVEAL: X-AXIS FLIP */
 .cell-reveal {
   animation: flip-x 0.6s ease-in-out;
   animation-fill-mode: forwards;
@@ -186,56 +104,19 @@ body {
   100% { transform: rotateX(180deg); }
 }
 
-/* Ensure letter content is flipped back so it's readable */
-.cell-reveal > div {
-  transform: rotateX(180deg);
-}
+.cell-reveal > div { transform: rotateX(180deg); }
 
-/* STANDARD WORDLE POP: ON LETTER ENTRY */
-.cell-pop {
-  animation: pop 0.1s ease-in-out;
-}
+/* POP: ON LETTER ENTRY */
+.cell-pop { animation: pop 0.1s ease-in-out; }
+@keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
-@keyframes pop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
+.absent { background-color: var(--absent-cell-bg-color) !important; border-color: var(--absent-cell-bg-color) !important; color: rgba(255, 255, 255, 0.4) !important; }
+.correct { background-color: var(--correct-cell-bg-color) !important; border-color: var(--correct-cell-bg-color) !important; color: white !important; }
+.present { background-color: var(--present-cell-bg-color) !important; border-color: var(--present-cell-bg-color) !important; color: #000000 !important; font-weight: 900 !important; }
+.cell-neutral, .key-neutral { background-color: var(--default-cell-bg-color) !important; border-color: var(--default-cell-border-color) !important; color: var(--default-cell-text-color) !important; }
 
-.absent {
-  background-color: var(--absent-cell-bg-color) !important;
-  border-color: var(--absent-cell-bg-color) !important;
-  color: rgba(255, 255, 255, 0.4) !important;
-}
-.correct {
-  background-color: var(--correct-cell-bg-color) !important;
-  border-color: var(--correct-cell-bg-color) !important;
-  color: white !important;
-}
-.present {
-  background-color: var(--present-cell-bg-color) !important;
-  border-color: var(--present-cell-bg-color) !important;
-  color: #000000 !important;
-  font-weight: 900 !important;
-}
-
-.cell-neutral, .key-neutral {
-  background-color: var(--default-cell-bg-color) !important;
-  border-color: var(--default-cell-border-color) !important;
-  color: var(--default-cell-text-color) !important;
-}
-
-.jiggle {
-  animation: jiggle 0.2s linear;
-}
-
-@keyframes jiggle {
-  0% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  50% { transform: translateX(5px); }
-  75% { transform: translateX(-5px); }
-  100% { transform: translateX(0); }
-}
+.jiggle { animation: jiggle 0.2s linear; }
+@keyframes jiggle { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
 
 .theme-slider {
   -webkit-appearance: none;
@@ -259,11 +140,6 @@ body {
   border: 2px solid white;
   box-shadow: 0 2px 6px rgba(0,0,0,0.4);
   cursor: pointer;
-  transition: transform 0.1s;
 }
 
-.title-text {
-  color: var(--theme-primary);
-  text-shadow: 0 0 15px var(--theme-primary);
-  transition: all 0.5s ease;
-}
+.title-text { color: var(--theme-primary); text-shadow: 0 0 15px var(--theme-primary); transition: all 0.5s ease; }

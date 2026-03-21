@@ -11,43 +11,15 @@
   --absent-cell-bg-color: theme('colors.slate.400');
   --correct-cell-bg-color: theme('colors.green.400');
   --present-cell-bg-color: theme('colors.yellow.400');
+  --app-bg: theme('colors.white');
+  --app-text: theme('colors.black');
 }
 
-.dark {
-  --default-cell-bg-color: theme('colors.slate.900');
-  --default-cell-border-color: theme('colors.slate.200');
-  --default-cell-text-color: theme('colors.white');
-  --absent-cell-bg-color: theme('colors.slate.700');
-}
-
-.theme-cyberpunk {
-  --default-cell-bg-color: #0d0221;
-  --default-cell-border-color: #00f3ff;
-  --default-cell-text-color: #00f3ff;
-  --absent-cell-bg-color: #2a1b3d;
-  --correct-cell-bg-color: #ff007f;
-  --present-cell-bg-color: #00f3ff;
-}
-
-.theme-cyberpunk .bg-white,
-.theme-cyberpunk .bg-slate-50 {
-  background-color: #0d0221 !important;
-  color: #00f3ff !important;
-}
-
-.theme-nord {
-  --default-cell-bg-color: #2e3440;
-  --default-cell-border-color: #d8dee9;
-  --default-cell-text-color: #eceff4;
-  --absent-cell-bg-color: #4c566a;
-  --correct-cell-bg-color: #a3be8c;
-  --present-cell-bg-color: #ebcb8b;
-}
-
-.theme-nord .bg-white,
-.theme-nord .bg-slate-50 {
-  background-color: #2e3440 !important;
-  color: #eceff4 !important;
+/* Base theme class for anything that needs to follow the theme */
+body {
+  background-color: var(--app-bg);
+  color: var(--app-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .theme-retro {
@@ -57,12 +29,42 @@
   --absent-cell-bg-color: #003b00;
   --correct-cell-bg-color: #008f11;
   --present-cell-bg-color: #00ff41;
+  --app-bg: #000000;
+  --app-text: #00ff41;
+  font-family: 'Courier New', Courier, monospace;
 }
 
-.theme-retro .bg-white,
-.theme-retro .bg-slate-50 {
-  background-color: #000000 !important;
-  color: #00ff41 !important;
+.theme-cyberpunk {
+  --default-cell-bg-color: #0d0221;
+  --default-cell-border-color: #00f3ff;
+  --default-cell-text-color: #00f3ff;
+  --absent-cell-bg-color: #2a1b3d;
+  --correct-cell-bg-color: #ff007f;
+  --present-cell-bg-color: #00f3ff;
+  --app-bg: #0d0221;
+  --app-text: #00f3ff;
+}
+
+.theme-nord {
+  --default-cell-bg-color: #2e3440;
+  --default-cell-border-color: #d8dee9;
+  --default-cell-text-color: #eceff4;
+  --absent-cell-bg-color: #4c566a;
+  --correct-cell-bg-color: #a3be8c;
+  --present-cell-bg-color: #ebcb8b;
+  --app-bg: #2e3440;
+  --app-text: #eceff4;
+}
+
+.theme-default {
+  --default-cell-bg-color: theme('colors.white');
+  --default-cell-border-color: theme('colors.slate.900');
+  --default-cell-text-color: theme('colors.black');
+  --absent-cell-bg-color: theme('colors.slate.400');
+  --correct-cell-bg-color: theme('colors.green.400');
+  --present-cell-bg-color: theme('colors.yellow.400');
+  --app-bg: theme('colors.white');
+  --app-text: theme('colors.black');
 }
 
 .theme-solarized {
@@ -72,17 +74,23 @@
   --absent-cell-bg-color: #eee8d5;
   --correct-cell-bg-color: #859900;
   --present-cell-bg-color: #b58900;
+  --app-bg: #fdf6e3;
+  --app-text: #657b83;
 }
 
+/* Force overrides for existing tailwind classes to follow CSS variables */
+.theme-retro .bg-white,
+.theme-retro .bg-slate-50,
+.theme-cyberpunk .bg-white,
+.theme-cyberpunk .bg-slate-50,
+.theme-nord .bg-white,
+.theme-nord .bg-slate-50,
+.theme-default .bg-white,
+.theme-default .bg-slate-50,
 .theme-solarized .bg-white,
 .theme-solarized .bg-slate-50 {
-  background-color: #fdf6e3 !important;
-  color: #657b83 !important;
-}
-
-.high-contrast {
-  --correct-cell-bg-color: theme('colors.orange.400');
-  --present-cell-bg-color: theme('colors.cyan.400');
+  background-color: var(--app-bg) !important;
+  color: var(--app-text) !important;
 }
 
 .cell-fill-animation {
@@ -156,6 +164,7 @@ svg.cursor-pointer:hover {
   50.1% {
     background-color: var(--absent-cell-bg-color);
     border-color: var(--absent-cell-bg-color);
+    color: white;
   }
   100% {
     transform: rotateX(180deg);
@@ -177,6 +186,7 @@ svg.cursor-pointer:hover {
   50.1% {
     background-color: var(--correct-cell-bg-color);
     border-color: var(--correct-cell-bg-color);
+    color: white;
   }
   100% {
     transform: rotateX(180deg);
@@ -198,6 +208,7 @@ svg.cursor-pointer:hover {
   50.1% {
     background-color: var(--present-cell-bg-color);
     border-color: var(--present-cell-bg-color);
+    color: white;
   }
   100% {
     transform: rotateX(180deg);

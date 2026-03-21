@@ -36,10 +36,8 @@ import {
 import { useAlert } from './context/AlertContext'
 import { isInAppBrowser } from './lib/browser'
 import {
-  getStoredIsHighContrastMode,
   loadGameStateFromLocalStorage,
   saveGameStateToLocalStorage,
-  setStoredIsHighContrastMode,
 } from './lib/localStorage'
 import { addStatsForCompletedGame, loadStats } from './lib/stats'
 import {
@@ -57,9 +55,6 @@ import {
 function App() {
   const isLatestGame = getIsLatestGame()
   const gameDate = getGameDate()
-  const prefersDarkMode = window.matchMedia(
-    '(prefers-color-scheme: dark)'
-  ).matches
 
   const { showError: showErrorAlert, showSuccess: showSuccessAlert } =
     useAlert()
@@ -72,16 +67,7 @@ function App() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
   const [currentRowClass, setCurrentRowClass] = useState('')
   const [isGameLost, setIsGameLost] = useState(false)
-  const [isDarkMode, setIsDarkMode] = useState(
-    localStorage.getItem('theme')
-      ? localStorage.getItem('theme') === 'dark'
-      : prefersDarkMode
-      ? true
-      : false
-  )
-  const [isHighContrastMode, setIsHighContrastMode] = useState(
-    getStoredIsHighContrastMode()
-  )
+
   const [currentTheme, setCurrentTheme] = useState(
     localStorage.getItem('color-theme') || 'default'
   )
@@ -113,8 +99,6 @@ function App() {
   )
 
   useEffect(() => {
-    // if no game state on load,
-    // show the user the how-to info modal
     if (!loadGameStateFromLocalStorage(true)) {
       setTimeout(() => {
         setIsInfoModalOpen(true)
@@ -132,35 +116,17 @@ function App() {
   }, [showErrorAlert])
 
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-
-    if (isHighContrastMode) {
-      document.documentElement.classList.add('high-contrast')
-    } else {
-      document.documentElement.classList.remove('high-contrast')
-    }
-
-    // Handle custom themes
+    // Apply current theme
     const themes = [
       'theme-cyberpunk',
       'theme-nord',
       'theme-retro',
       'theme-solarized',
+      'theme-default',
     ]
     themes.forEach((t) => document.documentElement.classList.remove(t))
-    if (currentTheme !== 'default') {
-      document.documentElement.classList.add(`theme-${currentTheme}`)
-    }
-  }, [isDarkMode, isHighContrastMode, currentTheme])
-
-  const handleDarkMode = (isDark: boolean) => {
-    setIsDarkMode(isDark)
-    localStorage.setItem('theme', isDark ? 'dark' : 'light')
-  }
+    document.documentElement.classList.add(`theme-${currentTheme}`)
+  }, [currentTheme])
 
   const handleHardMode = (isHard: boolean) => {
     if (guesses.length === 0 || localStorage.getItem('gameMode') === 'hard') {
@@ -169,11 +135,6 @@ function App() {
     } else {
       showErrorAlert(HARD_MODE_ALERT_MESSAGE)
     }
-  }
-
-  const handleHighContrastMode = (isHighContrast: boolean) => {
-    setIsHighContrastMode(isHighContrast)
-    setStoredIsHighContrastMode(isHighContrast)
   }
 
   const handleTheme = (theme: string) => {
@@ -243,7 +204,6 @@ function App() {
       })
     }
 
-    // enforce hard mode - all guesses must contain all previously revealed letters
     if (isHardMode) {
       const firstMissingReveal = findFirstUnusedReveal(currentGuess, guesses)
       if (firstMissingReveal) {
@@ -255,8 +215,6 @@ function App() {
     }
 
     setIsRevealing(true)
-    // turn this back off after all
-    // chars have been revealed
     setTimeout(() => {
       setIsRevealing(false)
     }, REVEAL_TIME_MS * solution.length)
@@ -303,8 +261,8 @@ function App() {
 
         {!isLatestGame && (
           <div className="flex items-center justify-center">
-            <ClockIcon className="h-6 w-6 stroke-gray-600 dark:stroke-gray-300" />
-            <p className="text-base text-gray-600 dark:text-gray-300">
+            <ClockIcon className="h-6 w-6 stroke-gray-600" />
+            <p className="text-base text-gray-600">
               {format(gameDate, 'd MMMM yyyy', { locale: DATE_LOCALE })}
             </p>
           </div>
@@ -352,8 +310,8 @@ function App() {
               setIsMigrateStatsModalOpen(true)
             }}
             isHardMode={isHardMode}
-            isDarkMode={isDarkMode}
-            isHighContrastMode={isHighContrastMode}
+            isDarkMode={false}
+            isHighContrastMode={false}
             numberOfGuessesMade={guesses.length}
           />
           <DatePickerModal
@@ -374,10 +332,6 @@ function App() {
             handleClose={() => setIsSettingsModalOpen(false)}
             isHardMode={isHardMode}
             handleHardMode={handleHardMode}
-            isDarkMode={isDarkMode}
-            handleDarkMode={handleDarkMode}
-            isHighContrastMode={isHighContrastMode}
-            handleHighContrastMode={handleHighContrastMode}
             currentTheme={currentTheme}
             handleTheme={handleTheme}
           />

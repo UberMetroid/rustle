@@ -58,11 +58,20 @@ fn Cell(
 ) -> impl IntoView {
     let delay = position * 350;
     
-    let ring_trigger = create_memo(move |_| {
+    // Simple signal-based trigger for animations
+    let (ring_id, set_ring_id) = create_signal("".to_string());
+    let (destroy_id, set_destroy_id) = create_signal("".to_string());
+
+    create_effect(move |_| {
         if is_last_typed && value != ' ' && !is_completed && !is_revealing {
-            js_sys::Date::now().to_string()
-        } else {
-            "".to_string()
+            set_ring_id.set(js_sys::Date::now().to_string());
+        }
+    });
+
+    create_effect(move |_| {
+        let trigger = destroy_trigger.get();
+        if !trigger.is_empty() && is_last_typed {
+            set_destroy_id.set(trigger);
         }
     });
 
@@ -91,7 +100,7 @@ fn Cell(
     view! { 
         <div class=classes style=style>
             {move || {
-                let id = ring_trigger.get();
+                let id = ring_id.get();
                 if !id.is_empty() { view! { <div key=id class="power-ring" /> }.into_view() } else { view! {}.into_view() }
             }}
             {move || {
@@ -99,8 +108,8 @@ fn Cell(
                 if !id.is_empty() && !is_completed && !is_revealing { view! { <div key=id class="surge-ring" /> }.into_view() } else { view! {}.into_view() }
             }}
             {move || {
-                let id = destroy_trigger.get();
-                if !id.is_empty() && is_last_typed { view! { <div key=id class="destroyed-puff" /> }.into_view() } else { view! {}.into_view() }
+                let id = destroy_id.get();
+                if !id.is_empty() { view! { <div key=id class="destroyed-puff" /> }.into_view() } else { view! {}.into_view() }
             }}
             <div>{value.to_uppercase().to_string()}</div>
         </div> 
@@ -194,11 +203,8 @@ fn App() -> impl IntoView {
                 if let Ok(state) = serde_json::from_str::<StoredState>(&saved) {
                     if state.solution == sol {
                         set_guesses.set(state.guesses.clone());
-                        if state.guesses.contains(&sol) {
-                            set_game_won.set(true);
-                        } else if state.guesses.len() >= 6 {
-                            set_game_lost.set(true);
-                        }
+                        if state.guesses.contains(&sol) { set_game_won.set(true); } 
+                        else if state.guesses.len() >= 6 { set_game_lost.set(true); }
                     }
                 }
             }
@@ -223,7 +229,6 @@ fn App() -> impl IntoView {
 
     let on_key = move |key: String| {
         if game_won.get() || game_lost.get() { return; }
-        
         if key == "ENTER" {
             let input = current_input.get().to_uppercase();
             let sol = solution_data.get().solution.to_uppercase();
@@ -239,7 +244,6 @@ fn App() -> impl IntoView {
                 set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
             }
-
             if hard_mode.get() && !guesses.get().is_empty() {
                 let sol_upper = sol.to_uppercase();
                 let current_guesses = guesses.get();
@@ -295,7 +299,6 @@ fn App() -> impl IntoView {
                     }
                 }
             }
-
             set_surge_trigger.set(js_sys::Date::now().to_string());
             let mut new_guesses = guesses.get();
             new_guesses.push(input.clone());
@@ -328,7 +331,11 @@ fn App() -> impl IntoView {
             if len > 0 {
                 set_last_typed_index.set(len as i32 - 1);
                 set_destroy_trigger.set(js_sys::Date::now().to_string());
-                set_timeout(move || { set_current_input.update(|s| { s.pop(); }); set_last_typed_index.set(-1); }, std::time::Duration::from_millis(150));
+                set_timeout(move || {
+                    set_current_input.update(|s| { s.pop(); });
+                    set_last_typed_index.set(-1);
+                    set_destroy_trigger.set("".to_string());
+                }, std::time::Duration::from_millis(150));
             }
         } else if current_input.get().len() < 5 {
             let next_idx = current_input.get().len() as i32;
@@ -349,42 +356,24 @@ fn App() -> impl IntoView {
     });
 
     view! {
-        <div class="flex flex-col h-screen transition-all duration-500 px-2 overflow-hidden bg-app-bg text-app-text">
-            // Balanced flex container for equal spacing and auto-scaling
-            <div class="flex-1 flex flex-col justify-evenly items-center max-w-[600px] mx-auto w-full py-4 overflow-hidden h-full">
-                
-                // FLOATING NAVBAR PAD
+        <div class="flex flex-col min-h-screen transition-all duration-500 px-2 overflow-hidden bg-app-bg text-app-text">
+            <div class="flex-1 flex flex-col justify-evenly items-center max-w-[600px] mx-auto w-full py-2 overflow-hidden h-full">
                 <nav class="w-full grid grid-cols-3 items-center px-4 glass-pad py-2 shrink-0">
                     <div class="flex gap-2 justify-start items-center">
                         <button on:click=move |_| set_show_stats.set(true) title="Score" class="correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
-                        
                         <button on:click=move |_| set_show_help.set(true) title="How to Play" class="correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </button>
-
-                        <button 
-                            on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) }
-                            title="Hard Mode"
-                            class=move || format!("correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95 {}", if !guesses.get().is_empty() { "opacity-50 grayscale cursor-not-allowed" } else { "cursor-pointer" })
-                        >
-                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if hard_mode.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_8px_rgba(253,224,71,0.8)]" } else { "text-white opacity-40" }) fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
+                        <button on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) } title="Hard Mode" class=move || format!("correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95 {}", if !guesses.get().is_empty() { "opacity-50 grayscale cursor-not-allowed" } else { "cursor-pointer" })>
+                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if hard_mode.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_8px_rgba(253,224,71,0.8)]" } else { "text-white opacity-40" }) fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                         </button>
-
-                        <button 
-                            disabled=move || !game_won.get() && !game_lost.get()
-                            title="AI Mode"
-                            class=move || format!("correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95 {}", if !game_won.get() && !game_lost.get() { "opacity-30 grayscale cursor-not-allowed" } else { "cursor-pointer" })
-                        >
+                        <button disabled=move || !game_won.get() && !game_lost.get() title="AI Mode" class=move || format!("correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95 {}", if !game_won.get() && !game_lost.get() { "opacity-30 grayscale cursor-not-allowed" } else { "cursor-pointer" })>
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
                         </button>
                     </div>
-
                     <h1 class="text-xl sm:text-4xl font-black tracking-tighter italic text-center title-text uppercase shrink-0">"RUSTLE"</h1>
-                    
                     <div class="flex justify-end items-center">
                         <div class="glass-pad p-1.5 sm:p-2 rounded-2xl flex items-center shadow-lg">
                             {move || {
@@ -397,7 +386,6 @@ fn App() -> impl IntoView {
                     </div>
                 </nav>
 
-                // FLOATING GRID PAD
                 <div class="glass-pad p-4 sm:p-8 flex items-center justify-center shrink min-h-0">
                     <div class="flex flex-col gap-1 sm:gap-2 max-h-full aspect-[5/6]">
                         {move || {
@@ -424,8 +412,7 @@ fn App() -> impl IntoView {
                     </div>
                 </div>
 
-                // FLOATING KEYBOARD PAD
-                <div class="w-full max-w-[600px] px-2 py-4 glass-pad flex flex-col items-center text-white shadow-2xl shrink-0">
+                <div class="w-full max-w-[500px] px-1 py-3 glass-pad flex flex-col items-center text-white shadow-2xl shrink-0">
                     {move || {
                         let rows = vec![vec!['Q','W','E','R','T','Y','U','I','O','P'], vec!['A','S','D','F','G','H','J','K','L'], vec!['Z','X','C','V','B','N','M']];
                         rows.into_iter().enumerate().map(|(i, row)| {
@@ -445,9 +432,8 @@ fn App() -> impl IntoView {
                 </div>
             </div>
 
-            // MODALS
             <Modal title="How to Play".to_string() is_open=show_help set_is_open=set_show_help>
-                <div class="flex flex-col gap-6 text-white text-white">
+                <div class="flex flex-col gap-6 text-white">
                     <div class="space-y-4">
                         <div class="space-y-3">
                             <div class="flex flex-col items-center gap-1">
@@ -486,8 +472,8 @@ fn App() -> impl IntoView {
             </Modal>
 
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
-                <div class="flex flex-col items-center text-center text-white text-white">
-                    <div class="flex w-full justify-around mb-6">
+                <div class="flex flex-col items-center text-center text-white">
+                    <div class="flex w-full justify-around mb-6 text-white text-white">
                         <div><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70">"Played"</div></div>
                         <div><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70">"Win %"</div></div>
                         <div><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70">"Streak"</div></div>

@@ -6,28 +6,21 @@
     <meta name="theme-color" content="#10b981">
     <title>Rustle</title>
     
-    <!-- Nuclear Service Worker Unregister - Fixes the White Screen -->
+    <!-- Kill any persistent bad service workers -->
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
                 for(let registration of registrations) {
                     registration.unregister();
-                    console.log('Broken SW Unregistered');
                 }
             });
         }
-        // Force refresh if we were stuck
-        if (window.location.hash === '#reload') {
-            window.location.hash = '';
-        } else if (document.referrer.includes(window.location.host) === false) {
-            // Optional: force a clean reload once
-        }
     </script>
 
-    <link data-trunk rel="css" href="style/tailwind.css">
+    <link data-trunk rel="tailwind-css" href="style/tailwind.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
-<body>
+<body class="m-0 p-0 overflow-x-hidden">
     <div id="root"></div>
 </body>
 </html>

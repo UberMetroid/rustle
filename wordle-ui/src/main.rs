@@ -91,11 +91,11 @@ fn Modal(title: String, is_open: ReadSignal<bool>, set_is_open: WriteSignal<bool
         <Show when=move || is_open.get()>
             <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50" on:click=move |_| set_is_open.set(false)>
                 <div class="glass-pad w-full max-w-sm p-6 shadow-2xl transition-all scale-up overflow-y-auto max-h-[90vh]" on:click=move |ev| ev.stop_propagation()>
-                    <div class="flex justify-between items-center mb-4 text-white uppercase">
+                    <div class="flex justify-between items-center mb-4 uppercase">
                         <h2 class="text-2xl font-black tracking-tighter"> {title_clone.clone()} </h2>
                         <button on:click=move |_| set_is_open.set(false) class="text-2xl font-bold hover:text-red-500 transition-colors"> "×" </button>
                     </div>
-                    <div class="text-white">
+                    <div>
                         {children.with_value(|children| children())}
                     </div>
                 </div>
@@ -129,7 +129,6 @@ fn App() -> impl IntoView {
         s
     });
 
-    // Handle LocalStorage only inside create_effect to prevent hydration/initialization issues
     create_effect(move |_| {
         if let Some(storage) = get_storage() {
             if let Ok(Some(t)) = storage.get_item("color-theme") { set_theme.set(t); }
@@ -189,7 +188,6 @@ fn App() -> impl IntoView {
                 return;
             }
 
-            // Hard Mode
             if hard_mode.get() && !guesses.get().is_empty() {
                 let prev_guess = guesses.get().last().cloned().unwrap().to_uppercase();
                 let prev_statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &prev_guess)).unwrap_or_default();
@@ -291,14 +289,14 @@ fn App() -> impl IntoView {
     });
 
     view! {
-        <div class="flex min-h-screen flex-col items-center py-4 sm:py-8 transition-all duration-500 text-black dark:text-white px-2">
+        <div class="flex min-h-screen flex-col items-center py-4 sm:py-8 transition-all duration-500 px-2 overflow-x-hidden">
             <div class="w-full max-w-[600px] flex flex-col items-center">
                 <nav class="w-full grid grid-cols-3 items-center px-4 mb-4 sm:mb-8 glass-pad py-2">
-                    <div class="flex gap-2 justify-start">
-                        <button on:click=move |_| set_show_stats.set(true) class="correct-pad w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent">
+                    <div class="flex gap-2 justify-start text-white">
+                        <button on:click=move |_| set_show_stats.set(true) class="correct-pad w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
-                        <button on:click=move |_| set_show_settings.set(true) class="correct-pad w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent">
+                        <button on:click=move |_| set_show_settings.set(true) class="correct-pad w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
@@ -322,7 +320,7 @@ fn App() -> impl IntoView {
                     </div>
                 </nav>
 
-                <div class="glass-pad p-4 sm:p-8">
+                <div class="glass-pad p-4 sm:p-8 mb-4">
                     <div class="flex flex-col gap-1 sm:gap-2">
                         {move || {
                             let gs = guesses.get();
@@ -343,7 +341,7 @@ fn App() -> impl IntoView {
                 </div>
             </div>
 
-            <div class="mt-4 w-full max-w-[550px] px-4 py-4 glass-pad flex flex-col items-center text-white shadow-2xl">
+            <div class="mt-auto w-full max-w-[550px] px-2 py-4 glass-pad flex flex-col items-center text-white shadow-2xl">
                 {move || {
                     let rows = vec![vec!['Q','W','E','R','T','Y','U','I','O','P'], vec!['A','S','D','F','G','H','J','K','L'], vec!['Z','X','C','V','B','N','M']];
                     rows.into_iter().enumerate().map(|(i, row)| {
@@ -372,7 +370,7 @@ fn App() -> impl IntoView {
 
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
                 <div class="flex flex-col items-center text-center">
-                    <div class="flex w-full justify-around mb-6 text-white text-white">
+                    <div class="flex w-full justify-around mb-6 text-white">
                         <div><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70">"Played"</div></div>
                         <div><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70">"Win %"</div></div>
                         <div><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70">"Streak"</div></div>
@@ -396,8 +394,8 @@ fn App() -> impl IntoView {
                 <div class="flex flex-col gap-6 text-white">
                     <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30">
                         <div>
-                            <div class="font-bold text-white">"Hard Mode"</div>
-                            <div class="text-xs opacity-70 text-white">"Strict validation of clues"</div>
+                            <div class="font-bold">"Hard Mode"</div>
+                            <div class="text-xs opacity-70">"Strict validation of clues"</div>
                             {move || if !guesses.get().is_empty() { view! { <div class="text-[10px] text-red-400 mt-1 font-bold uppercase tracking-tighter italic">"Game in progress"</div> }.into_view() } else { view! {}.into_view() }}
                         </div>
                         <button on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) }
@@ -406,8 +404,8 @@ fn App() -> impl IntoView {
                         </button>
                     </div>
                     <div class="space-y-4">
-                        <h3 class="text-sm font-black uppercase tracking-widest text-center opacity-80 text-white">"How to Play"</h3>
-                        <div class="space-y-3 text-white">
+                        <h3 class="text-sm font-black uppercase tracking-widest text-center opacity-80">"How to Play"</h3>
+                        <div class="space-y-3">
                             <div class="flex flex-col items-center gap-1">
                                 <div class="flex">
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent correct font-black">"R"</div>

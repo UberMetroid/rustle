@@ -82,22 +82,23 @@ function App() {
       : false
   )
 
-  // Fast-init Wasm
+  // Non-blocking Wasm init
   useEffect(() => {
     init()
       .then(() => {
         const data = getSolution(gameDate)
-        setSolutionData(data)
-        setIsWasmReady(true)
+        if (data) {
+          setSolutionData(data)
+          setIsWasmReady(true)
 
-        // Sync state
-        const loaded = loadGameStateFromLocalStorage(isLatestGame)
-        if (data && loaded?.solution === data.solution) {
-          setGuesses(loaded.guesses)
-          if (loaded.guesses.includes(data.solution)) {
-            setIsGameWon(true)
-          } else if (loaded.guesses.length === MAX_CHALLENGES) {
-            setIsGameLost(true)
+          const loaded = loadGameStateFromLocalStorage(isLatestGame)
+          if (loaded?.solution === data.solution) {
+            setGuesses(loaded.guesses)
+            if (loaded.guesses.includes(data.solution)) {
+              setIsGameWon(true)
+            } else if (loaded.guesses.length === MAX_CHALLENGES) {
+              setIsGameLost(true)
+            }
           }
         }
       })
@@ -179,7 +180,7 @@ function App() {
   }, [isGameWon, isGameLost, showSuccessAlert, solutionData])
 
   const onChar = (value: string) => {
-    if (isWasmReady && guesses.length < MAX_CHALLENGES && !isGameWon) {
+    if (guesses.length < MAX_CHALLENGES && !isGameWon) {
       setCurrentGuess(
         `${currentGuess}${value}`.slice(0, solutionData?.solution.length || 5)
       )
@@ -248,14 +249,6 @@ function App() {
         delayMs: REVEAL_TIME_MS * solutionData.solution.length + 1,
       })
     }
-  }
-
-  if (!isWasmReady || !solutionData) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <p className="text-xl font-bold">Loading Wordle Rust...</p>
-      </div>
-    )
   }
 
   return (

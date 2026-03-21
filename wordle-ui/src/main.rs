@@ -270,6 +270,33 @@ fn App() -> impl IntoView {
         if let Some(storage) = get_storage() { let _ = storage.remove_item("game-state"); }
     };
 
+    let share_results = move || {
+        let is_hard = hard_mode.get() || is_ng_plus.get();
+        let comment = snarky_comment.get();
+        let shared_comment = if game_lost.get() && !comment.contains("BREACHED") { "TOTAL BUMMER. POSEUR.".to_string() } else { comment };
+        
+        let current_theme = theme.get();
+        let (correct_e, present_e, absent_e) = get_theme_emojis(&current_theme);
+        let mut text = format!("RUSTLE {} {}/6 {}{}\n\n", 
+            solution_data.get().solution_index, 
+            if game_won.get() { guesses.get().len().to_string() } else { "X".to_string() }, 
+            if is_hard { "⚡" } else { "" },
+            if is_ng_plus.get() { "+" } else { "" }
+        );
+        let ss = guess_statuses.get();
+        for s_row in ss {
+            for s in s_row { text.push_str(match s.as_str() { "correct" => correct_e, "present" => present_e, _ => absent_e }); }
+            text.push('\n');
+        }
+        text.push('\n');
+        text.push_str(&shared_comment);
+        let _ = window().navigator().clipboard().write_text(&text);
+        set_snarky_comment.set("Results Copied, poseur.".to_string());
+        set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));
+        
+        if !is_ng_plus.get() { start_ng_plus(); }
+    };
+
     let on_key = move |key: String| {
         if game_won.get() || game_lost.get() { return; }
         if key == "ENTER" {
@@ -428,19 +455,22 @@ fn App() -> impl IntoView {
     };
 
     let _ = window_event_listener(leptos::ev::keydown, move |ev| {
-        if show_stats.get() || show_help.get() { return; }
         let key = ev.key();
+        if show_stats.get() {
+            if key == "Enter" && (game_won.get() || game_lost.get()) {
+                share_results();
+                set_show_stats.set(false);
+            }
+            return;
+        }
+        if show_help.get() { return; }
+        
         if key == "Enter" { on_key("ENTER".to_string()); }
         else if key == "Backspace" { on_key("DELETE".to_string()); }
         else if key.len() == 1 {
             let c = key.chars().next().unwrap();
             if c.is_ascii_alphabetic() { on_key(c.to_uppercase().to_string()); }
         }
-    });
-
-    create_effect(move |_| {
-        let h = hard_mode.get();
-        if let Some(storage) = get_storage() { let _ = storage.set_item("hard-mode", if h { "true" } else { "false" }); }
     });
 
     view! {
@@ -628,32 +658,7 @@ fn App() -> impl IntoView {
                     </div>
 
                     <Show when=move || game_won.get() || game_lost.get()>
-                        <button on:click=move |_| {
-                            let is_hard = hard_mode.get() || is_ng_plus.get();
-                            let comment = snarky_comment.get();
-                            let shared_comment = if game_lost.get() && !comment.contains("BREACHED") { "TOTAL BUMMER. POSEUR.".to_string() } else { comment };
-                            
-                            let current_theme = theme.get();
-                            let (correct_e, present_e, absent_e) = get_theme_emojis(&current_theme);
-                            let mut text = format!("RUSTLE {} {}/6 {}{}\n\n", 
-                                solution_data.get().solution_index, 
-                                if game_won.get() { guesses.get().len().to_string() } else { "X".to_string() }, 
-                                if is_hard { "⚡" } else { "" },
-                                if is_ng_plus.get() { "+" } else { "" }
-                            );
-                            let ss = guess_statuses.get();
-                            for s_row in ss {
-                                for s in s_row { text.push_str(match s.as_str() { "correct" => correct_e, "present" => present_e, _ => absent_e }); }
-                                text.push('\n');
-                            }
-                            text.push('\n');
-                            text.push_str(&shared_comment);
-                            let _ = window().navigator().clipboard().write_text(&text);
-                            set_snarky_comment.set("Results Copied, poseur.".to_string());
-                            set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));
-                            
-                            if !is_ng_plus.get() { start_ng_plus(); }
-                        } class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest"> "SHARE" </button>
+                        <button on:click=move |_| share_results() class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest"> "SHARE" </button>
                     </Show>
                 </div>
             </Modal>

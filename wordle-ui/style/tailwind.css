@@ -32,19 +32,19 @@ body {
   position: relative;
 }
 
-/* Theme Definitions with High Legibility */
+/* Theme Definitions with High Legibility and Unified Unused Colors */
 
 /* 0: Dark */
 .theme-dark {
   --app-bg: #0f172a;
   --app-text: #f8fafc;
-  --default-cell-bg-color: #1e293b;
-  --default-cell-border-color: #334155;
+  --default-cell-bg-color: #334155;
+  --default-cell-border-color: #475569;
   --default-cell-text-color: #f8fafc;
   --key-bg: #334155;
   --key-text: #f8fafc;
   --theme-primary: #38bdf8;
-  --absent-cell-bg-color: #334155;
+  --absent-cell-bg-color: #1e293b;
   --correct-cell-bg-color: #22c55e;
   --present-cell-bg-color: #eab308;
 }
@@ -53,7 +53,7 @@ body {
 .theme-red {
   --app-bg: #450a0a;
   --app-text: #ffffff;
-  --default-cell-bg-color: #7f1d1d;
+  --default-cell-bg-color: #991b1b;
   --default-cell-border-color: #b91c1c;
   --default-cell-text-color: #ffffff;
   --key-bg: #991b1b;
@@ -68,7 +68,7 @@ body {
 .theme-orange {
   --app-bg: #431407;
   --app-text: #ffffff;
-  --default-cell-bg-color: #7c2d12;
+  --default-cell-bg-color: #9a3412;
   --default-cell-border-color: #ea580c;
   --default-cell-text-color: #ffffff;
   --key-bg: #9a3412;
@@ -83,7 +83,7 @@ body {
 .theme-yellow {
   --app-bg: #422006;
   --app-text: #ffffff;
-  --default-cell-bg-color: #713f12;
+  --default-cell-bg-color: #854d0e;
   --default-cell-border-color: #ca8a04;
   --default-cell-text-color: #ffffff;
   --key-bg: #854d0e;
@@ -98,7 +98,7 @@ body {
 .theme-green {
   --app-bg: #064e3b;
   --app-text: #ffffff;
-  --default-cell-bg-color: #065f46;
+  --default-cell-bg-color: #047857;
   --default-cell-border-color: #10b981;
   --default-cell-text-color: #ffffff;
   --key-bg: #047857;
@@ -113,7 +113,7 @@ body {
 .theme-blue {
   --app-bg: #1e3a8a;
   --app-text: #ffffff;
-  --default-cell-bg-color: #1e40af;
+  --default-cell-bg-color: #1d4ed8;
   --default-cell-border-color: #3b82f6;
   --default-cell-text-color: #ffffff;
   --key-bg: #1d4ed8;
@@ -128,7 +128,7 @@ body {
 .theme-purple {
   --app-bg: #4c1d95;
   --app-text: #ffffff;
-  --default-cell-bg-color: #5b21b6;
+  --default-cell-bg-color: #6d28d9;
   --default-cell-border-color: #8b5cf6;
   --default-cell-text-color: #ffffff;
   --key-bg: #6d28d9;
@@ -143,7 +143,7 @@ body {
 .theme-light {
   --app-bg: #f8fafc;
   --app-text: #0f172a;
-  --default-cell-bg-color: #ffffff;
+  --default-cell-bg-color: #e2e8f0;
   --default-cell-border-color: #cbd5e1;
   --default-cell-text-color: #0f172a;
   --key-bg: #e2e8f0;
@@ -198,7 +198,7 @@ body {
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-/* Cell Overrides */
+/* Cell Status Overrides - Priority! */
 .absent {
   background-color: var(--absent-cell-bg-color) !important;
   border-color: var(--absent-cell-bg-color) !important;
@@ -213,6 +213,13 @@ body {
   background-color: var(--present-cell-bg-color) !important;
   border-color: var(--present-cell-bg-color) !important;
   color: white !important;
+}
+
+/* Default state for cells (when not completed/revealing) */
+.cell-neutral {
+  background-color: var(--default-cell-bg-color);
+  border-color: var(--default-cell-border-color);
+  color: var(--default-cell-text-color);
 }
 
 /* Animations */
@@ -244,7 +251,7 @@ body {
   100% { transform: translateX(0); }
 }
 
-/* Slidding Toggle Styling */
+/* Slider Toggle Styling */
 .theme-slider {
   -webkit-appearance: none;
   appearance: none;

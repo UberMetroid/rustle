@@ -3,6 +3,7 @@ use word_engine::{get_solution, is_word_in_list, get_guess_statuses};
 use serde::{Serialize, Deserialize};
 use wasm_bindgen::prelude::*;
 use std::collections::HashMap;
+use leptos::ev::keydown;
 
 // Re-exporting for convenience
 mod word_engine {
@@ -261,6 +262,24 @@ fn App() -> impl IntoView {
         }
     });
 
+    // PHYSICAL KEYBOARD SUPPORT
+    let _ = window_event_listener(keydown, move |ev| {
+        // If a modal is open, ignore keyboard
+        if show_stats.get() || show_settings.get() { return; }
+        
+        let key = ev.key();
+        if key == "Enter" {
+            on_key.call("ENTER".to_string());
+        } else if key == "Backspace" {
+            on_key.call("DELETE".to_string());
+        } else if key.len() == 1 {
+            let c = key.chars().next().unwrap();
+            if c.is_ascii_alphabetic() {
+                on_key.call(c.to_uppercase().to_string());
+            }
+        }
+    });
+
     let on_share = move |_| {
         let sol = solution_data.get().solution.to_uppercase();
         let mut text = format!("Rustle {} {}/6\n\n", solution_data.get().solution_index, if game_won.get() { guesses.get().len().to_string() } else { "X".to_string() });
@@ -301,7 +320,7 @@ fn App() -> impl IntoView {
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
                         <button on:click=move |_| set_show_settings.set(true) class="correct-pad w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.756 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
                     
@@ -436,7 +455,6 @@ fn App() -> impl IntoView {
                         </button>
                     </div>
 
-                    // How to Play Examples
                     <div class="space-y-4">
                         <h3 class="text-sm font-black uppercase tracking-widest text-center opacity-80">"How to Play"</h3>
                         

@@ -77,11 +77,11 @@ fn Modal(title: String, is_open: ReadSignal<bool>, set_is_open: WriteSignal<bool
         <Show when=move || is_open.get()>
             <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50" on:click=move |_| set_is_open.set(false)>
                 <div class="glass-pad w-full max-w-sm p-6 shadow-2xl transition-all scale-up" on:click=move |ev| ev.stop_propagation()>
-                    <div class="flex justify-between items-center mb-4 text-white">
+                    <div class="flex justify-between items-center mb-4">
                         <h2 class="text-2xl font-black tracking-tighter"> {title_clone.clone()} </h2>
                         <button on:click=move |_| set_is_open.set(false) class="text-2xl font-bold hover:text-red-500"> "×" </button>
                     </div>
-                    <div class="text-white">
+                    <div>
                         {children.with_value(|children| children())}
                     </div>
                 </div>
@@ -104,7 +104,7 @@ fn App() -> impl IntoView {
     let (theme, set_theme) = create_signal(
         window().local_storage().unwrap().unwrap()
             .get_item("color-theme").unwrap_or_default()
-            .unwrap_or_else(|| "default".to_string())
+            .unwrap_or_else(|| "dark".to_string())
     );
 
     let (hard_mode, set_hard_mode) = create_signal(
@@ -287,21 +287,20 @@ fn App() -> impl IntoView {
                     </div>
                     <h1 class="text-2xl sm:text-3xl font-black tracking-tighter italic mr-4 title-text transition-all duration-500">"RUSTLE"</h1>
                     
-                    // Fancy Range Slider from Dashboard
                     {move || {
-                        let themes = vec!["retro", "cyberpunk", "nord", "default", "solarized"];
+                        let themes = vec!["dark", "red", "orange", "yellow", "green", "blue", "purple", "light"];
                         let current = theme.get();
-                        let index = themes.iter().position(|&t| t == current).unwrap_or(3);
+                        let index = themes.iter().position(|&t| t == current).unwrap_or(0);
                         view! {
                             <input 
                                 type="range" 
                                 min="0" 
-                                max="4" 
+                                max="7" 
                                 step="1" 
                                 value=index
                                 class="theme-slider"
                                 on:input=move |ev| {
-                                    let val = event_target_value(&ev).parse::<usize>().unwrap_or(3);
+                                    let val = event_target_value(&ev).parse::<usize>().unwrap_or(0);
                                     set_theme.set(themes[val].to_string());
                                 }
                             />
@@ -354,17 +353,17 @@ fn App() -> impl IntoView {
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
                 <div class="flex flex-col items-center text-center">
                     <div class="flex w-full justify-around mb-6">
-                        <div><div class="text-3xl font-black text-white">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70">"Played"</div></div>
-                        <div><div class="text-3xl font-black text-white">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70">"Win %"</div></div>
-                        <div><div class="text-3xl font-black text-white">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70">"Streak"</div></div>
-                        <div><div class="text-3xl font-black text-white">{move || stats.get().best_streak}</div><div class="text-xs uppercase opacity-70">"Best"</div></div>
+                        <div><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70">"Played"</div></div>
+                        <div><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70">"Win %"</div></div>
+                        <div><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70">"Streak"</div></div>
+                        <div><div class="text-3xl font-black">{move || stats.get().best_streak}</div><div class="text-xs uppercase opacity-70">"Best"</div></div>
                     </div>
-                    <h3 class="text-sm font-bold uppercase mb-2 text-white">"Guess Distribution"</h3>
+                    <h3 class="text-sm font-bold uppercase mb-2">"Guess Distribution"</h3>
                     <div class="w-full space-y-1 mb-6 text-left">
                         {move || stats.get().distribution.iter().enumerate().map(|(i, count)| {
                             let wins = stats.get().wins;
                             let width = if wins > 0 { (*count as f32 * 100.0 / wins as f32).max(10.0) } else { 10.0 };
-                            view! { <div class="flex items-center gap-2 text-xs text-white"><div class="w-2">{i+1}</div><div class="bg-gray-500 text-white font-bold p-0.5 rounded text-right pr-2 transition-all duration-1000" style=format!("width: {}%", width)>{*count}</div></div> }
+                            view! { <div class="flex items-center gap-2 text-xs"><div class="w-2">{i+1}</div><div class="bg-gray-500 text-white font-bold p-0.5 rounded text-right pr-2 transition-all duration-1000" style=format!("width: {}%", width)>{*count}</div></div> }
                         }).collect_view()}
                     </div>
                     <Show when=move || game_won.get() || game_lost.get()>
@@ -377,7 +376,7 @@ fn App() -> impl IntoView {
 
             <Modal title="Settings".to_string() is_open=show_settings set_is_open=set_show_settings>
                 <div class="flex flex-col gap-4">
-                    <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30 text-white">
+                    <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30">
                         <div>
                             <div class="font-bold">"Hard Mode"</div>
                             <div class="text-xs opacity-70">"Strict validation of clues"</div>
@@ -389,7 +388,7 @@ fn App() -> impl IntoView {
                             <div class=move || format!("absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 {}", if hard_mode.get() { "left-7" } else { "left-1" }) />
                         </button>
                     </div>
-                    <div class="text-xs opacity-50 italic text-white">"Rustle Version 1.0.0 (Pure Rust)"</div>
+                    <div class="text-xs opacity-50 italic">"Rustle Version 1.0.0 (Pure Rust)"</div>
                 </div>
             </Modal>
 

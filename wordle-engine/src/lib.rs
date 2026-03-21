@@ -1,109 +1,103 @@
 use wasm_bindgen::prelude::*;
-use unicode_segmentation::UnicodeSegmentation;
-use serde::{Serialize, Deserialize};
-use chrono::{Utc, Datelike, Duration, TimeZone};
+use std::collections::HashMap;
 
 mod words;
-use words::{WORDS, VALID_GUESSES};
+use words::WORDS;
 
 #[wasm_bindgen]
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Copy)]
-pub enum CharStatus {
-    Absent,
-    Present,
-    Correct,
-}
-
-impl CharStatus {
-    pub fn to_string(&self) -> String {
-        match self {
-            CharStatus::Absent => "absent".to_string(),
-            CharStatus::Present => "present".to_string(),
-            CharStatus::Correct => "correct".to_string(),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Solution {
-    pub solution: String,
-    #[serde(rename = "solutionGameDate")]
-    pub solution_game_date: u64,
-    #[serde(rename = "solutionIndex")]
-    pub solution_index: i64,
-    pub tomorrow: u64,
-}
-
-const FIRST_GAME_DATE_MS: i64 = 1640995200000; // Jan 1 2022 00:00:00 UTC
-
-#[wasm_bindgen]
-pub fn get_solution(timestamp_ms: u64) -> JsValue {
-    let date = Utc.timestamp_millis_opt(timestamp_ms as i64).unwrap();
-    let start_of_day = Utc.with_ymd_and_hms(date.year(), date.month(), date.day(), 0, 0, 0).unwrap();
+pub fn get_solution(timestamp: u64) -> JsValue {
+    let day = timestamp / 86400000;
+    let index = (day % WORDS.len() as u64) as usize;
+    let tomorrow = (day + 1) * 86400000;
     
-    let first_game_date = Utc.timestamp_millis_opt(FIRST_GAME_DATE_MS).unwrap();
-    
-    let diff = start_of_day.signed_duration_since(first_game_date);
-    let index = diff.num_days();
-    
-    let word = WORDS[(index as usize) % WORDS.len()].to_uppercase();
-    let tomorrow = (start_of_day + Duration::days(1)).timestamp_millis() as u64;
-
-    let res = Solution {
-        solution: word,
-        solution_game_date: start_of_day.timestamp_millis() as u64,
-        solution_index: index,
-        tomorrow,
-    };
-
-    serde_wasm_bindgen::to_value(&res).unwrap()
+    let sol = serde_json::json!({
+        "solution": WORDS[index].to_uppercase(),
+        "solutionGameDate": day,
+        "solutionIndex": index as i64,
+        "tomorrow": tomorrow
+    });
+    serde_wasm_bindgen::to_value(&sol).unwrap()
 }
 
 #[wasm_bindgen]
 pub fn is_word_in_list(word: &str) -> bool {
-    let lower_word = word.to_lowercase();
-    WORDS.contains(&lower_word.as_str()) || VALID_GUESSES.contains(&lower_word.as_str())
+    let w = word.to_lowercase();
+    WORDS.contains(&w.as_str())
 }
 
 #[wasm_bindgen]
 pub fn get_guess_statuses(solution: &str, guess: &str) -> JsValue {
-    let split_solution: Vec<&str> = solution.graphemes(true).collect();
-    let split_guess: Vec<&str> = guess.graphemes(true).collect();
+    let statuses = calculate_statuses(solution, guess);
+    serde_wasm_bindgen::to_value(&statuses).unwrap()
+}
 
-    let mut solution_chars_taken = vec![false; split_solution.len()];
-    let mut statuses = vec![CharStatus::Absent; split_guess.len()];
-    let mut status_assigned = vec![false; split_guess.len()];
+// ADVERSARIAL AI LOGIC (Absurdle)
+#[wasm_bindgen]
+pub fn get_ai_word_list() -> JsValue {
+    let list: Vec<String> = WORDS.iter().map(|w| w.to_uppercase()).collect();
+    serde_wasm_bindgen::to_value(&list).unwrap()
+}
 
-    // Handle all correct cases first
-    for (i, &letter) in split_guess.iter().enumerate() {
-        if i < split_solution.len() && letter == split_solution[i] {
-            statuses[i] = CharStatus::Correct;
-            solution_chars_taken[i] = true;
-            status_assigned[i] = true;
+#[wasm_bindgen]
+pub fn get_adversarial_step(guess: &str, current_pool: JsValue) -> JsValue {
+    let pool: Vec<String> = serde_wasm_bindgen::from_value(current_pool).unwrap_or_default();
+    if pool.is_empty() { return JsValue::NULL; }
+
+    // Map: Pattern String -> List of words that produce that pattern
+    let mut buckets: HashMap<String, Vec<String>> = HashMap::new();
+
+    for sol in &pool {
+        let statuses = calculate_statuses(sol, guess);
+        let pattern_key = statuses.join(",");
+        buckets.entry(pattern_key).or_insert_with(Vec::new).push(sol.clone());
+    }
+
+    // Find the bucket with the most words (Adversarial choice)
+    let mut best_pattern = String::new();
+    let mut best_bucket: Vec<String> = Vec::new();
+
+    for (pattern, words) in buckets {
+        if words.len() > best_bucket.len() {
+            best_pattern = pattern;
+            best_bucket = words;
         }
     }
 
-    // Handle present and absent cases
-    for (i, &letter) in split_guess.iter().enumerate() {
-        if status_assigned[i] {
-            continue;
-        }
+    let result = serde_json::json!({
+        "pattern": best_pattern.split(',').collect::<Vec<&str>>(),
+        "newPool": best_bucket
+    });
+    serde_wasm_bindgen::to_value(&result).unwrap()
+}
 
-        let mut found = false;
-        for (j, &sol_letter) in split_solution.iter().enumerate() {
-            if letter == sol_letter && !solution_chars_taken[j] {
-                statuses[i] = CharStatus::Present;
-                solution_chars_taken[j] = true;
-                found = true;
-                break;
+fn calculate_statuses(solution: &str, guess: &str) -> Vec<String> {
+    let sol_chars: Vec<char> = solution.chars().collect();
+    let guess_chars: Vec<char> = guess.chars().collect();
+    let mut statuses = vec!["absent".to_string(); 5];
+    let mut sol_used = vec![false; 5];
+    let mut guess_used = vec![false; 5];
+
+    // First pass: Find correct spots (Green)
+    for i in 0..5 {
+        if guess_chars[i] == sol_chars[i] {
+            statuses[i] = "correct".to_string();
+            sol_used[i] = true;
+            guess_used[i] = true;
+        }
+    }
+
+    // Second pass: Find present letters (Yellow)
+    for i in 0..5 {
+        if !guess_used[i] {
+            for j in 0..5 {
+                if !sol_used[j] && guess_chars[i] == sol_chars[j] {
+                    statuses[i] = "present".to_string();
+                    sol_used[j] = true;
+                    break;
+                }
             }
         }
-
-        if !found {
-            statuses[i] = CharStatus::Absent;
-        }
     }
 
-    let status_strings: Vec<String> = statuses.iter().map(|s| s.to_string()).collect();
-    serde_wasm_bindgen::to_value(&status_strings).unwrap()
+    statuses
 }

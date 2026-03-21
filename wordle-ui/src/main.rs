@@ -1,5 +1,5 @@
 use leptos::*;
-use word_engine::{get_solution, is_word_in_list, get_guess_statuses};
+use word_engine::{get_solution, is_word_in_list, get_guess_statuses, get_ai_word_list, get_adversarial_step};
 use serde::{Serialize, Deserialize};
 use wasm_bindgen::prelude::*;
 use std::collections::HashMap;
@@ -38,7 +38,17 @@ struct GameStats {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct StoredState {
     pub guesses: Vec<String>,
+    pub statuses: Vec<Vec<String>>, // Explicitly store statuses for AI mode
     pub solution: String,
+    pub is_ai_mode: bool,
+    pub ai_pool: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct AdversarialResult {
+    pub pattern: Vec<String>,
+    #[serde(rename = "newPool")]
+    pub new_pool: Vec<String>,
 }
 
 fn get_storage() -> Option<web_sys::Storage> {
@@ -59,38 +69,33 @@ fn get_theme_emojis(theme: &str) -> (&str, &str, &str) {
     }
 }
 
-fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool) -> String {
-    if is_loss {
+fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool, is_ai: bool) -> String {
+    if is_ai {
+        if is_win { return "SYSTEM BREACHED. IMPRESSIVE.".to_string(); }
+        if is_loss { return "THE SYSTEM WINS. LOG OFF.".to_string(); }
         return vec![
-            "Game Over, Poseur.", 
-            "Total barf bag.", 
-            "Gag me with a spoon.", 
-            "Barf out!", 
-            "Wasted.", 
-            "Adjust your tracking."
-        ][js_sys::Math::floor(js_sys::Math::random() * 6.0) as usize].to_string();
+            "CALCULATING ENTROPY...", "I AM THE SYSTEM.", "GLITCH DETECTED.",
+            "SHALL WE PLAY A GAME?", "ACCESS DENIED.", "DATA CORRUPTION...",
+            "TRON CALLED. HE WANTS HIS SKILLS BACK.", "DIGITAL ENTROPY MAXIMIZED."
+        ][js_sys::Math::floor(js_sys::Math::random() * 8.0) as usize].to_string();
     }
-    
+
+    if is_loss { return "Poseur.".to_string(); }
     if is_win {
         let win_msgs = match tries {
-            1 => vec!["HACK THE PLANET!", "Pure Luck.", "Sus physics.", "God Mode active.", "Keyboard Cowboy."],
-            2 => vec!["Radical!", "Tubular!", "Showoff.", "Maximum Overdrive.", "Excellent!", "Righteous."],
-            3 => vec!["Righteous.", "Choice.", "Solid mid.", "Right on.", "Righteous.", "Stay gold."],
-            4 => vec!["Finally.", "Took your time.", "Getting slow?", "Analog brain.", "Manual override."],
-            5 => vec!["Panic yet?", "Sweaty.", "Close one.", "Danger Zone.", "Tracking error.", "Static..."],
-            6 => vec!["Barely.", "Yikes.", "Scrub tier.", "Bogus win.", "Poseur alert.", "Last life."],
+            1 => vec!["HACKER!", "Pure Luck.", "Sus physics."],
+            2 => vec!["Radical!", "Tubular!", "Showoff."],
+            3 => vec!["Righteous.", "Choice.", "Solid mid."],
+            4 => vec!["Finally.", "Getting slow?"],
+            5 => vec!["Sweaty.", "Close one."],
+            6 => vec!["Barely.", "Scrub tier."],
             _ => vec!["Win."],
         };
         let mut msg = win_msgs[js_sys::Math::floor(js_sys::Math::random() * win_msgs.len() as f64) as usize].to_string();
         if is_hard { msg.push_str(" (Hard Mode)"); }
         return msg;
     }
-    
-    let mid_comments = vec![
-        "Gnarly.", "Totally.", "Groovy.", "Neon.", "Retro.", "Bogus.", "As if!",
-        "Not!", "Eat my shorts!", "Party on.", "Cyber-glitch.", "Shall we play?",
-        "L33T logic.", "Static...", "No way!", "Way harsh.", "Take a chill pill."
-    ];
+    let mid_comments = vec!["Gnarly.", "Totally.", "Groovy.", "Neon.", "Retro.", "Bogus?"];
     mid_comments[js_sys::Math::floor(js_sys::Math::random() * mid_comments.len() as f64) as usize].to_string()
 }
 
@@ -141,7 +146,7 @@ fn Cell(
             {move || { let id = ring_id.get(); if !id.is_empty() { view! { <div key=id class="power-ring" /> }.into_view() } else { view! {}.into_view() } }}
             {move || { let id = underline_id.get(); if !id.is_empty() { view! { <div key=id class="power-underline" /> }.into_view() } else { view! {}.into_view() } }}
             {move || { let id = destroy_id.get(); if !id.is_empty() { view! { <div key=id class="destroyed-puff" /> }.into_view() } else { view! {}.into_view() } }}
-            <div>{value.to_uppercase().to_string()}</div>
+            <div class="relative z-10">{value.to_uppercase().to_string()}</div>
         </div> 
     }
 }
@@ -149,7 +154,7 @@ fn Cell(
 #[component]
 fn Row(
     guess: String, 
-    solution: String, 
+    statuses: Vec<String>, 
     is_revealing: bool, 
     is_completed: bool, 
     is_jiggling: Signal<bool>,
@@ -157,9 +162,6 @@ fn Row(
     last_typed_index: i32,
     is_hard_mode: bool
 ) -> impl IntoView {
-    let statuses: Vec<String> = if is_completed || is_revealing {
-        serde_wasm_bindgen::from_value(get_guess_statuses(&solution, &guess)).unwrap_or_default()
-    } else { vec!["".to_string(); 5] };
     view! {
         <div class=move || format!("flex justify-center mb-1 {}", if is_jiggling.get() { "jiggle" } else { "" })>
             {guess.chars().chain(std::iter::repeat(' ')).take(5).zip(statuses.into_iter().chain(std::iter::repeat("".to_string()))).enumerate().map(|(i, (c, s))| {
@@ -193,6 +195,7 @@ fn Modal(title: String, is_open: ReadSignal<bool>, set_is_open: WriteSignal<bool
 #[component]
 fn App() -> impl IntoView {
     let (guesses, set_guesses) = create_signal(Vec::<String>::new());
+    let (guess_statuses, set_guess_statuses_vec) = create_signal(Vec::<Vec<String>>::new());
     let (current_input, set_current_input) = create_signal(String::new());
     let (game_won, set_game_won) = create_signal(false);
     let (game_lost, set_game_lost) = create_signal(false);
@@ -208,6 +211,11 @@ fn App() -> impl IntoView {
     let (stats, set_stats) = create_signal(GameStats::default());
     let (keyboard_pulse, set_keyboard_pulse) = create_signal((' ', "".to_string()));
     let (snarky_comment, set_snarky_comment) = create_signal(String::new());
+
+    // AI MODE STATE
+    let (is_ai_mode, set_is_ai_mode) = create_signal(false);
+    let (ai_pool, set_ai_pool) = create_signal(Vec::<String>::new());
+    let (daily_game_done, set_daily_game_done) = create_signal(false);
 
     let now = js_sys::Date::now();
     let solution_data = create_memo(move |_| {
@@ -230,8 +238,16 @@ fn App() -> impl IntoView {
                 if let Ok(state) = serde_json::from_str::<StoredState>(&saved) {
                     if state.solution == sol {
                         set_guesses.set(state.guesses.clone());
-                        if state.guesses.contains(&sol) { set_game_won.set(true); } 
-                        else if state.guesses.len() >= 6 { set_game_lost.set(true); }
+                        set_guess_statuses_vec.set(state.statuses.clone());
+                        set_is_ai_mode.set(state.is_ai_mode);
+                        set_ai_pool.set(state.ai_pool.clone());
+                        if state.guesses.contains(&sol) || (state.is_ai_mode && state.statuses.last().map(|s| s.iter().all(|x| x == "correct")).unwrap_or(false)) {
+                            set_game_won.set(true);
+                            if !state.is_ai_mode { set_daily_game_done.set(true); }
+                        } else if state.guesses.len() >= 6 {
+                            set_game_lost.set(true);
+                            if !state.is_ai_mode { set_daily_game_done.set(true); }
+                        }
                     }
                 }
             }
@@ -240,15 +256,14 @@ fn App() -> impl IntoView {
 
     let char_statuses = create_memo(move |_| {
         let mut map = HashMap::new();
-        let sol = solution_data.get().solution.to_uppercase();
-        for g in guesses.get() {
-            let guess_upper = g.to_uppercase();
-            let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &guess_upper)).unwrap_or_default();
-            for (c, s) in guess_upper.chars().zip(statuses.into_iter()) {
+        let gs = guesses.get();
+        let ss = guess_statuses.get();
+        for (g, s_row) in gs.iter().zip(ss.iter()) {
+            for (c, s) in g.chars().zip(s_row.iter()) {
                 let current = map.entry(c).or_insert(s.clone());
-                if s == "correct" { *current = s; }
-                else if s == "present" && *current != "correct" { *current = s; }
-                else if s == "absent" && *current != "correct" && *current != "present" { *current = s; }
+                if s == "correct" { *current = s.clone(); }
+                else if s == "present" && *current != "correct" { *current = s.clone(); }
+                else if s == "absent" && *current != "correct" && *current != "present" { *current = s.clone(); }
             }
         }
         map
@@ -266,19 +281,21 @@ fn App() -> impl IntoView {
                 return;
             }
             if !is_word_in_list(&input) {
-                set_snarky_comment.set("Not a word, poser.".to_string());
+                set_snarky_comment.set("Not a word, dweeb.".to_string());
                 set_jiggle_row.set(true);
                 set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
             }
-            if hard_mode.get() && !guesses.get().is_empty() {
-                let sol_upper = sol.to_uppercase();
+
+            // Hard Mode Rules (Forced in AI Mode)
+            if (hard_mode.get() || is_ai_mode.get()) && !guesses.get().is_empty() {
                 let current_guesses = guesses.get();
+                let current_ss = guess_statuses.get();
+                
+                // Rule 1: Correct letters must be used in the same spot
                 let mut required_spots: [Option<char>; 5] = [None; 5];
-                for g in &current_guesses {
-                    let g_upper = g.to_uppercase();
-                    let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol_upper, &g_upper)).unwrap_or_default();
-                    for (i, (c, s)) in g_upper.chars().zip(statuses.iter()).enumerate() {
+                for (g, ss) in current_guesses.iter().zip(current_ss.iter()) {
+                    for (i, (c, s)) in g.chars().zip(ss.iter()).enumerate() {
                         if s == "correct" { required_spots[i] = Some(c); }
                     }
                 }
@@ -292,12 +309,12 @@ fn App() -> impl IntoView {
                         }
                     }
                 }
+
+                // Rule 2: Revealed letters must be used
                 let mut required_letters: HashMap<char, usize> = HashMap::new();
-                for g in &current_guesses {
-                    let g_upper = g.to_uppercase();
-                    let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol_upper, &g_upper)).unwrap_or_default();
+                for (g, ss) in current_guesses.iter().zip(current_ss.iter()) {
                     let mut current_g_counts: HashMap<char, usize> = HashMap::new();
-                    for (c, s) in g_upper.chars().zip(statuses.iter()) {
+                    for (c, s) in g.chars().zip(ss.iter()) {
                         if s == "correct" || s == "present" { *current_g_counts.entry(c).or_insert(0) += 1; }
                     }
                     for (c, count) in current_g_counts {
@@ -314,6 +331,8 @@ fn App() -> impl IntoView {
                         return;
                     }
                 }
+
+                // Rule 3: Absent letters must not be used
                 let statuses_map = char_statuses.get();
                 for c in input.chars() {
                     if let Some(status) = statuses_map.get(&c) {
@@ -326,23 +345,50 @@ fn App() -> impl IntoView {
                     }
                 }
             }
+
             let mut new_guesses = guesses.get();
+            let mut new_ss_vec = guess_statuses.get();
             new_guesses.push(input.clone());
+
+            let mut current_pattern = vec![];
+            if is_ai_mode.get() {
+                // Adversarial Step
+                let val = get_adversarial_step(&input, serde_wasm_bindgen::to_value(&ai_pool.get()).unwrap());
+                if let Ok(res) = serde_wasm_bindgen::from_value::<AdversarialResult>(val) {
+                    current_pattern = res.pattern;
+                    set_ai_pool.set(res.new_pool);
+                }
+            } else {
+                // Standard Step
+                current_pattern = serde_wasm_bindgen::from_value(wordle_engine::get_guess_statuses(&sol, &input)).unwrap_or_default();
+            }
+            
+            new_ss_vec.push(current_pattern.clone());
             set_guesses.set(new_guesses.clone());
+            set_guess_statuses_vec.set(new_ss_vec.clone());
             set_current_input.set(String::new());
+
             if let Some(storage) = get_storage() {
-                let state = StoredState { guesses: new_guesses.clone(), solution: sol.clone() };
+                let state = StoredState { 
+                    guesses: new_guesses.clone(), 
+                    statuses: new_ss_vec.clone(),
+                    solution: sol.clone(),
+                    is_ai_mode: is_ai_mode.get(),
+                    ai_pool: ai_pool.get()
+                };
                 let _ = storage.set_item("game-state", &serde_json::to_string(&state).unwrap());
             }
+
             set_is_revealing_row.set(true);
             set_timeout(move || set_is_revealing_row.set(false), std::time::Duration::from_millis(2000));
             
-            let is_win = input == sol;
+            let is_win = current_pattern.iter().all(|s| s == "correct");
             let is_loss = new_guesses.len() >= 6 && !is_win;
-            set_snarky_comment.set(get_80s_comment(new_guesses.len(), is_win, is_loss, hard_mode.get()));
+            set_snarky_comment.set(get_80s_comment(new_guesses.len(), is_win, is_loss, hard_mode.get(), is_ai_mode.get()));
 
             if is_win {
                 set_game_won.set(true);
+                if !is_ai_mode.get() { set_daily_game_done.set(true); }
                 set_timeout(move || confetti(), std::time::Duration::from_millis(1800));
                 set_stats.update(|s| {
                     s.total_games += 1; s.wins += 1; s.current_streak += 1;
@@ -353,6 +399,7 @@ fn App() -> impl IntoView {
                 set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3500));
             } else if is_loss {
                 set_game_lost.set(true);
+                if !is_ai_mode.get() { set_daily_game_done.set(true); }
                 set_stats.update(|s| { s.total_games += 1; s.current_streak = 0; });
                 if let Some(storage) = get_storage() { let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap()); }
                 set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3500));
@@ -378,27 +425,21 @@ fn App() -> impl IntoView {
         }
     };
 
-    let _ = window_event_listener(keydown, move |ev| {
-        if show_stats.get() || show_help.get() { return; }
-        let key = ev.key();
-        if key == "Enter" { on_key("ENTER".to_string()); }
-        else if key == "Backspace" { on_key("DELETE".to_string()); }
-        else if key.len() == 1 {
-            let c = key.chars().next().unwrap();
-            if c.is_ascii_alphabetic() { on_key(c.to_uppercase().to_string()); }
+    let start_ai_mode = move |_| {
+        set_is_ai_mode.set(true);
+        set_guesses.set(vec![]);
+        set_guess_statuses_vec.set(vec![]);
+        set_game_won.set(false);
+        set_game_lost.set(false);
+        set_snarky_comment.set("THE SYSTEM IS ONLINE.".to_string());
+        
+        let list: Vec<String> = serde_wasm_bindgen::from_value(get_ai_word_list()).unwrap_or_default();
+        set_ai_pool.set(list);
+        
+        if let Some(storage) = get_storage() {
+            let _ = storage.remove_item("game-state");
         }
-    });
-
-    create_effect(move |_| {
-        let t = theme.get();
-        if let Some(el) = document().document_element() { let _ = el.set_attribute("class", &format!("theme-{}", t)); }
-        if let Some(storage) = get_storage() { let _ = storage.set_item("color-theme", &t); }
-    });
-
-    create_effect(move |_| {
-        let h = hard_mode.get();
-        if let Some(storage) = get_storage() { let _ = storage.set_item("hard-mode", if h { "true" } else { "false" }); }
-    });
+    };
 
     view! {
         <div class="flex flex-col h-full transition-all duration-500 px-2 bg-app-bg text-app-text">
@@ -412,16 +453,23 @@ fn App() -> impl IntoView {
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </button>
                         <button 
-                            on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) } 
+                            on:click=move |_| if guesses.get().is_empty() && !is_ai_mode.get() { set_hard_mode.update(|h| *h = !*h) } 
                             title="Hard Mode" 
-                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if hard_mode.get() { "correct-pad border-transparent" } else { "cell-neutral border-current" })
+                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if hard_mode.get() || is_ai_mode.get() { "correct-pad border-transparent" } else { "cell-neutral border-current" })
                         >
-                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if hard_mode.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_12px_rgba(253,224,71,1)]" } else { "text-current opacity-40" }) fill="currentColor" viewBox="0 0 24 24">
+                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if hard_mode.get() || is_ai_mode.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_12px_rgba(253,224,71,1)]" } else { "text-current opacity-40" }) fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                             </svg>
                         </button>
-                        <button disabled=move || !game_won.get() && !game_lost.get() title="AI Mode" class=move || format!("correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95 {}", if !game_won.get() && !game_lost.get() { "opacity-30 grayscale cursor-not-allowed" } else { "cursor-pointer" })>
-                            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        <button 
+                            on:click=start_ai_mode
+                            disabled=move || !daily_game_done.get() || is_ai_mode.get()
+                            title="AI Mode" 
+                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if is_ai_mode.get() { "correct-pad border-transparent" } else if daily_game_done.get() { "cell-neutral border-current" } else { "opacity-30 grayscale cursor-not-allowed border-current" })
+                        >
+                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if is_ai_mode.get() { "text-magenta-400 scale-110 drop-shadow-[0_0_12px_rgba(255,0,255,1)]" } else { "text-current opacity-40" }) fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            </svg>
                         </button>
                     </div>
                     <div class="flex flex-col items-center w-full max-w-[150px] sm:max-w-[200px]">
@@ -452,24 +500,23 @@ fn App() -> impl IntoView {
                     <div class="flex flex-col gap-1 sm:gap-2 max-h-full aspect-[5/6]">
                         {move || {
                             let gs = guesses.get();
-                            let sol = solution_data.get().solution.to_uppercase();
+                            let ss = guess_statuses.get();
                             let is_rev = is_revealing_row.get();
                             let len = gs.len();
-                            let hard = hard_mode.get();
-                            gs.into_iter().enumerate().map(move |(i, g)| { 
-                                view! { <Row guess=g.to_uppercase() solution=sol.clone() is_revealing=is_rev && i == len-1 is_completed=true is_jiggling=Signal::derive(|| false) destroy_trigger=destroy_trigger last_typed_index=-1 is_hard_mode=hard /> } 
+                            let hard = hard_mode.get() || is_ai_mode.get();
+                            gs.into_iter().zip(ss.into_iter()).enumerate().map(move |(i, (g, s))| { 
+                                view! { <Row guess=g.to_uppercase() statuses=s is_revealing=is_rev && i == len-1 is_completed=true is_jiggling=Signal::derive(|| false) destroy_trigger=destroy_trigger last_typed_index=-1 is_hard_mode=hard /> } 
                             }).collect_view()
                         }}
                         {move || if guesses.get().len() < 6 && !game_won.get() { 
                             let current_input = current_input.get().to_uppercase();
-                            let solution = solution_data.get().solution.to_uppercase();
                             let last_idx = last_typed_index.get();
-                            let hard = hard_mode.get();
-                            view! { <Row guess=current_input solution=solution is_revealing=false is_completed=false is_jiggling=Signal::derive(move || jiggle_row.get()) destroy_trigger=destroy_trigger last_typed_index=last_idx is_hard_mode=hard /> }.into_view() 
+                            let hard = hard_mode.get() || is_ai_mode.get();
+                            view! { <Row guess=current_input statuses=vec![] is_revealing=false is_completed=false is_jiggling=Signal::derive(move || jiggle_row.get()) destroy_trigger=destroy_trigger last_typed_index=last_idx is_hard_mode=hard /> }.into_view() 
                         } else { view! {}.into_view() }}
                         {move || {
-                            let hard = hard_mode.get();
-                            (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(move |_| { view! { <Row guess="".to_string() solution="".to_string() is_revealing=false is_completed=false is_jiggling=Signal::derive(|| false) destroy_trigger=destroy_trigger last_typed_index=-1 is_hard_mode=hard /> } }).collect_view()
+                            let hard = hard_mode.get() || is_ai_mode.get();
+                            (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(move |_| { view! { <Row guess="".to_string() statuses=vec![] is_revealing=false is_completed=false is_jiggling=Signal::derive(|| false) destroy_trigger=destroy_trigger last_typed_index=-1 is_hard_mode=hard /> } }).collect_view()
                         }}
                     </div>
                 </div>
@@ -485,7 +532,7 @@ fn App() -> impl IntoView {
                                         let status = move || char_statuses.get().get(&c).cloned().unwrap_or_default();
                                         let status_class = move || match status().as_str() { "correct" => "correct", "present" => "present", "absent" => "absent", _ => "key-neutral" };
                                         let pulse = move || if keyboard_pulse.get().0 == c { keyboard_pulse.get().1 } else { "".to_string() };
-                                        let hard = hard_mode.get();
+                                        let hard = hard_mode.get() || is_ai_mode.get();
                                         view! { 
                                             <button class=move || format!("relative h-10 sm:h-14 mx-0.5 rounded-xl font-bold flex-1 min-w-[20px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg border-2 border-transparent text-sm sm:text-base {}", status_class()) on:click=move |_| on_key(c.to_string())> 
                                                 {move || { 
@@ -576,14 +623,14 @@ fn App() -> impl IntoView {
                     <Show when=move || game_won.get() || game_lost.get()>
                         <button on:click=move |_| {
                             let sol = solution_data.get().solution.to_uppercase();
-                            let is_hard = hard_mode.get();
+                            let is_hard = hard_mode.get() || is_ai_mode.get();
                             let comment = snarky_comment.get();
                             let current_theme = theme.get();
                             let (correct_e, present_e, absent_e) = get_theme_emojis(&current_theme);
                             let mut text = format!("RUSTLE {} {}/6 {}\n\n", solution_data.get().solution_index, if game_won.get() { guesses.get().len().to_string() } else { "X".to_string() }, if is_hard { "⚡" } else { "" });
-                            for g in guesses.get() {
-                                let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &g.to_uppercase())).unwrap_or_default();
-                                for s in statuses { text.push_str(match s.as_str() { "correct" => correct_e, "present" => present_e, _ => absent_e }); }
+                            let ss = guess_statuses.get();
+                            for s_row in ss {
+                                for s in s_row { text.push_str(match s.as_str() { "correct" => correct_e, "present" => present_e, _ => absent_e }); }
                                 text.push('\n');
                             }
                             text.push('\n');

@@ -2,11 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#10b981">
     <title>Rustle</title>
     
-    <!-- Kill any persistent bad service workers -->
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -18,42 +17,119 @@
     </script>
 
     <link data-trunk rel="tailwind-css" href="style/tailwind.css">
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script>
-        function cyberBurst() {
-            const colors = ['#00ffff', '#ff00ff', '#39ff14', '#ffff00'];
-            const end = Date.now() + (2 * 1000);
+        function cyberpunkVictory(theme) {
+            const canvas = document.createElement('canvas');
+            canvas.style.position = 'fixed';
+            canvas.style.inset = '0';
+            canvas.style.pointerEvents = 'none';
+            canvas.style.zIndex = '200';
+            document.body.appendChild(canvas);
+            const ctx = canvas.getContext('2d');
+            
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
 
-            (function frame() {
-                confetti({
-                    particleCount: 5,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0, y: 0.6 },
-                    colors: colors,
-                    shapes: ['square'],
-                    scalar: 1.2,
-                    gravity: 1.2,
-                    drift: 0,
-                    ticks: 200
-                });
-                confetti({
-                    particleCount: 5,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1, y: 0.6 },
-                    colors: colors,
-                    shapes: ['square'],
-                    scalar: 1.2,
-                    gravity: 1.2,
-                    drift: 0,
-                    ticks: 200
-                });
-
-                if (Date.now() < end) {
-                    requestAnimationFrame(frame);
+            const effects = {
+                dark: () => { // STROBE FLICKER
+                    let frames = 0;
+                    const run = () => {
+                        ctx.clearRect(0, 0, width, height);
+                        if (frames % 4 < 2) {
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                            ctx.fillRect(0, 0, width, height);
+                        }
+                        frames++;
+                        if (frames < 120) requestAnimationFrame(run);
+                        else canvas.remove();
+                    };
+                    run();
+                },
+                red: () => { // CRITICAL OVERLOAD
+                    let radius = 0;
+                    const run = () => {
+                        ctx.fillStyle = 'rgba(24, 0, 0, 0.1)';
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.strokeStyle = '#ff4444';
+                        ctx.lineWidth = 10;
+                        ctx.beginPath();
+                        ctx.arc(width/2, height/2, radius, 0, Math.PI * 2);
+                        ctx.stroke();
+                        radius += 25;
+                        if (radius < width) requestAnimationFrame(run);
+                        else canvas.remove();
+                    };
+                    run();
+                },
+                green: () => { // MATRIX RAIN
+                    const columns = Math.floor(width / 20);
+                    const drops = Array(columns).fill(1);
+                    let frames = 0;
+                    const run = () => {
+                        ctx.fillStyle = 'rgba(0, 26, 10, 0.1)';
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.fillStyle = '#39ff14';
+                        ctx.font = '20px monospace';
+                        for(let i = 0; i < drops.length; i++) {
+                            const text = String.fromCharCode(Math.random() * 128);
+                            ctx.fillText(text, i * 20, drops[i] * 20);
+                            if(drops[i] * 20 > height && Math.random() > 0.975) drops[i] = 0;
+                            drops[i]++;
+                        }
+                        frames++;
+                        if (frames < 200) requestAnimationFrame(run);
+                        else canvas.remove();
+                    };
+                    run();
+                },
+                blue: () => { // DATA STREAM
+                    const particles = Array(50).fill().map(() => ({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        v: 10 + Math.random() * 20
+                    }));
+                    let frames = 0;
+                    const run = () => {
+                        ctx.fillStyle = 'rgba(0, 10, 26, 0.2)';
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.fillStyle = '#2563eb';
+                        particles.forEach(p => {
+                            ctx.fillRect(p.x, p.y, 2, 40);
+                            p.y += p.v;
+                            if (p.y > height) p.y = -40;
+                        });
+                        frames++;
+                        if (frames < 150) requestAnimationFrame(run);
+                        else canvas.remove();
+                    };
+                    run();
+                },
+                white: () => { // SYSTEM PURGE (WHITEOUT)
+                    let alpha = 0;
+                    const run = () => {
+                        ctx.clearRect(0, 0, width, height);
+                        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                        ctx.fillRect(0, 0, width, height);
+                        if (alpha < 1) {
+                            alpha += 0.05;
+                            requestAnimationFrame(run);
+                        } else {
+                            const fade = () => {
+                                alpha -= 0.05;
+                                ctx.clearRect(0, 0, width, height);
+                                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                                ctx.fillRect(0, 0, width, height);
+                                if (alpha > 0) requestAnimationFrame(fade);
+                                else canvas.remove();
+                            };
+                            fade();
+                        }
+                    };
+                    run();
                 }
-            }());
+            };
+
+            (effects[theme] || effects.dark)();
         }
     </script>
 </head>

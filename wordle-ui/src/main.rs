@@ -7,8 +7,8 @@ use wasm_bindgen::JsCast;
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(js_name = cyberBurst)]
-    fn confetti();
+    #[wasm_bindgen(js_name = cyberpunkVictory)]
+    fn celebrate(theme: &str);
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -48,25 +48,42 @@ fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool, is_
     if is_ng {
         if is_win { return "SYSTEM BREACHED. UNREAL.".to_string(); }
         if is_loss { return "THE SYSTEM WINS. LOG OFF.".to_string(); }
-        let msgs = vec!["CALCULATING...", "I AM THE SYSTEM.", "GLITCH DETECTED.", "PLAY A GAME?", "ACCESS DENIED.", "DATA CORRUPTION...", "TRON CALLED.", "MAX ENTROPY."];
+        let msgs = vec![
+            "CALCULATING...", "I AM THE SYSTEM.", "GLITCH DETECTED.", "PLAY A GAME?", 
+            "ACCESS DENIED.", "DATA CORRUPTION...", "TRON CALLED.", "MAX ENTROPY.",
+            "CORE OVERLOAD.", "CYBER SYNC...", "BUFFER OVERFLOW.", "NULL POINTER."
+        ];
         return msgs[js_sys::Math::floor(js_sys::Math::random() * msgs.len() as f64) as usize].to_string();
     }
-    if is_loss { return "Poseur.".to_string(); }
+
+    if is_loss { 
+        let loss_msgs = vec![
+            "Poseur.", "Total barf bag.", "Gag me with a spoon.", "Wasted.", "Bummer.",
+            "Bogus journey.", "Take a hike, dweeb.", "You trip me out.", "What a goober.",
+            "Lame-o.", "Get real.", "No way, José.", "Majorly bogus."
+        ];
+        return loss_msgs[js_sys::Math::floor(js_sys::Math::random() * loss_msgs.len() as f64) as usize].to_string();
+    }
+
     if is_win {
         let win_msgs = match tries {
-            1 => vec!["HACKER!", "Pure Luck.", "Sus physics.", "God Mode."],
-            2 => vec!["Radical!", "Tubular!", "Showoff.", "Excellent!"],
-            3 => vec!["Solid mid.", "Typical.", "Choice.", "Right on."],
-            4 => vec!["Finally.", "Took your time.", "Getting slow?", "Analog brain."],
-            5 => vec!["Panic yet?", "Sweaty.", "Close one.", "Danger Zone."],
-            6 => vec!["Barely.", "Yikes.", "Scrub tier.", "Bogus win."],
+            1 => vec!["HACKER!", "Pure Luck.", "Sus physics.", "God Mode.", "Keyboard Cowboy.", "Access Granted.", "Illegal Operation."],
+            2 => vec!["Radical!", "Tubular!", "Showoff.", "Excellent!", "Righteous.", "Out of sight.", "To the max."],
+            3 => vec!["Solid mid.", "Typical.", "Choice.", "Right on.", "Like, totally.", "Mint.", "Wicked."],
+            4 => vec!["Finally.", "Getting slow?", "Analog brain.", "Manual override.", "Dial-up speed.", "Take a chill pill."],
+            5 => vec!["Panic yet?", "Sweaty.", "Close one.", "Danger Zone.", "Tracking error.", "Static...", "No duh."],
+            6 => vec!["Barely.", "Yikes.", "Scrub tier.", "Bogus win.", "Last life.", "Skin of your teeth.", "Airhead."],
             _ => vec!["Win."],
         };
         let mut msg = win_msgs[js_sys::Math::floor(js_sys::Math::random() * win_msgs.len() as f64) as usize].to_string();
         if is_hard { msg.push_str(" (Hard Mode)"); }
         return msg;
     }
-    let mid_comments = vec!["Gnarly.", "Totally.", "Groovy.", "Neon.", "Retro.", "Bogus?"];
+
+    let mid_comments = vec![
+        "Gnarly.", "Totally.", "Groovy.", "Neon.", "Retro.", "Bogus?", "Righteous.", "Word.", 
+        "Fresh.", "Choice.", "Stellar.", "Stoked.", "Rad.", "Chill.", "Solid."
+    ];
     mid_comments[js_sys::Math::floor(js_sys::Math::random() * mid_comments.len() as f64) as usize].to_string()
 }
 
@@ -254,7 +271,17 @@ fn App() -> impl IntoView {
         set_game_won.set(false);
         set_game_lost.set(false);
         set_current_input.set(String::new());
-        set_snarky_comment.set(if was_active { "SYSTEM REBOOT." } else { "THE SYSTEM IS ONLINE." }.to_string());
+        
+        if was_active {
+            set_snarky_comment.set("SYSTEM REBOOT.".to_string());
+        } else {
+            let startup_msgs = vec![
+                "NEW GAME+ ENABLED. GOOD LUCK!", "PROTOCOL INITIALIZED. BREACH THE SYSTEM.",
+                "DIGITAL ENTROPY MAXIMIZED.", "ACCESSING ADVERSARIAL POOL...",
+                "TRON CALLED. HE WANTS HIS WORD BACK."
+            ];
+            set_snarky_comment.set(startup_msgs[js_sys::Math::floor(js_sys::Math::random() * startup_msgs.len() as f64) as usize].to_string());
+        }
         
         let full_list: Vec<String> = serde_wasm_bindgen::from_value(get_ai_word_list()).unwrap_or_default();
         let mut filtered_pool: Vec<String> = full_list.iter()
@@ -405,14 +432,8 @@ fn App() -> impl IntoView {
                 set_game_won.set(true);
                 if !is_ng_plus.get() { set_daily_game_done.set(true); }
                 
-                if is_ng_plus.get() {
-                    set_timeout(move || confetti(), std::time::Duration::from_millis(1800));
-                    set_timeout(move || confetti(), std::time::Duration::from_millis(2000));
-                    set_timeout(move || confetti(), std::time::Duration::from_millis(2200));
-                    set_timeout(move || confetti(), std::time::Duration::from_millis(2400));
-                } else {
-                    set_timeout(move || confetti(), std::time::Duration::from_millis(1800));
-                }
+                // TRIGGER CYBERPUNK CELEBRATION
+                set_timeout(move || celebrate(&theme.get()), std::time::Duration::from_millis(1800));
 
                 set_stats.update(|s| {
                     s.total_games += 1; s.wins += 1; s.current_streak += 1;
@@ -468,11 +489,6 @@ fn App() -> impl IntoView {
             let c = key.chars().next().unwrap();
             if c.is_ascii_alphabetic() { on_key(c.to_uppercase().to_string()); }
         }
-    });
-
-    create_effect(move |_| {
-        let h = hard_mode.get();
-        if let Some(storage) = get_storage() { let _ = storage.set_item("hard-mode", if h { "true" } else { "false" }); }
     });
 
     view! {

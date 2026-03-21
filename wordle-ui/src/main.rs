@@ -41,6 +41,10 @@ struct StoredState {
     pub solution: String,
 }
 
+fn get_storage() -> Option<web_sys::Storage> {
+    window().local_storage().ok().flatten()
+}
+
 #[component]
 fn Cell(value: char, status: String, position: usize, is_revealing: bool, is_completed: bool) -> impl IntoView {
     let delay = position * 350;
@@ -115,17 +119,15 @@ fn App() -> impl IntoView {
     let (alert_message, set_alert_message) = create_signal(String::new());
     let (is_revealing_row, set_is_revealing_row) = create_signal(false);
     
-    let (theme, set_theme) = create_signal(
-        window().local_storage().unwrap().unwrap()
-            .get_item("color-theme").unwrap_or_default()
-            .unwrap_or_else(|| "dark".to_string())
-    );
+    let initial_theme = get_storage()
+        .and_then(|s| s.get_item("color-theme").ok().flatten())
+        .unwrap_or_else(|| "dark".to_string());
+    let (theme, set_theme) = create_signal(initial_theme);
 
-    let (hard_mode, set_hard_mode) = create_signal(
-        window().local_storage().unwrap().unwrap()
-            .get_item("hard-mode").unwrap_or_default()
-            .map(|v| v == "true").unwrap_or(false)
-    );
+    let initial_hard_mode = get_storage()
+        .and_then(|s| s.get_item("hard-mode").ok().flatten())
+        .map(|v| v == "true").unwrap_or(false);
+    let (hard_mode, set_hard_mode) = create_signal(initial_hard_mode);
     
     let now = js_sys::Date::now();
     let solution_data = create_memo(move |_| {
@@ -136,24 +138,25 @@ fn App() -> impl IntoView {
         s
     });
 
-    let storage = window().local_storage().unwrap().unwrap();
-    let stats_stored = storage.get_item("game-stats").unwrap_or_default()
+    let initial_stats = get_storage()
+        .and_then(|s| s.get_item("game-stats").ok().flatten())
         .and_then(|s| serde_json::from_str::<GameStats>(&s).ok())
         .unwrap_or_default();
-    let (stats, set_stats) = create_signal(stats_stored);
+    let (stats, set_stats) = create_signal(initial_stats);
 
     // Initial Load
     create_effect(move |_| {
-        let storage = window().local_storage().unwrap().unwrap();
         let sol = solution_data.get().solution;
-        if let Ok(Some(saved)) = storage.get_item("game-state") {
-            if let Ok(state) = serde_json::from_str::<StoredState>(&saved) {
-                if state.solution == sol {
-                    set_guesses.set(state.guesses.clone());
-                    if state.guesses.contains(&sol) {
-                        set_game_won.set(true);
-                    } else if state.guesses.len() >= 6 {
-                        set_game_lost.set(true);
+        if let Some(storage) = get_storage() {
+            if let Ok(Some(saved)) = storage.get_item("game-state") {
+                if let Ok(state) = serde_json::from_str::<StoredState>(&saved) {
+                    if state.solution == sol {
+                        set_guesses.set(state.guesses.clone());
+                        if state.guesses.contains(&sol) {
+                            set_game_won.set(true);
+                        } else if state.guesses.len() >= 6 {
+                            set_game_lost.set(true);
+                        }
                     }
                 }
             }
@@ -187,8 +190,7 @@ fn App() -> impl IntoView {
 
     let on_key = Callback::new(move |key: String| {
         if game_won.get() || game_lost.get() { return; }
-        let storage = window().local_storage().unwrap().unwrap();
-
+        
         if key == "ENTER" {
             let input = current_input.get().to_uppercase();
             let sol = solution_data.get().solution.to_uppercase();
@@ -228,8 +230,10 @@ fn App() -> impl IntoView {
             set_guesses.set(new_guesses.clone());
             set_current_input.set(String::new());
             
-            let state = StoredState { guesses: new_guesses.clone(), solution: sol.clone() };
-            let _ = storage.set_item("game-state", &serde_json::to_string(&state).unwrap());
+            if let Some(storage) = get_storage() {
+                let state = StoredState { guesses: new_guesses.clone(), solution: sol.clone() };
+                let _ = storage.set_item("game-state", &serde_json::to_string(&state).unwrap());
+            }
 
             set_is_revealing_row.set(true);
             set_timeout(move || set_is_revealing_row.set(false), std::time::Duration::from_millis(2000));
@@ -244,7 +248,9 @@ fn App() -> impl IntoView {
                     if s.current_streak > s.best_streak { s.best_streak = s.current_streak; }
                     s.distribution[new_guesses.len() - 1] += 1;
                 });
-                let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap());
+                if let Some(storage) = get_storage() {
+                    let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap());
+                }
                 set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3000));
             } else if new_guesses.len() >= 6 {
                 set_game_lost.set(true);
@@ -252,7 +258,9 @@ fn App() -> impl IntoView {
                     s.total_games += 1;
                     s.current_streak = 0;
                 });
-                let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap());
+                if let Some(storage) = get_storage() {
+                    let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap());
+                }
                 set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3000));
             }
         } else if key == "DELETE" {
@@ -262,22 +270,23 @@ fn App() -> impl IntoView {
         }
     });
 
-    // PHYSICAL KEYBOARD SUPPORT
-    let _ = window_event_listener(keydown, move |ev| {
-        // If a modal is open, ignore keyboard
-        if show_stats.get() || show_settings.get() { return; }
-        
-        let key = ev.key();
-        if key == "Enter" {
-            on_key.call("ENTER".to_string());
-        } else if key == "Backspace" {
-            on_key.call("DELETE".to_string());
-        } else if key.len() == 1 {
-            let c = key.chars().next().unwrap();
-            if c.is_ascii_alphabetic() {
-                on_key.call(c.to_uppercase().to_string());
+    // Robust Physical Keyboard Support
+    create_effect(move |_| {
+        let key_handle = window_event_listener(keydown, move |ev| {
+            if show_stats.get() || show_settings.get() { return; }
+            let key = ev.key();
+            if key == "Enter" {
+                on_key.call("ENTER".to_string());
+            } else if key == "Backspace" {
+                on_key.call("DELETE".to_string());
+            } else if key.len() == 1 {
+                let c = key.chars().next().unwrap();
+                if c.is_ascii_alphabetic() {
+                    on_key.call(c.to_uppercase().to_string());
+                }
             }
-        }
+        });
+        on_cleanup(move || key_handle.remove());
     });
 
     let on_share = move |_| {
@@ -301,14 +310,19 @@ fn App() -> impl IntoView {
 
     create_effect(move |_| {
         let t = theme.get();
-        let el = document().document_element().unwrap();
-        let _ = el.set_attribute("class", &format!("theme-{}", t));
-        let _ = window().local_storage().unwrap().unwrap().set_item("color-theme", &t);
+        if let Some(el) = document().document_element() {
+            let _ = el.set_attribute("class", &format!("theme-{}", t));
+        }
+        if let Some(storage) = get_storage() {
+            let _ = storage.set_item("color-theme", &t);
+        }
     });
 
     create_effect(move |_| {
         let h = hard_mode.get();
-        let _ = window().local_storage().unwrap().unwrap().set_item("hard-mode", if h { "true" } else { "false" });
+        if let Some(storage) = get_storage() {
+            let _ = storage.set_item("hard-mode", if h { "true" } else { "false" });
+        }
     });
 
     view! {
@@ -320,7 +334,7 @@ fn App() -> impl IntoView {
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
                         <button on:click=move |_| set_show_settings.set(true) class="correct-pad w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
                     
@@ -436,8 +450,8 @@ fn App() -> impl IntoView {
                 <div class="flex flex-col gap-6 text-white">
                     <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30">
                         <div>
-                            <div class="font-bold">"Hard Mode"</div>
-                            <div class="text-xs opacity-70">"Strict validation of clues"</div>
+                            <div class="font-bold text-white">"Hard Mode"</div>
+                            <div class="text-xs opacity-70 text-white">"Strict validation of clues"</div>
                             {move || if !guesses.get().is_empty() {
                                 view! { <div class="text-[10px] text-red-400 mt-1 font-bold uppercase tracking-tighter italic">"Game in progress"</div> }.into_view()
                             } else {
@@ -446,7 +460,7 @@ fn App() -> impl IntoView {
                         </div>
                         <button 
                             on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) }
-                            class=move || format!("w-12 h-6 rounded-full transition-all duration-300 relative {} {}", 
+                            class=move || format!("w-12 h-6 rounded-full transition-colors duration-300 relative {} {}", 
                                 if hard_mode.get() { "bg-green-500" } else { "bg-gray-600" },
                                 if !guesses.get().is_empty() { "opacity-50 cursor-not-allowed" } else { "cursor-pointer" }
                             )
@@ -456,7 +470,7 @@ fn App() -> impl IntoView {
                     </div>
 
                     <div class="space-y-4">
-                        <h3 class="text-sm font-black uppercase tracking-widest text-center opacity-80">"How to Play"</h3>
+                        <h3 class="text-sm font-black uppercase tracking-widest text-center opacity-80 text-white">"How to Play"</h3>
                         
                         <div class="space-y-3">
                             <div class="flex flex-col items-center gap-1">
@@ -467,18 +481,18 @@ fn App() -> impl IntoView {
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"T"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"S"</div>
                                 </div>
-                                <div class="text-[10px] opacity-70">"R is in the word and in the correct spot."</div>
+                                <div class="text-[10px] opacity-70 text-white">"R is in the word and in the correct spot."</div>
                             </div>
 
                             <div class="flex flex-col items-center gap-1">
                                 <div class="flex">
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral font-bold">"W"</div>
-                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent present mx-0.5 font-black">"O"</div>
+                                    <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent present mx-0.5 font-black text-black">"O"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"R"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"D"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"S"</div>
                                 </div>
-                                <div class="text-[10px] opacity-70">"O is in the word but in the wrong spot."</div>
+                                <div class="text-[10px] opacity-70 text-white">"O is in the word but in the wrong spot."</div>
                             </div>
 
                             <div class="flex flex-col items-center gap-1">
@@ -489,12 +503,12 @@ fn App() -> impl IntoView {
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent absent mx-0.5 font-black">"U"</div>
                                     <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"E"</div>
                                 </div>
-                                <div class="text-[10px] opacity-70">"U is not in the word in any spot."</div>
+                                <div class="text-[10px] opacity-70 text-white">"U is not in the word in any spot."</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="text-[10px] opacity-40 italic text-center mt-2">"Rustle Version 1.0.0 (Pure Rust)"</div>
+                    <div class="text-[10px] opacity-40 italic text-center mt-2 text-white">"Rustle Version 1.0.0 (Pure Rust)"</div>
                 </div>
             </Modal>
 

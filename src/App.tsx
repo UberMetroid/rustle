@@ -3,7 +3,7 @@ import './App.css'
 import { ClockIcon } from '@heroicons/react/outline'
 import { format } from 'date-fns'
 import { default as GraphemeSplitter } from 'grapheme-splitter'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { AlertContainer } from './components/alerts/AlertContainer'
 import { Grid } from './components/grid/Grid'
@@ -52,8 +52,9 @@ import {
 import init from './wordle-engine-pkg'
 
 function App() {
-  const isLatestGame = getIsLatestGame()
-  const gameDate = getGameDate()
+  // Memoize these to prevent infinite re-renders
+  const isLatestGame = useMemo(() => getIsLatestGame(), [])
+  const gameDate = useMemo(() => getGameDate(), [])
 
   const { showError: showErrorAlert, showSuccess: showSuccessAlert } =
     useAlert()
@@ -94,7 +95,7 @@ function App() {
       : false
   )
 
-  // Non-blocking Wasm init
+  // One-time Wasm init
   useEffect(() => {
     let mounted = true
 
@@ -131,22 +132,25 @@ function App() {
     if (
       isWasmReady &&
       !didShowInfoModal &&
-      !loadGameStateFromLocalStorage(true)
+      !loadGameStateFromLocalStorage(isLatestGame)
     ) {
       setDidShowInfoModal(true)
       setTimeout(() => {
         setIsInfoModalOpen(true)
       }, WELCOME_INFO_MODAL_MS)
     }
-  }, [isWasmReady, didShowInfoModal])
+  }, [isWasmReady, didShowInfoModal, isLatestGame])
 
   useEffect(() => {
-    DISCOURAGE_INAPP_BROWSERS &&
-      isInAppBrowser() &&
-      showErrorAlert(DISCOURAGE_INAPP_BROWSER_TEXT, {
-        persist: false,
-        durationMs: 7000,
-      })
+    const handler = () => {
+      if (DISCOURAGE_INAPP_BROWSERS && isInAppBrowser()) {
+        showErrorAlert(DISCOURAGE_INAPP_BROWSER_TEXT, {
+          persist: false,
+          durationMs: 7000,
+        })
+      }
+    }
+    handler()
   }, [showErrorAlert])
 
   useEffect(() => {
@@ -181,7 +185,7 @@ function App() {
 
   useEffect(() => {
     if (isWasmReady) {
-      saveGameStateToLocalStorage(getIsLatestGame(), {
+      saveGameStateToLocalStorage(isLatestGame, {
         guesses,
         solution: solutionData.solution,
       })
@@ -265,7 +269,8 @@ function App() {
     )
 
     const winningWord = isWinningWord(currentGuess, solutionData.solution)
-    setGuesses([...guesses, currentGuess])
+    const newGuesses = [...guesses, currentGuess]
+    setGuesses(newGuesses)
     setCurrentGuess('')
 
     if (winningWord) {
@@ -274,9 +279,9 @@ function App() {
       return setIsGameWon(true)
     }
 
-    if (guesses.length === MAX_CHALLENGES - 1) {
+    if (newGuesses.length === MAX_CHALLENGES) {
       if (isLatestGame)
-        setStats(addStatsForCompletedGame(stats, guesses.length + 1))
+        setStats(addStatsForCompletedGame(stats, newGuesses.length))
       setIsGameLost(true)
       showErrorAlert(CORRECT_WORD_MESSAGE(solutionData.solution), {
         persist: true,

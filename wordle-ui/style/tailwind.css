@@ -145,7 +145,7 @@ body {
 
 /* Unified "Pad" Glass Style */
 .glass-pad {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -168,35 +168,22 @@ body {
   box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
-/* HARD MODE: FLAME EFFECT */
-.hard-mode-flame {
-  animation: flame-pulse 0.1s infinite alternate, heat-vibration 0.2s infinite;
-  text-shadow: 
-    0 0 4px #fff,
-    0 -2px 4px #ff0,
-    1px -4px 6px #f80,
-    -1px -8px 10px #f40;
+/* POWER RING GRAPHIC (When letter is pressed) */
+.power-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 2px solid var(--theme-primary);
+  border-radius: 0.75rem;
+  opacity: 0;
+  pointer-events: none;
+  animation: power-ring-expand 0.4s ease-out;
+  z-index: 10;
 }
 
-.correct.hard-mode-flame {
-  text-shadow: 
-    0 0 4px #fff,
-    0 -2px 8px #4ade80,
-    1px -4px 12px #22c55e,
-    -1px -8px 16px #166534;
-}
-
-@keyframes flame-pulse {
-  0% { transform: scale(1); filter: brightness(1); }
-  100% { transform: scale(1.05); filter: brightness(1.3); }
-}
-
-@keyframes heat-vibration {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(0.5px, -0.5px); }
-  50% { transform: translate(-0.5px, 0.5px); }
-  75% { transform: translate(0.5px, 0.5px); }
-  100% { transform: translate(0, 0); }
+@keyframes power-ring-expand {
+  0% { transform: scale(0.8); opacity: 1; border-width: 4px; }
+  100% { transform: scale(1.5); opacity: 0; border-width: 1px; }
 }
 
 /* Status Classes */

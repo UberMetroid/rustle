@@ -15,9 +15,69 @@
 
 .dark {
   --default-cell-bg-color: theme('colors.slate.900');
-  --default-cell-border-color: theme('colors.white');
+  --default-cell-border-color: theme('colors.slate.200');
   --default-cell-text-color: theme('colors.white');
   --absent-cell-bg-color: theme('colors.slate.700');
+}
+
+.theme-cyberpunk {
+  --default-cell-bg-color: #0d0221;
+  --default-cell-border-color: #00f3ff;
+  --default-cell-text-color: #00f3ff;
+  --absent-cell-bg-color: #2a1b3d;
+  --correct-cell-bg-color: #ff007f;
+  --present-cell-bg-color: #00f3ff;
+}
+
+.theme-cyberpunk .bg-white,
+.theme-cyberpunk .bg-slate-50 {
+  background-color: #0d0221 !important;
+  color: #00f3ff !important;
+}
+
+.theme-nord {
+  --default-cell-bg-color: #2e3440;
+  --default-cell-border-color: #d8dee9;
+  --default-cell-text-color: #eceff4;
+  --absent-cell-bg-color: #4c566a;
+  --correct-cell-bg-color: #a3be8c;
+  --present-cell-bg-color: #ebcb8b;
+}
+
+.theme-nord .bg-white,
+.theme-nord .bg-slate-50 {
+  background-color: #2e3440 !important;
+  color: #eceff4 !important;
+}
+
+.theme-retro {
+  --default-cell-bg-color: #000000;
+  --default-cell-border-color: #00ff41;
+  --default-cell-text-color: #00ff41;
+  --absent-cell-bg-color: #003b00;
+  --correct-cell-bg-color: #008f11;
+  --present-cell-bg-color: #00ff41;
+}
+
+.theme-retro .bg-white,
+.theme-retro .bg-slate-50 {
+  background-color: #000000 !important;
+  color: #00ff41 !important;
+}
+
+.theme-solarized {
+  --default-cell-bg-color: #fdf6e3;
+  --default-cell-border-color: #657b83;
+  --default-cell-text-color: #657b83;
+  --absent-cell-bg-color: #eee8d5;
+  --correct-cell-bg-color: #859900;
+  --present-cell-bg-color: #b58900;
+}
+
+.theme-solarized .bg-white,
+.theme-solarized .bg-slate-50 {
+  background-color: #fdf6e3 !important;
+  color: #657b83 !important;
 }
 
 .high-contrast {

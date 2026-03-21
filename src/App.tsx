@@ -82,6 +82,9 @@ function App() {
   const [isHighContrastMode, setIsHighContrastMode] = useState(
     getStoredIsHighContrastMode()
   )
+  const [currentTheme, setCurrentTheme] = useState(
+    localStorage.getItem('color-theme') || 'default'
+  )
   const [isRevealing, setIsRevealing] = useState(false)
   const [guesses, setGuesses] = useState<string[]>(() => {
     const loaded = loadGameStateFromLocalStorage(isLatestGame)
@@ -140,7 +143,19 @@ function App() {
     } else {
       document.documentElement.classList.remove('high-contrast')
     }
-  }, [isDarkMode, isHighContrastMode])
+
+    // Handle custom themes
+    const themes = [
+      'theme-cyberpunk',
+      'theme-nord',
+      'theme-retro',
+      'theme-solarized',
+    ]
+    themes.forEach((t) => document.documentElement.classList.remove(t))
+    if (currentTheme !== 'default') {
+      document.documentElement.classList.add(`theme-${currentTheme}`)
+    }
+  }, [isDarkMode, isHighContrastMode, currentTheme])
 
   const handleDarkMode = (isDark: boolean) => {
     setIsDarkMode(isDark)
@@ -159,6 +174,11 @@ function App() {
   const handleHighContrastMode = (isHighContrast: boolean) => {
     setIsHighContrastMode(isHighContrast)
     setStoredIsHighContrastMode(isHighContrast)
+  }
+
+  const handleTheme = (theme: string) => {
+    setCurrentTheme(theme)
+    localStorage.setItem('color-theme', theme)
   }
 
   const clearCurrentRowClass = () => {
@@ -358,6 +378,8 @@ function App() {
             handleDarkMode={handleDarkMode}
             isHighContrastMode={isHighContrastMode}
             handleHighContrastMode={handleHighContrastMode}
+            currentTheme={currentTheme}
+            handleTheme={handleTheme}
           />
           <AlertContainer />
         </div>

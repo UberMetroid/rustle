@@ -91,7 +91,7 @@ export const localeAwareUpperCase = (text: string) => {
 
 export const getLastGameDate = (today: Date) => {
   const t = startOfDay(today)
-  let daysSinceLastGame = differenceInDays(firstGameDate, t) % periodInDays
+  let daysSinceLastGame = differenceInDays(t, firstGameDate) % periodInDays
   return addDays(t, -daysSinceLastGame)
 }
 
@@ -104,18 +104,11 @@ export const isValidGameDate = (date: Date) => {
     return false
   }
 
-  return differenceInDays(firstGameDate, date) % periodInDays === 0
+  return differenceInDays(date, firstGameDate) % periodInDays === 0
 }
 
 export const getIndex = (gameDate: Date) => {
-  let start = firstGameDate
-  let index = -1
-  do {
-    index++
-    start = addDays(start, periodInDays)
-  } while (start <= gameDate)
-
-  return index
+  return differenceInDays(gameDate, firstGameDate)
 }
 
 export const getWordOfDay = (index: number) => {

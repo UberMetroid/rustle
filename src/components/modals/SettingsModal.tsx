@@ -14,6 +14,8 @@ type Props = {
   handleDarkMode: Function
   isHighContrastMode: boolean
   handleHighContrastMode: Function
+  currentTheme: string
+  handleTheme: Function
 }
 
 export const SettingsModal = ({
@@ -25,6 +27,8 @@ export const SettingsModal = ({
   handleDarkMode,
   isHighContrastMode,
   handleHighContrastMode,
+  currentTheme,
+  handleTheme,
 }: Props) => {
   return (
     <BaseModal title="Settings" isOpen={isOpen} handleClose={handleClose}>
@@ -46,6 +50,22 @@ export const SettingsModal = ({
           handleFlag={handleHighContrastMode}
           description={HIGH_CONTRAST_MODE_DESCRIPTION}
         />
+        <div className="flex flex-col py-3">
+          <div className="flex justify-between">
+            <p className="text-gray-500 dark:text-gray-300">Theme</p>
+            <select
+              value={currentTheme}
+              onChange={(e) => handleTheme(e.target.value)}
+              className="rounded border border-gray-300 bg-white p-1 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none dark:bg-slate-800 dark:text-gray-200"
+            >
+              <option value="default">Default</option>
+              <option value="cyberpunk">Cyberpunk</option>
+              <option value="nord">Nord</option>
+              <option value="retro">Retro</option>
+              <option value="solarized">Solarized</option>
+            </select>
+          </div>
+        </div>
       </div>
     </BaseModal>
   )

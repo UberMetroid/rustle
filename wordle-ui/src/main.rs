@@ -1,28 +1,14 @@
 use leptos::*;
-use word_engine::{get_solution, is_word_in_list, get_guess_statuses, get_ai_word_list, get_adversarial_step};
+use wordle_engine::{get_solution, is_word_in_list, get_guess_statuses, get_ai_word_list, get_adversarial_step, SolutionData, AdversarialResult};
 use serde::{Serialize, Deserialize};
 use wasm_bindgen::prelude::*;
 use std::collections::HashMap;
 use wasm_bindgen::JsCast;
 
-mod word_engine {
-    pub use wordle_engine::*;
-}
-
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_name = cyberBurst)]
     fn confetti();
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-struct SolutionData {
-    pub solution: String,
-    #[serde(rename = "solutionGameDate")]
-    pub solution_game_date: u64,
-    #[serde(rename = "solutionIndex")]
-    pub solution_index: i64,
-    pub tomorrow: u64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -41,13 +27,6 @@ struct StoredState {
     pub solution: String,
     pub is_ai_mode: bool,
     pub ai_pool: Vec<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-struct AdversarialResult {
-    pub pattern: Vec<String>,
-    #[serde(rename = "newPool")]
-    pub new_pool: Vec<String>,
 }
 
 fn get_storage() -> Option<web_sys::Storage> {
@@ -80,7 +59,7 @@ fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool, is_
         let win_msgs = match tries {
             1 => vec!["HACKER!", "Pure Luck.", "Sus physics.", "God Mode active.", "Keyboard Cowboy."],
             2 => vec!["Radical!", "Tubular!", "Showoff.", "Maximum Overdrive.", "Excellent!", "Righteous."],
-            3 => vec!["Solid mid.", "Typical.", "Choice.", "Right on.", "Righteous.", "Stay gold."],
+            3 => vec!["Righteous.", "Choice.", "Solid mid.", "Right on.", "Righteous.", "Stay gold."],
             4 => vec!["Finally.", "Took your time.", "Getting slow?", "Analog brain.", "Manual override."],
             5 => vec!["Panic yet?", "Sweaty.", "Close one.", "Danger Zone.", "Tracking error.", "Static..."],
             6 => vec!["Barely.", "Yikes.", "Scrub tier.", "Bogus win.", "Poseur alert.", "Last life."],
@@ -247,7 +226,6 @@ fn App() -> impl IntoView {
         }
     });
 
-    // THEME SYNC EFFECT
     create_effect(move |_| {
         let t = theme.get();
         if let Some(el) = document().document_element() {

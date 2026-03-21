@@ -3,7 +3,7 @@ import './App.css'
 import { ClockIcon } from '@heroicons/react/outline'
 import { format } from 'date-fns'
 import { default as GraphemeSplitter } from 'grapheme-splitter'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { AlertContainer } from './components/alerts/AlertContainer'
 import { Grid } from './components/grid/Grid'
@@ -67,7 +67,19 @@ function App() {
   const [currentRowClass, setCurrentRowClass] = useState('')
   const [isGameLost, setIsGameLost] = useState(false)
   const [isWasmReady, setIsWasmReady] = useState(false)
-  const [solutionData, setSolutionData] = useState<any>(null)
+
+  // Provide a safe fallback so the UI never crashes if Wasm is slow or fails
+  const [solutionData, setSolutionData] = useState<{
+    solution: string
+    solutionGameDate: Date
+    solutionIndex: number
+    tomorrow: number
+  }>({
+    solution: '.....', // 5 spaces to ensure grid renders
+    solutionGameDate: new Date(),
+    solutionIndex: 0,
+    tomorrow: 0,
+  })
 
   const [currentTheme, setCurrentTheme] = useState(
     localStorage.getItem('color-theme') || 'default'
@@ -84,8 +96,12 @@ function App() {
 
   // Non-blocking Wasm init
   useEffect(() => {
+    let mounted = true
+
     init()
       .then(() => {
+        if (!mounted) return
+
         const data = getSolution(gameDate)
         if (data) {
           setSolutionData(data)
@@ -102,7 +118,15 @@ function App() {
           }
         }
       })
-      .catch(console.error)
+      .catch((e) => {
+        console.error('Wasm Init Failed:', e)
+        // We could show an alert here, but for now we'll just fail silently
+        // so the user sees the grid at least.
+      })
+
+    return () => {
+      mounted = false
+    }
   }, [gameDate, isLatestGame])
 
   useEffect(() => {
@@ -148,21 +172,21 @@ function App() {
     localStorage.setItem('color-theme', theme)
   }
 
-  const clearCurrentRowClass = () => {
+  const clearCurrentRowClass = useCallback(() => {
     setCurrentRowClass('')
-  }
+  }, [])
 
   useEffect(() => {
-    if (solutionData) {
+    if (isWasmReady) {
       saveGameStateToLocalStorage(getIsLatestGame(), {
         guesses,
         solution: solutionData.solution,
       })
     }
-  }, [guesses, solutionData])
+  }, [guesses, solutionData, isWasmReady, isLatestGame])
 
   useEffect(() => {
-    if (isGameWon && solutionData) {
+    if (isGameWon && isWasmReady) {
       const winMessage =
         WIN_MESSAGES[Math.floor(Math.random() * WIN_MESSAGES.length)]
       const delayMs = REVEAL_TIME_MS * solutionData.solution.length
@@ -171,19 +195,21 @@ function App() {
         onClose: () => setIsStatsModalOpen(true),
       })
     }
-    if (isGameLost && solutionData) {
+    if (isGameLost && isWasmReady) {
       setTimeout(
         () => setIsStatsModalOpen(true),
         (solutionData.solution.length + 1) * REVEAL_TIME_MS
       )
     }
-  }, [isGameWon, isGameLost, showSuccessAlert, solutionData])
+  }, [isGameWon, isGameLost, showSuccessAlert, solutionData, isWasmReady])
 
   const onChar = (value: string) => {
-    if (guesses.length < MAX_CHALLENGES && !isGameWon) {
+    if (isWasmReady && guesses.length < MAX_CHALLENGES && !isGameWon) {
       setCurrentGuess(
-        `${currentGuess}${value}`.slice(0, solutionData?.solution.length || 5)
+        `${currentGuess}${value}`.slice(0, solutionData.solution.length)
       )
+    } else if (!isWasmReady) {
+      showErrorAlert('Loading Wordle Rust Engine...', { durationMs: 1000 })
     }
   }
 
@@ -194,7 +220,12 @@ function App() {
   }
 
   const onEnter = () => {
-    if (!isWasmReady || isGameWon || isGameLost || !solutionData) return
+    if (!isWasmReady) {
+      showErrorAlert('Loading Wordle Rust Engine...', { durationMs: 1000 })
+      return
+    }
+
+    if (isGameWon || isGameLost) return
 
     if (unicodeLength(currentGuess) !== solutionData.solution.length) {
       setCurrentRowClass('jiggle')
@@ -252,7 +283,7 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-full flex-col">
       <Navbar
         setIsInfoModalOpen={setIsInfoModalOpen}
         setIsStatsModalOpen={setIsStatsModalOpen}
@@ -272,7 +303,7 @@ function App() {
       <div className="mx-auto flex w-full max-w-[500px] grow flex-col justify-between px-1 py-2 sm:px-6">
         <div className="flex grow flex-col justify-center">
           <Grid
-            solution={solutionData?.solution || '     '}
+            solution={solutionData.solution}
             guesses={guesses}
             currentGuess={currentGuess}
             isRevealing={isRevealing}
@@ -284,7 +315,7 @@ function App() {
             onChar={onChar}
             onDelete={onDelete}
             onEnter={onEnter}
-            solution={solutionData?.solution || '     '}
+            solution={solutionData.solution}
             guesses={guesses}
             isRevealing={isRevealing}
           />
@@ -296,10 +327,10 @@ function App() {
         <StatsModal
           isOpen={isStatsModalOpen}
           handleClose={() => setIsStatsModalOpen(false)}
-          solution={solutionData?.solution || ''}
-          solutionIndex={solutionData?.solutionIndex || 0}
-          solutionGameDate={solutionData?.solutionGameDate || new Date()}
-          tomorrow={solutionData?.tomorrow || 0}
+          solution={solutionData.solution}
+          solutionIndex={solutionData.solutionIndex}
+          solutionGameDate={solutionData.solutionGameDate}
+          tomorrow={solutionData.tomorrow}
           guesses={guesses}
           gameStats={stats}
           isLatestGame={isLatestGame}
@@ -320,7 +351,7 @@ function App() {
         />
         <DatePickerModal
           isOpen={isDatePickerModalOpen}
-          initialDate={solutionData?.solutionGameDate || new Date()}
+          initialDate={solutionData.solutionGameDate}
           handleSelectDate={(d) => {
             setIsDatePickerModalOpen(false)
             setGameDate(d)

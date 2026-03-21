@@ -25,5 +25,5 @@ COPY --from=builder /app/wordle-ui/dist /usr/share/nginx/html
 COPY docker/build_system.sh .
 RUN ./build_system.sh && rm ./build_system.sh
 
-EXPOSE 7583
+EXPOSE 8080
 USER reactle

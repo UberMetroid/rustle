@@ -36,7 +36,7 @@ services:
     container_name: rustle
     restart: unless-stopped
     ports:
-      - "7583:7583"
+      - "7583:8080"
     security_opt:
       - no-new-privileges:true
 ```
@@ -50,7 +50,7 @@ docker-compose up -d
 ```bash
 docker run -d \
   --name rustle \
-  -p 7583:7583 \
+  -p 7583:8080 \
   --restart unless-stopped \
   ghcr.io/ubermetroid/rustle:latest
 ```

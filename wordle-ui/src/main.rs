@@ -37,12 +37,9 @@ fn get_theme_emojis(theme: &str) -> (&str, &str, &str) {
     match theme {
         "dark" => ("⬜", "🟨", "⬛"),
         "red" => ("🟥", "🟨", "⬛"),
-        "orange" => ("🟧", "🟨", "⬛"),
-        "yellow" => ("🟨", "⬜", "⬛"),
         "green" => ("🟩", "🟨", "⬛"),
         "blue" => ("🟦", "🟨", "⬛"),
-        "purple" => ("🟪", "🟨", "⬛"),
-        "light" => ("🟩", "🟨", "⬜"),
+        "white" => ("🟩", "🟨", "⬜"),
         _ => ("🟩", "🟨", "⬛"),
     }
 }
@@ -473,6 +470,11 @@ fn App() -> impl IntoView {
         }
     });
 
+    create_effect(move |_| {
+        let h = hard_mode.get();
+        if let Some(storage) = get_storage() { let _ = storage.set_item("hard-mode", if h { "true" } else { "false" }); }
+    });
+
     view! {
         <div class="flex flex-col h-full transition-all duration-500 bg-app-bg text-app-text overflow-hidden">
             <header class="w-full flex flex-col items-center py-4 shrink-0">
@@ -540,21 +542,13 @@ fn App() -> impl IntoView {
                     </div>
                 </div>
 
-                <aside class="flex flex-col items-center justify-center py-4 shrink-0">
-                    <div class="glass-pad p-3 rounded-3xl flex items-center shadow-lg relative z-[50]">
-                        {move || {
-                            let themes = vec!["dark", "red", "orange", "yellow", "green", "blue", "purple", "light"];
-                            let current = theme.get();
-                            let index = themes.iter().position(|&t| t == current).unwrap_or(0);
-                            view! { 
-                                <div class="theme-slider-container">
-                                    <input type="range" min="0" max="7" step="1" value=index class="theme-slider" on:input=move |ev| { 
-                                        let val = event_target_value(&ev).parse::<usize>().unwrap_or(0); 
-                                        set_theme.set(themes[val].to_string()); 
-                                    } /> 
-                                </div>
-                            }
-                        }}
+                <aside class="flex flex-col gap-3 py-4 shrink-0 px-2">
+                    <div class="glass-pad p-2 flex flex-col gap-4 shadow-xl">
+                        <button on:click=move |_| set_theme.set("dark".to_string()) title="Dark Theme" class=move || format!("theme-dot bg-black active:scale-125 {}", if theme.get() == "dark" { "active ring-2 ring-white ring-offset-2 ring-offset-black" } else { "" }) />
+                        <button on:click=move |_| set_theme.set("red".to_string()) title="Red Theme" class=move || format!("theme-dot bg-red-600 active:scale-125 {}", if theme.get() == "red" { "active ring-2 ring-white ring-offset-2 ring-offset-red-600" } else { "" }) />
+                        <button on:click=move |_| set_theme.set("green".to_string()) title="Green Theme" class=move || format!("theme-dot bg-green-600 active:scale-125 {}", if theme.get() == "green" { "active ring-2 ring-white ring-offset-2 ring-offset-green-600" } else { "" }) />
+                        <button on:click=move |_| set_theme.set("blue".to_string()) title="Blue Theme" class=move || format!("theme-dot bg-blue-600 active:scale-125 {}", if theme.get() == "blue" { "active ring-2 ring-white ring-offset-2 ring-offset-blue-600" } else { "" }) />
+                        <button on:click=move |_| set_theme.set("white".to_string()) title="White Theme" class=move || format!("theme-dot bg-white active:scale-125 {}", if theme.get() == "white" { "active ring-2 ring-gray-400 ring-offset-2 ring-offset-white" } else { "" }) />
                     </div>
                 </aside>
             </main>

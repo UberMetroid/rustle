@@ -37,14 +37,12 @@ body {
 /* THEMES */
 .theme-dark { --app-bg: #000000; --app-text: #ffffff; --theme-primary: #e2e8f0; --absent-cell-bg-color: #111111; --correct-cell-bg-color: #f8fafc; --present-cell-bg-color: #fbbf24; }
 .theme-red { --app-bg: #180000; --app-text: #ffffff; --theme-primary: #ff4444; --absent-cell-bg-color: #2d0000; --correct-cell-bg-color: #ff4444; --present-cell-bg-color: #facc15; }
-.theme-orange { --app-bg: #1a0a00; --app-text: #ffffff; --theme-primary: #fb923c; --absent-cell-bg-color: #2d1200; --correct-cell-bg-color: #fb923c; --present-cell-bg-color: #fef08a; }
-.theme-yellow { --app-bg: #1a1400; --app-text: #ffffff; --theme-primary: #facc15; --absent-cell-bg-color: #2d2200; --correct-cell-bg-color: #facc15; --present-cell-bg-color: #ffffff; }
 .theme-green { --app-bg: #001a0a; --app-text: #ffffff; --theme-primary: #4ade80; --absent-cell-bg-color: #002d11; --correct-cell-bg-color: #4ade80; --present-cell-bg-color: #facc15; }
 .theme-blue { --app-bg: #000a1a; --app-text: #ffffff; --theme-primary: #2563eb; --absent-cell-bg-color: #001a3d; --correct-cell-bg-color: #3b82f6; --present-cell-bg-color: #facc15; }
-.theme-purple { --app-bg: #0a001a; --app-text: #ffffff; --theme-primary: #c084fc; --absent-cell-bg-color: #1a003d; --correct-cell-bg-color: #c084fc; --present-cell-bg-color: #facc15; }
-.theme-light { --app-bg: #f8fafc; --app-text: #0f172a; --theme-primary: #10b981; --absent-cell-bg-color: #cbd5e1; --correct-cell-bg-color: #10b981; --present-cell-bg-color: #f59e0b; }
+.theme-white { --app-bg: #ffffff; --app-text: #000000; --theme-primary: #10b981; --absent-cell-bg-color: #e2e8f0; --correct-cell-bg-color: #10b981; --present-cell-bg-color: #f59e0b; }
 
 .theme-dark .correct, .theme-dark .correct-pad { color: #000 !important; }
+.theme-white .absent { color: #94a3b8 !important; }
 
 .glass-pad {
   background: rgba(0, 0, 0, 0.4);
@@ -52,6 +50,11 @@ body {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 1rem !important;
+}
+
+.theme-white .glass-pad {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .correct-pad {
@@ -158,66 +161,6 @@ body {
 .jiggle { animation: jiggle 0.2s linear; }
 @keyframes jiggle { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
 
-/* ROBUST VERTICAL RAINBOW SLIDER */
-.theme-slider-container {
-  width: 16px;
-  height: 200px;
-  position: relative;
-  background: linear-gradient(to top, #0f172a 0%, #dc2626 16%, #ea580c 33%, #eab308 50%, #22c55e 60%, #2563eb 75%, #a855f7 90%, #f8fafc 100%);
-  border-radius: 8px;
-  box-shadow: inset 0 1px 4px rgba(0,0,0,0.5), 0 0 10px rgba(0,0,0,0.2);
-  display: flex;
-  justify-content: center;
-  overflow: visible;
-}
-
-.theme-slider {
-  -webkit-appearance: slider-vertical;
-  appearance: slider-vertical;
-  width: 100%;
-  height: 100%;
-  background: transparent !important;
-  cursor: pointer;
-  margin: 0;
-  outline: none;
-}
-
-/* For browsers that don't support slider-vertical well, use the rotation hack but with better sizing */
-@supports not (appearance: slider-vertical) {
-  .theme-slider {
-    -webkit-appearance: none;
-    width: 200px;
-    height: 16px;
-    transform: rotate(-90deg);
-    transform-origin: center;
-    position: absolute;
-    top: 92px; /* Center it */
-    left: -92px;
-  }
-}
-
-.theme-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: white;
-  border: 3px solid var(--theme-primary);
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
-  cursor: pointer;
-}
-
-.theme-slider::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: white;
-  border: 3px solid var(--theme-primary);
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
-  cursor: pointer;
-}
-
 .title-text { color: var(--theme-primary); text-shadow: 0 0 15px var(--theme-primary); transition: all 0.5s ease; }
 
 .snarky-toast {
@@ -245,3 +188,16 @@ body {
     border-radius: 0.5rem !important;
   }
 }
+
+/* THEME BUTTONS */
+.theme-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.theme-dot:hover { transform: scale(1.2); }
+.theme-dot.active { border-color: white; box-shadow: 0 0 12px currentColor; transform: scale(1.3); }

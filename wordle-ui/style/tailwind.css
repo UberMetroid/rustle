@@ -32,7 +32,7 @@ body {
   position: relative;
 }
 
-/* Theme Definitions */
+/* Theme Definitions with High Legibility */
 
 /* 0: Dark */
 .theme-dark {
@@ -52,14 +52,14 @@ body {
 /* 1: Red */
 .theme-red {
   --app-bg: #450a0a;
-  --app-text: #fecaca;
+  --app-text: #ffffff;
   --default-cell-bg-color: #7f1d1d;
-  --default-cell-border-color: #991b1b;
-  --default-cell-text-color: #fecaca;
+  --default-cell-border-color: #b91c1c;
+  --default-cell-text-color: #ffffff;
   --key-bg: #991b1b;
-  --key-text: #fecaca;
+  --key-text: #ffffff;
   --theme-primary: #fca5a5;
-  --absent-cell-bg-color: #991b1b;
+  --absent-cell-bg-color: #450a0a;
   --correct-cell-bg-color: #dc2626;
   --present-cell-bg-color: #ef4444;
 }
@@ -67,14 +67,14 @@ body {
 /* 2: Orange */
 .theme-orange {
   --app-bg: #431407;
-  --app-text: #ffedd5;
+  --app-text: #ffffff;
   --default-cell-bg-color: #7c2d12;
-  --default-cell-border-color: #9a3412;
-  --default-cell-text-color: #ffedd5;
+  --default-cell-border-color: #ea580c;
+  --default-cell-text-color: #ffffff;
   --key-bg: #9a3412;
-  --key-text: #ffedd5;
+  --key-text: #ffffff;
   --theme-primary: #fcd34d;
-  --absent-cell-bg-color: #9a3412;
+  --absent-cell-bg-color: #431407;
   --correct-cell-bg-color: #ea580c;
   --present-cell-bg-color: #f97316;
 }
@@ -82,14 +82,14 @@ body {
 /* 3: Yellow */
 .theme-yellow {
   --app-bg: #422006;
-  --app-text: #fef9c3;
+  --app-text: #ffffff;
   --default-cell-bg-color: #713f12;
-  --default-cell-border-color: #854d0e;
-  --default-cell-text-color: #fef9c3;
+  --default-cell-border-color: #ca8a04;
+  --default-cell-text-color: #ffffff;
   --key-bg: #854d0e;
-  --key-text: #fef9c3;
+  --key-text: #ffffff;
   --theme-primary: #fef08a;
-  --absent-cell-bg-color: #854d0e;
+  --absent-cell-bg-color: #422006;
   --correct-cell-bg-color: #eab308;
   --present-cell-bg-color: #facc15;
 }
@@ -97,14 +97,14 @@ body {
 /* 4: Green */
 .theme-green {
   --app-bg: #064e3b;
-  --app-text: #d1fae5;
+  --app-text: #ffffff;
   --default-cell-bg-color: #065f46;
-  --default-cell-border-color: #047857;
-  --default-cell-text-color: #d1fae5;
+  --default-cell-border-color: #10b981;
+  --default-cell-text-color: #ffffff;
   --key-bg: #047857;
-  --key-text: #d1fae5;
+  --key-text: #ffffff;
   --theme-primary: #86efac;
-  --absent-cell-bg-color: #047857;
+  --absent-cell-bg-color: #064e3b;
   --correct-cell-bg-color: #22c55e;
   --present-cell-bg-color: #4ade80;
 }
@@ -112,14 +112,14 @@ body {
 /* 5: Blue */
 .theme-blue {
   --app-bg: #1e3a8a;
-  --app-text: #dbeafe;
+  --app-text: #ffffff;
   --default-cell-bg-color: #1e40af;
-  --default-cell-border-color: #1d4ed8;
-  --default-cell-text-color: #dbeafe;
+  --default-cell-border-color: #3b82f6;
+  --default-cell-text-color: #ffffff;
   --key-bg: #1d4ed8;
-  --key-text: #dbeafe;
+  --key-text: #ffffff;
   --theme-primary: #93c5fd;
-  --absent-cell-bg-color: #1d4ed8;
+  --absent-cell-bg-color: #1e3a8a;
   --correct-cell-bg-color: #2563eb;
   --present-cell-bg-color: #3b82f6;
 }
@@ -127,14 +127,14 @@ body {
 /* 6: Purple */
 .theme-purple {
   --app-bg: #4c1d95;
-  --app-text: #ede9fe;
+  --app-text: #ffffff;
   --default-cell-bg-color: #5b21b6;
-  --default-cell-border-color: #6d28d9;
-  --default-cell-text-color: #ede9fe;
+  --default-cell-border-color: #8b5cf6;
+  --default-cell-text-color: #ffffff;
   --key-bg: #6d28d9;
-  --key-text: #ede9fe;
+  --key-text: #ffffff;
   --theme-primary: #ddd6fe;
-  --absent-cell-bg-color: #6d28d9;
+  --absent-cell-bg-color: #4c1d95;
   --correct-cell-bg-color: #a855f7;
   --present-cell-bg-color: #c084fc;
 }
@@ -144,7 +144,7 @@ body {
   --app-bg: #f8fafc;
   --app-text: #0f172a;
   --default-cell-bg-color: #ffffff;
-  --default-cell-border-color: #e2e8f0;
+  --default-cell-border-color: #cbd5e1;
   --default-cell-text-color: #0f172a;
   --key-bg: #e2e8f0;
   --key-text: #0f172a;
@@ -154,8 +154,8 @@ body {
   --present-cell-bg-color: #eab308;
 }
 
-/* CRT Overlay for Retro - integrated into dark */
-.theme-dark::before {
+/* CRT Overlay */
+.theme-dark::before, .theme-red::before, .theme-orange::before, .theme-yellow::before, .theme-green::before, .theme-blue::before, .theme-purple::before {
   content: " ";
   display: block;
   position: absolute;
@@ -170,21 +170,35 @@ body {
 
 /* Unified "Pad" Glass Style */
 .glass-pad {
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 0 20px rgba(0,0,0,0.2), 0 4px 15px rgba(0,0,0,0.3);
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.3), 0 4px 15px rgba(0,0,0,0.4);
   border-radius: 1.5rem !important;
 }
 
-.theme-light .glass-pad {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+/* Correct Placement Button Pad style */
+.correct-pad {
+  background-color: var(--correct-cell-bg-color) !important;
+  border-color: var(--correct-cell-bg-color) !important;
+  color: white !important;
+  box-shadow: 0 0 15px var(--correct-cell-bg-color);
+  transition: all 0.3s ease;
 }
 
-/* Cell Overrides - Use CSS Variables from Theme */
+.correct-pad:hover {
+  filter: brightness(1.1);
+  transform: scale(1.1);
+}
+
+.theme-light .glass-pad {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* Cell Overrides */
 .absent {
   background-color: var(--absent-cell-bg-color) !important;
   border-color: var(--absent-cell-bg-color) !important;
@@ -214,7 +228,6 @@ body {
   100% { transform: rotateX(180deg); }
 }
 
-/* During the 50% part of flip, the background-color is set by the classes absent/correct/present */
 .cell-reveal > div {
   transform: rotateX(180deg);
 }

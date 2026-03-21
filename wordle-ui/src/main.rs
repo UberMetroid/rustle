@@ -82,7 +82,7 @@ fn Modal(title: String, is_open: ReadSignal<bool>, set_is_open: WriteSignal<bool
             <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50" on:click=move |_| set_is_open.set(false)>
                 <div class="glass-pad w-full max-w-sm p-6 shadow-2xl transition-all scale-up" on:click=move |ev| ev.stop_propagation()>
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-black tracking-tighter text-white"> {title_clone.clone()} </h2>
+                        <h2 class="text-2xl font-black tracking-tighter text-white uppercase"> {title_clone.clone()} </h2>
                         <button on:click=move |_| set_is_open.set(false) class="text-2xl font-bold text-white hover:text-red-500 transition-colors"> "×" </button>
                     </div>
                     <div>
@@ -151,7 +151,6 @@ fn App() -> impl IntoView {
         }
     });
 
-    // Keyboard Status Mapping Logic - Fixed with Case Sensitivity and Proper Result Mapping
     let char_statuses = create_memo(move |_| {
         let mut map = HashMap::new();
         let sol = solution_data.get().solution.to_uppercase();
@@ -289,11 +288,12 @@ fn App() -> impl IntoView {
         <div class="flex h-screen flex-col items-center justify-between py-4 sm:py-8 overflow-hidden transition-all duration-500 text-black dark:text-white px-2">
             <div class="w-full max-w-[600px] flex flex-col items-center">
                 <nav class="w-full grid grid-cols-3 items-center px-4 mb-4 sm:mb-8">
+                    // Left Buttons (Now using correct-pad style and exact letter-pad size)
                     <div class="flex gap-2 justify-start">
-                        <button on:click=move |_| set_show_stats.set(true) class="glass-pad w-12 h-12 flex items-center justify-center rounded-xl hover:scale-110 transition-transform shadow-lg">
+                        <button on:click=move |_| set_show_stats.set(true) class="correct-pad w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl shadow-lg border-2">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
-                        <button on:click=move |_| set_show_settings.set(true) class="glass-pad w-12 h-12 flex items-center justify-center rounded-xl hover:scale-110 transition-transform shadow-lg">
+                        <button on:click=move |_| set_show_settings.set(true) class="correct-pad w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl shadow-lg border-2">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
@@ -301,7 +301,7 @@ fn App() -> impl IntoView {
                     <h1 class="text-2xl sm:text-4xl font-black tracking-tighter italic text-center title-text">"RUSTLE"</h1>
                     
                     <div class="flex justify-end">
-                        <div class="glass-pad p-2 rounded-2xl flex items-center shadow-lg">
+                        <div class="glass-pad p-2 rounded-3xl flex items-center shadow-lg">
                             {move || {
                                 let themes = vec!["dark", "red", "orange", "yellow", "green", "blue", "purple", "light"];
                                 let current = theme.get();
@@ -384,11 +384,11 @@ fn App() -> impl IntoView {
 
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
                 <div class="flex flex-col items-center text-center">
-                    <div class="flex w-full justify-around mb-6">
-                        <div><div class="text-3xl font-black text-white">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70 text-white">"Played"</div></div>
-                        <div><div class="text-3xl font-black text-white">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70 text-white">"Win %"</div></div>
-                        <div><div class="text-3xl font-black text-white">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70 text-white">"Streak"</div></div>
-                        <div><div class="text-3xl font-black text-white">{move || stats.get().best_streak}</div><div class="text-xs uppercase opacity-70 text-white">"Best"</div></div>
+                    <div class="flex w-full justify-around mb-6 text-white">
+                        <div><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70">"Played"</div></div>
+                        <div><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70">"Win %"</div></div>
+                        <div><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70">"Streak"</div></div>
+                        <div><div class="text-3xl font-black">{move || stats.get().best_streak}</div><div class="text-xs uppercase opacity-70">"Best"</div></div>
                     </div>
                     <h3 class="text-sm font-bold uppercase mb-2 text-white">"Guess Distribution"</h3>
                     <div class="w-full space-y-1 mb-6 text-left">
@@ -399,7 +399,7 @@ fn App() -> impl IntoView {
                         }).collect_view()}
                     </div>
                     <Show when=move || game_won.get() || game_lost.get()>
-                        <button on:click=on_share class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95">
+                        <button on:click=on_share class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase">
                             "SHARE RESULT"
                         </button>
                     </Show>
@@ -410,8 +410,8 @@ fn App() -> impl IntoView {
                 <div class="flex flex-col gap-4 text-white">
                     <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30">
                         <div>
-                            <div class="font-bold text-white">"Hard Mode"</div>
-                            <div class="text-xs opacity-70 text-white">"Strict validation of clues"</div>
+                            <div class="font-bold">"Hard Mode"</div>
+                            <div class="text-xs opacity-70">"Strict validation of clues"</div>
                         </div>
                         <button 
                             on:click=move |_| set_hard_mode.update(|h| *h = !*h)
@@ -420,7 +420,7 @@ fn App() -> impl IntoView {
                             <div class=move || format!("absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 {}", if hard_mode.get() { "left-7" } else { "left-1" }) />
                         </button>
                     </div>
-                    <div class="text-xs opacity-50 italic text-center mt-2 text-white">"Rustle Version 1.0.0 (Pure Rust)"</div>
+                    <div class="text-xs opacity-50 italic text-center mt-2">"Rustle Version 1.0.0 (Pure Rust)"</div>
                 </div>
             </Modal>
 

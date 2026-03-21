@@ -383,7 +383,7 @@ fn App() -> impl IntoView {
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </button>
                         <button 
-                            on:click=move |_| if guesses.get().is_empty() || game_won.get() || game_lost.get() { set_hard_mode.update(|h| *h = !*h) } 
+                            on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) } 
                             title="Hard Mode" 
                             class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if hard_mode.get() { "correct-pad border-transparent" } else { "cell-neutral border-current" })
                         >
@@ -547,12 +547,16 @@ fn App() -> impl IntoView {
                     <Show when=move || game_won.get() || game_lost.get()>
                         <button on:click=move |_| {
                             let sol = solution_data.get().solution.to_uppercase();
-                            let mut text = format!("Rustle {} {}/6\n\n", solution_data.get().solution_index, if game_won.get() { guesses.get().len().to_string() } else { "X".to_string() });
+                            let is_hard = hard_mode.get();
+                            let comment = snarky_comment.get();
+                            let mut text = format!("RUSTLE {} {}/6 {}\n\n", solution_data.get().solution_index, if game_won.get() { guesses.get().len().to_string() } else { "X".to_string() }, if is_hard { "⚡" } else { "" });
                             for g in guesses.get() {
                                 let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &g.to_uppercase())).unwrap_or_default();
                                 for s in statuses { text.push_str(match s.as_str() { "correct" => "🟩", "present" => "🟨", _ => "⬛" }); }
                                 text.push('\n');
                             }
+                            text.push('\n');
+                            text.push_str(&comment);
                             let _ = window().navigator().clipboard().write_text(&text);
                             set_snarky_comment.set("Results Copied, poseur.".to_string());
                             set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));

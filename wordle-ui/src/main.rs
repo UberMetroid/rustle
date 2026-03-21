@@ -431,10 +431,7 @@ fn App() -> impl IntoView {
             if is_win {
                 set_game_won.set(true);
                 if !is_ng_plus.get() { set_daily_game_done.set(true); }
-                
-                // TRIGGER SCALED CYBERPUNK CELEBRATION
                 set_timeout(move || celebrate(&theme.get(), hard_mode.get(), is_ng_plus.get()), std::time::Duration::from_millis(1800));
-
                 set_stats.update(|s| {
                     s.total_games += 1; s.wins += 1; s.current_streak += 1;
                     if s.current_streak > s.best_streak { s.best_streak = s.current_streak; }
@@ -506,18 +503,19 @@ fn App() -> impl IntoView {
                         </button>
                     </Show>
                 </div>
-                <div class="absolute top-[85%] left-0 right-0 h-12 flex items-center justify-center pointer-events-none px-4">
-                    {move || {
-                        let snark = snarky_comment.get();
-                        if !snark.is_empty() {
-                            let color = if game_won.get() { "text-green-400" } else if game_lost.get() { "text-red-400" } else { "text-theme-primary" };
-                            view! { <div key=snark.clone() class=format!("text-[10px] sm:text-xs font-black uppercase tracking-widest {} snarky-toast text-center pointer-events-auto", color)> {snark} </div> }.into_view()
-                        } else { view! {}.into_view() }
-                    }}
-                </div>
             </header>
 
-            <main class="flex-1 flex items-center justify-center w-full max-w-4xl mx-auto px-2 sm:px-4 min-h-0 pt-8">
+            <div class="h-16 flex items-center justify-center pointer-events-none px-4 shrink-0">
+                {move || {
+                    let snark = snarky_comment.get();
+                    if !snark.is_empty() {
+                        let color = if game_won.get() { "text-green-400" } else if game_lost.get() { "text-red-400" } else { "text-theme-primary" };
+                        view! { <div key=snark.clone() class=format!("text-[10px] sm:text-xs font-black uppercase tracking-widest {} snarky-toast text-center pointer-events-auto", color)> {snark} </div> }.into_view()
+                    } else { view! {}.into_view() }
+                }}
+            </div>
+
+            <main class="flex-1 flex items-center justify-center w-full max-w-4xl mx-auto px-2 sm:px-4 min-h-0">
                 <aside class="flex flex-col gap-4 py-4 shrink-0">
                     <button on:click=move |_| set_show_stats.set(true) title="Score" class="correct-pad w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center rounded-2xl shadow-lg border-2 border-transparent transition-all active:scale-90">
                         <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
@@ -562,7 +560,7 @@ fn App() -> impl IntoView {
                 </div>
 
                 <aside class="flex flex-col gap-3 py-4 shrink-0 px-2">
-                    <div class="glass-pad p-2 flex flex-col gap-4 shadow-xl">
+                    <div class="flex flex-col gap-4">
                         <button on:click=move |_| set_theme.set("dark".to_string()) title="Dark Theme" class=move || format!("theme-square bg-black active:scale-125 {}", if theme.get() == "dark" { "active ring-2 ring-white ring-offset-2 ring-offset-black" } else { "" }) />
                         <button on:click=move |_| set_theme.set("red".to_string()) title="Red Theme" class=move || format!("theme-square bg-red-600 active:scale-125 {}", if theme.get() == "red" { "active ring-2 ring-white ring-offset-2 ring-offset-red-600" } else { "" }) />
                         <button on:click=move |_| set_theme.set("green".to_string()) title="Green Theme" class=move || format!("theme-square bg-green-600 active:scale-125 {}", if theme.get() == "green" { "active ring-2 ring-white ring-offset-2 ring-offset-green-600" } else { "" }) />

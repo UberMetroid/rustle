@@ -5,7 +5,7 @@
 :root {
   --animation-speed: 1000ms;
   --animation-speed-fast: 250ms;
-  --default-cell-bg-color: rgba(0, 0, 0, 0.3);
+  --default-cell-bg-color: rgba(0, 0, 0, 0.5);
   --default-cell-border-color: rgba(255, 255, 255, 0.1);
   --default-cell-text-color: #ffffff;
   --absent-cell-bg-color: #334155;
@@ -18,9 +18,9 @@
   --theme-primary: #10b981;
 }
 
-/* Ensure body takes full height and centers content */
+/* Ensure body takes full height */
 html, body, #root {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
 }
@@ -32,114 +32,99 @@ body {
   position: relative;
 }
 
-/* Refined Themes - Correct (Theme Color) vs Present (Contrast Color) */
+/* HIGH DISTINCTION: Onyx Glass + Neon Glow Letters */
 
-/* 0: Dark (Sky Blue) */
+/* Shared base for all colored themes */
+.theme-dark, .theme-red, .theme-orange, .theme-yellow, .theme-green, .theme-blue, .theme-purple {
+  --default-cell-bg-color: rgba(0, 0, 0, 0.6); /* Deep onyx glass */
+  --default-cell-border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 0: Dark (Sky Blue Neon) */
 .theme-dark {
   --app-bg: #020617;
   --app-text: #f8fafc;
-  --default-cell-bg-color: rgba(30, 41, 59, 0.6);
-  --default-cell-border-color: rgba(56, 189, 248, 0.3);
   --default-cell-text-color: #38bdf8;
-  --key-bg: rgba(30, 41, 59, 0.6);
   --key-text: #38bdf8;
   --theme-primary: #38bdf8;
   --absent-cell-bg-color: #1e293b;
-  --correct-cell-bg-color: #38bdf8; /* Blue */
-  --present-cell-bg-color: #facc15; /* Yellow */
+  --correct-cell-bg-color: #38bdf8;
+  --present-cell-bg-color: #facc15;
 }
 
-/* 1: Red */
+/* 1: Red (Red Neon) */
 .theme-red {
-  --app-bg: #450a0a;
+  --app-bg: #180000;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(127, 29, 29, 0.6);
-  --default-cell-border-color: rgba(248, 113, 113, 0.3);
-  --default-cell-text-color: #fca5a5;
-  --key-bg: rgba(127, 29, 29, 0.6);
-  --key-text: #fca5a5;
-  --theme-primary: #ef4444;
-  --absent-cell-bg-color: #7f1d1d;
-  --correct-cell-bg-color: #ef4444; /* Red */
-  --present-cell-bg-color: #facc15; /* Yellow */
+  --default-cell-text-color: #ff4444;
+  --key-text: #ff4444;
+  --theme-primary: #ff4444;
+  --absent-cell-bg-color: #450a0a;
+  --correct-cell-bg-color: #ff4444;
+  --present-cell-bg-color: #facc15;
 }
 
-/* 2: Orange */
+/* 2: Orange (Orange Neon) */
 .theme-orange {
-  --app-bg: #431407;
+  --app-bg: #1a0a00;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(124, 45, 18, 0.6);
-  --default-cell-border-color: rgba(251, 146, 60, 0.3);
-  --default-cell-text-color: #fdba74;
-  --key-bg: rgba(124, 45, 18, 0.6);
-  --key-text: #fdba74;
-  --theme-primary: #f97316;
-  --absent-cell-bg-color: #7c2d12;
-  --correct-cell-bg-color: #f97316; /* Orange */
-  --present-cell-bg-color: #fef08a; /* Bright Yellow */
+  --default-cell-text-color: #fb923c;
+  --key-text: #fb923c;
+  --theme-primary: #fb923c;
+  --absent-cell-bg-color: #431407;
+  --correct-cell-bg-color: #fb923c;
+  --present-cell-bg-color: #fef08a;
 }
 
-/* 3: Yellow */
+/* 3: Yellow (Yellow Neon) */
 .theme-yellow {
-  --app-bg: #422006;
+  --app-bg: #1a1400;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(113, 63, 18, 0.6);
-  --default-cell-border-color: rgba(250, 204, 21, 0.3);
-  --default-cell-text-color: #fef08a;
-  --key-bg: rgba(113, 63, 18, 0.6);
-  --key-text: #fef08a;
-  --theme-primary: #eab308;
-  --absent-cell-bg-color: #713f12;
-  --correct-cell-bg-color: #eab308; /* Yellow */
-  --present-cell-bg-color: #ffffff; /* White (Distinction!) */
+  --default-cell-text-color: #facc15;
+  --key-text: #facc15;
+  --theme-primary: #facc15;
+  --absent-cell-bg-color: #422006;
+  --correct-cell-bg-color: #facc15;
+  --present-cell-bg-color: #ffffff;
 }
 
-/* 4: Green */
+/* 4: Green (Green Neon) */
 .theme-green {
-  --app-bg: #064e3b;
+  --app-bg: #001a0a;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(6, 95, 70, 0.6);
-  --default-cell-border-color: rgba(74, 222, 128, 0.3);
-  --default-cell-text-color: #86efac;
-  --key-bg: rgba(6, 95, 70, 0.6);
-  --key-text: #86efac;
-  --theme-primary: #22c55e;
-  --absent-cell-bg-color: #065f46;
-  --correct-cell-bg-color: #22c55e; /* Green */
-  --present-cell-bg-color: #facc15; /* Yellow */
+  --default-cell-text-color: #4ade80;
+  --key-text: #4ade80;
+  --theme-primary: #4ade80;
+  --absent-cell-bg-color: #064e3b;
+  --correct-cell-bg-color: #4ade80;
+  --present-cell-bg-color: #facc15;
 }
 
-/* 5: Blue */
+/* 5: Blue (Blue Neon) */
 .theme-blue {
-  --app-bg: #1e3a8a;
+  --app-bg: #000a1a;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(30, 64, 175, 0.6);
-  --default-cell-border-color: rgba(96, 165, 250, 0.3);
-  --default-cell-text-color: #93c5fd;
-  --key-bg: rgba(30, 64, 175, 0.6);
-  --key-text: #93c5fd;
-  --theme-primary: #3b82f6;
-  --absent-cell-bg-color: #1e40af;
-  --correct-cell-bg-color: #3b82f6; /* Blue */
-  --present-cell-bg-color: #facc15; /* Yellow */
+  --default-cell-text-color: #60a5fa;
+  --key-text: #60a5fa;
+  --theme-primary: #60a5fa;
+  --absent-cell-bg-color: #1e3a8a;
+  --correct-cell-bg-color: #60a5fa;
+  --present-cell-bg-color: #facc15;
 }
 
-/* 6: Purple */
+/* 6: Purple (Purple Neon) */
 .theme-purple {
-  --app-bg: #4c1d95;
+  --app-bg: #0a001a;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(91, 33, 182, 0.6);
-  --default-cell-border-color: rgba(192, 132, 252, 0.3);
-  --default-cell-text-color: #ddd6fe;
-  --key-bg: rgba(91, 33, 182, 0.6);
-  --key-text: #ddd6fe;
-  --theme-primary: #a855f7;
-  --absent-cell-bg-color: #5b21b6;
-  --correct-cell-bg-color: #a855f7; /* Purple */
-  --present-cell-bg-color: #facc15; /* Yellow */
+  --default-cell-text-color: #c084fc;
+  --key-text: #c084fc;
+  --theme-primary: #c084fc;
+  --absent-cell-bg-color: #4c1d95;
+  --correct-cell-bg-color: #c084fc;
+  --present-cell-bg-color: #facc15;
 }
 
-/* 7: Light */
+/* 7: Light (Classic) */
 .theme-light {
   --app-bg: #f8fafc;
   --app-text: #0f172a;
@@ -150,8 +135,8 @@ body {
   --key-text: #0f172a;
   --theme-primary: #10b981;
   --absent-cell-bg-color: #94a3b8;
-  --correct-cell-bg-color: #10b981; /* Green */
-  --present-cell-bg-color: #f59e0b; /* Orange */
+  --correct-cell-bg-color: #10b981;
+  --present-cell-bg-color: #f59e0b;
 }
 
 /* CRT Overlay */
@@ -170,7 +155,7 @@ body {
 
 /* Unified "Pad" Glass Style */
 .glass-pad {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -185,11 +170,6 @@ body {
   color: white !important;
   box-shadow: 0 0 15px var(--correct-cell-bg-color);
   transition: all 0.3s ease;
-}
-
-.correct-pad:hover {
-  filter: brightness(1.1);
-  transform: scale(1.1);
 }
 
 .theme-light .glass-pad {
@@ -212,7 +192,7 @@ body {
 .present {
   background-color: var(--present-cell-bg-color) !important;
   border-color: var(--present-cell-bg-color) !important;
-  color: #000000 !important; /* Black text on Yellow/White for maximum pop */
+  color: #000000 !important;
   font-weight: 900 !important;
 }
 

@@ -438,6 +438,11 @@ fn App() -> impl IntoView {
         }
     });
 
+    create_effect(move |_| {
+        let h = hard_mode.get();
+        if let Some(storage) = get_storage() { let _ = storage.set_item("hard-mode", if h { "true" } else { "false" }); }
+    });
+
     view! {
         <div class="flex flex-col h-full transition-all duration-500 bg-app-bg text-app-text overflow-hidden">
             <header class="w-full flex flex-col items-center py-4 shrink-0">

@@ -12,7 +12,7 @@ mod word_engine {
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(js_name = confetti)]
+    #[wasm_bindgen(js_name = cyberBurst)]
     fn confetti();
 }
 
@@ -397,7 +397,7 @@ fn App() -> impl IntoView {
                     </div>
                     <div class="flex flex-col items-center w-full max-w-[150px] sm:max-w-[200px]">
                         <h1 class="text-xl sm:text-4xl font-black tracking-tighter italic text-center title-text uppercase shrink-0 w-full">"RUSTLE"</h1>
-                        <div class="h-6 flex items-center justify-center w-full">
+                        <div class="min-h-6 flex items-center justify-center w-full py-1">
                             {move || {
                                 let snark = snarky_comment.get();
                                 if !snark.is_empty() {

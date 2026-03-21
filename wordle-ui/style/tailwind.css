@@ -218,9 +218,9 @@ body {
   animation: snarky-slide 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   text-shadow: 0 0 8px currentColor;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  white-space: normal;
+  line-height: 1.2;
 }
 
 @keyframes snarky-slide {

@@ -38,7 +38,7 @@ struct GameStats {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct StoredState {
     pub guesses: Vec<String>,
-    pub statuses: Vec<Vec<String>>, // Explicitly store statuses for AI mode
+    pub statuses: Vec<Vec<String>>,
     pub solution: String,
     pub is_ai_mode: bool,
     pub ai_pool: Vec<String>,
@@ -76,7 +76,7 @@ fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool, is_
         return vec![
             "CALCULATING ENTROPY...", "I AM THE SYSTEM.", "GLITCH DETECTED.",
             "SHALL WE PLAY A GAME?", "ACCESS DENIED.", "DATA CORRUPTION...",
-            "TRON CALLED. HE WANTS HIS SKILLS BACK.", "DIGITAL ENTROPY MAXIMIZED."
+            "TRON CALLED.", "DIGITAL ENTROPY MAXIMIZED."
         ][js_sys::Math::floor(js_sys::Math::random() * 8.0) as usize].to_string();
     }
 
@@ -212,7 +212,6 @@ fn App() -> impl IntoView {
     let (keyboard_pulse, set_keyboard_pulse) = create_signal((' ', "".to_string()));
     let (snarky_comment, set_snarky_comment) = create_signal(String::new());
 
-    // AI MODE STATE
     let (is_ai_mode, set_is_ai_mode) = create_signal(false);
     let (ai_pool, set_ai_pool) = create_signal(Vec::<String>::new());
     let (daily_game_done, set_daily_game_done) = create_signal(false);
@@ -220,10 +219,9 @@ fn App() -> impl IntoView {
     let now = js_sys::Date::now();
     let solution_data = create_memo(move |_| {
         let val = get_solution(now as u64);
-        let s: SolutionData = serde_wasm_bindgen::from_value(val).unwrap_or_else(|_| {
+        serde_wasm_bindgen::from_value::<SolutionData>(val).unwrap_or_else(|_| {
             SolutionData { solution: "APPLE".to_string(), solution_game_date: 0, solution_index: 0, tomorrow: 0 }
-        });
-        s
+        })
     });
 
     create_effect(move |_| {
@@ -287,12 +285,9 @@ fn App() -> impl IntoView {
                 return;
             }
 
-            // Hard Mode Rules (Forced in AI Mode)
             if (hard_mode.get() || is_ai_mode.get()) && !guesses.get().is_empty() {
                 let current_guesses = guesses.get();
                 let current_ss = guess_statuses.get();
-                
-                // Rule 1: Correct letters must be used in the same spot
                 let mut required_spots: [Option<char>; 5] = [None; 5];
                 for (g, ss) in current_guesses.iter().zip(current_ss.iter()) {
                     for (i, (c, s)) in g.chars().zip(ss.iter()).enumerate() {
@@ -302,15 +297,13 @@ fn App() -> impl IntoView {
                 for (i, &req) in required_spots.iter().enumerate() {
                     if let Some(c) = req {
                         if input.chars().nth(i).unwrap() != c {
-                            set_snarky_comment.set(format!("{} goes at {}", c, i + 1));
+                            set_snarky_comment.set(format!("{} goes at spot {}", c, i + 1));
                             set_jiggle_row.set(true);
                             set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                             return;
                         }
                     }
                 }
-
-                // Rule 2: Revealed letters must be used
                 let mut required_letters: HashMap<char, usize> = HashMap::new();
                 for (g, ss) in current_guesses.iter().zip(current_ss.iter()) {
                     let mut current_g_counts: HashMap<char, usize> = HashMap::new();
@@ -331,8 +324,6 @@ fn App() -> impl IntoView {
                         return;
                     }
                 }
-
-                // Rule 3: Absent letters must not be used
                 let statuses_map = char_statuses.get();
                 for c in input.chars() {
                     if let Some(status) = statuses_map.get(&c) {
@@ -352,17 +343,17 @@ fn App() -> impl IntoView {
 
             let mut current_pattern = vec![];
             if is_ai_mode.get() {
-                // Adversarial Step
                 let val = get_adversarial_step(&input, serde_wasm_bindgen::to_value(&ai_pool.get()).unwrap());
                 if let Ok(res) = serde_wasm_bindgen::from_value::<AdversarialResult>(val) {
                     current_pattern = res.pattern;
                     set_ai_pool.set(res.new_pool);
                 }
             } else {
-                // Standard Step
-                current_pattern = serde_wasm_bindgen::from_value(wordle_engine::get_guess_statuses(&sol, &input)).unwrap_or_default();
+                current_pattern = serde_wasm_bindgen::from_value(word_engine::get_guess_statuses(&sol, &input)).unwrap_or_default();
             }
             
+            if current_pattern.is_empty() { return; } // Safety belt
+
             new_ss_vec.push(current_pattern.clone());
             set_guesses.set(new_guesses.clone());
             set_guess_statuses_vec.set(new_ss_vec.clone());
@@ -425,6 +416,17 @@ fn App() -> impl IntoView {
         }
     };
 
+    let _ = window_event_listener(leptos::ev::keydown, move |ev| {
+        if show_stats.get() || show_help.get() { return; }
+        let key = ev.key();
+        if key == "Enter" { on_key("ENTER".to_string()); }
+        else if key == "Backspace" { on_key("DELETE".to_string()); }
+        else if key.len() == 1 {
+            let c = key.chars().next().unwrap();
+            if c.is_ascii_alphabetic() { on_key(c.to_uppercase().to_string()); }
+        }
+    });
+
     let start_ai_mode = move |_| {
         set_is_ai_mode.set(true);
         set_guesses.set(vec![]);
@@ -432,13 +434,9 @@ fn App() -> impl IntoView {
         set_game_won.set(false);
         set_game_lost.set(false);
         set_snarky_comment.set("THE SYSTEM IS ONLINE.".to_string());
-        
         let list: Vec<String> = serde_wasm_bindgen::from_value(get_ai_word_list()).unwrap_or_default();
         set_ai_pool.set(list);
-        
-        if let Some(storage) = get_storage() {
-            let _ = storage.remove_item("game-state");
-        }
+        if let Some(storage) = get_storage() { let _ = storage.remove_item("game-state"); }
     };
 
     view! {
@@ -465,9 +463,9 @@ fn App() -> impl IntoView {
                             on:click=start_ai_mode
                             disabled=move || !daily_game_done.get() || is_ai_mode.get()
                             title="AI Mode" 
-                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if is_ai_mode.get() { "correct-pad border-transparent" } else if daily_game_done.get() { "cell-neutral border-current" } else { "opacity-30 grayscale cursor-not-allowed border-current" })
+                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if is_ai_mode.get() { "correct-pad border-transparent shadow-[0_0_20px_rgba(255,0,255,0.8)]" } else if daily_game_done.get() { "cell-neutral border-current" } else { "opacity-30 grayscale cursor-not-allowed border-current" })
                         >
-                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if is_ai_mode.get() { "text-magenta-400 scale-110 drop-shadow-[0_0_12px_rgba(255,0,255,1)]" } else { "text-current opacity-40" }) fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if is_ai_mode.get() { "text-[#ff00ff] scale-110 drop-shadow-[0_0_12px_rgba(255,0,255,1)]" } else { "text-current opacity-40" }) fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                             </svg>
                         </button>

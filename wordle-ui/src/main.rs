@@ -41,18 +41,30 @@ fn get_storage() -> Option<web_sys::Storage> {
 }
 
 async fn fetch_global_stats() -> GlobalStats {
-    let mut opts = web_sys::RequestInit::new();
-    opts.set_method("GET");
-    let request = web_sys::Request::new_with_str_and_init("/global-stats.json", &opts).unwrap();
     let window = window();
-    let resp_value = wasm_bindgen_futures::JsFuture::from(window.fetch_with_request(&request)).await.unwrap();
-    let resp: web_sys::Response = resp_value.dyn_into().unwrap();
-    if resp.status() == 200 {
-        let json_value = wasm_bindgen_futures::JsFuture::from(resp.json().unwrap()).await.unwrap();
-        serde_wasm_bindgen::from_value(json_value).unwrap_or_default()
-    } else {
-        GlobalStats { cracked: "1.2M".to_string(), avg_ops: "4.2".to_string(), efficiency: "88%".to_string() }
+    // TRY GITHUB FIRST, FALLBACK TO LOCAL
+    let urls = vec![
+        "https://raw.githubusercontent.com/UberMetroid/rustle/main/data/global-stats.json",
+        "/global-stats.json"
+    ];
+    
+    for url in urls {
+        let mut opts = web_sys::RequestInit::new();
+        opts.set_method("GET");
+        if let Ok(request) = web_sys::Request::new_with_str_and_init(url, &opts) {
+            if let Ok(resp_value) = wasm_bindgen_futures::JsFuture::from(window.fetch_with_request(&request)).await {
+                let resp: web_sys::Response = resp_value.dyn_into().unwrap();
+                if resp.status() == 200 {
+                    if let Ok(json_value) = wasm_bindgen_futures::JsFuture::from(resp.json().unwrap()).await {
+                        if let Ok(stats) = serde_wasm_bindgen::from_value::<GlobalStats>(json_value) {
+                            return stats;
+                        }
+                    }
+                }
+            }
+        }
     }
+    GlobalStats { cracked: "1.2M".to_string(), avg_ops: "4.2".to_string(), efficiency: "88%".to_string() }
 }
 
 fn get_theme_emojis(theme: &str) -> (&str, &str, &str) {
@@ -286,6 +298,7 @@ fn App() -> impl IntoView {
     });
 
     let start_ng_plus = move || {
+        if !daily_game_done.get() { return; } // STRICT LOCK
         let daily_sol = solution_data.get().solution.to_uppercase();
         let was_active = is_ng_plus.get();
         set_is_ng_plus.set(true);
@@ -539,7 +552,7 @@ fn App() -> impl IntoView {
                 }}
             </div>
 
-            <main class="flex-1 flex items-center justify-center w-full max-w-4xl mx-auto px-2 sm:px-4 min-h-0 pt-2">
+            <main class="flex-1 flex items-center justify-center w-full max-w-2xl mx-auto px-2 sm:px-4 min-h-0 pt-2">
                 <aside class="flex flex-col gap-4 py-4 shrink-0">
                     <button on:click=move |_| set_show_stats.set(true) title="Score" class="btn-large correct-pad shadow-lg border-2 border-transparent transition-all active:scale-90">
                         <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
@@ -666,7 +679,7 @@ fn App() -> impl IntoView {
             </Modal>
 
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
-                <div class="flex flex-col items-center text-center text-white p-2 rounded-xl bg-black bg-opacity-20">
+                <div class="flex flex-col items-center text-center text-white p-2 rounded-xl bg-black bg-opacity-40">
                     <div class="grid grid-cols-4 w-full gap-4 mb-8">
                         <div class="flex flex-col"><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Played"</div></div>
                         <div class="flex flex-col"><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Win %"</div></div>

@@ -25,7 +25,7 @@ struct StoredState {
     pub guesses: Vec<String>,
     pub statuses: Vec<Vec<String>>,
     pub solution: String,
-    pub is_ai_mode: bool,
+    pub is_ng_plus: bool,
     pub ai_pool: Vec<String>,
 }
 
@@ -47,22 +47,24 @@ fn get_theme_emojis(theme: &str) -> (&str, &str, &str) {
     }
 }
 
-fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool, is_ai: bool) -> String {
-    if is_ai {
-        if is_win { return "SYSTEM BREACHED. IMPRESSIVE.".to_string(); }
+fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool, is_ng: bool) -> String {
+    if is_ng {
+        if is_win { return "SYSTEM BREACHED. UNREAL.".to_string(); }
         if is_loss { return "THE SYSTEM WINS. LOG OFF.".to_string(); }
-        let msgs = vec!["CALCULATING...", "I AM THE SYSTEM.", "GLITCH DETECTED.", "PLAY A GAME?", "ACCESS DENIED.", "DATA CORRUPTION...", "TRON CALLED.", "MAX ENTROPY."];
+        let msgs = vec!["CALCULATING...", "I AM THE SYSTEM.", "GLITCH DETECTED.", "PLAY A GAME?", "ACCESS DENIED.", "DATA CORRUPTION...", "MAX ENTROPY."];
         return msgs[js_sys::Math::floor(js_sys::Math::random() * msgs.len() as f64) as usize].to_string();
     }
-    if is_loss { return "Poseur.".to_string(); }
+    if is_loss { 
+        return vec!["Poseur.", "Total barf bag.", "Gag me.", "Wasted.", "Bummer."][js_sys::Math::floor(js_sys::Math::random() * 5.0) as usize].to_string();
+    }
     if is_win {
         let win_msgs = match tries {
-            1 => vec!["HACKER!", "Pure Luck.", "Sus physics.", "God Mode active.", "Keyboard Cowboy."],
-            2 => vec!["Radical!", "Tubular!", "Showoff.", "Maximum Overdrive.", "Excellent!", "Righteous."],
-            3 => vec!["Righteous.", "Choice.", "Solid mid.", "Right on.", "Righteous.", "Stay gold."],
-            4 => vec!["Finally.", "Took your time.", "Getting slow?", "Analog brain.", "Manual override."],
-            5 => vec!["Panic yet?", "Sweaty.", "Close one.", "Danger Zone.", "Tracking error.", "Static..."],
-            6 => vec!["Barely.", "Yikes.", "Scrub tier.", "Bogus win.", "Poseur alert.", "Last life."],
+            1 => vec!["HACKER!", "Pure Luck.", "Sus physics.", "God Mode."],
+            2 => vec!["Radical!", "Tubular!", "Showoff.", "Excellent!"],
+            3 => vec!["Solid mid.", "Typical.", "Choice.", "Right on."],
+            4 => vec!["Finally.", "Getting slow?", "Analog brain."],
+            5 => vec!["Panic yet?", "Sweaty.", "Close one.", "Danger Zone."],
+            6 => vec!["Barely.", "Yikes.", "Scrub tier.", "Bogus win."],
             _ => vec!["Win."],
         };
         let mut msg = win_msgs[js_sys::Math::floor(js_sys::Math::random() * win_msgs.len() as f64) as usize].to_string();
@@ -159,7 +161,7 @@ fn Modal(title: String, is_open: ReadSignal<bool>, set_is_open: WriteSignal<bool
                         </div>
                         <h2 class="text-2xl font-black tracking-tighter text-center"> {title_clone.clone()} </h2>
                     </div>
-                    <div class="text-white"> {children.with_value(|children| children())} </div>
+                    <div class="text-white text-center"> {children.with_value(|children| children())} </div>
                 </div>
             </div>
         </Show>
@@ -186,7 +188,7 @@ fn App() -> impl IntoView {
     let (keyboard_pulse, set_keyboard_pulse) = create_signal((' ', "".to_string()));
     let (snarky_comment, set_snarky_comment) = create_signal(String::new());
 
-    let (is_ai_mode, set_is_ai_mode) = create_signal(false);
+    let (is_ng_plus, set_is_ng_plus) = create_signal(false);
     let (ai_pool, set_ai_pool) = create_signal(Vec::<String>::new());
     let (daily_game_done, set_daily_game_done) = create_signal(false);
 
@@ -211,14 +213,14 @@ fn App() -> impl IntoView {
                     if state.solution == sol {
                         set_guesses.set(state.guesses.clone());
                         set_guess_statuses_vec.set(state.statuses.clone());
-                        set_is_ai_mode.set(state.is_ai_mode);
+                        set_is_ng_plus.set(state.is_ng_plus);
                         set_ai_pool.set(state.ai_pool.clone());
-                        if state.guesses.contains(&sol) || (state.is_ai_mode && state.statuses.last().map(|s| s.iter().all(|x| x == "correct")).unwrap_or(false)) {
+                        if state.guesses.contains(&sol) || (state.is_ng_plus && state.statuses.last().map(|s| s.iter().all(|x| x == "correct")).unwrap_or(false)) {
                             set_game_won.set(true);
-                            if !state.is_ai_mode { set_daily_game_done.set(true); }
+                            if !state.is_ng_plus { set_daily_game_done.set(true); }
                         } else if state.guesses.len() >= 6 {
                             set_game_lost.set(true);
-                            if !state.is_ai_mode { set_daily_game_done.set(true); }
+                            if !state.is_ng_plus { set_daily_game_done.set(true); }
                         }
                     }
                 }
@@ -228,12 +230,8 @@ fn App() -> impl IntoView {
 
     create_effect(move |_| {
         let t = theme.get();
-        if let Some(el) = document().document_element() {
-            let _ = el.set_attribute("class", &format!("theme-{}", t));
-        }
-        if let Some(storage) = get_storage() {
-            let _ = storage.set_item("color-theme", &t);
-        }
+        if let Some(el) = document().document_element() { let _ = el.set_attribute("class", &format!("theme-{}", t)); }
+        if let Some(storage) = get_storage() { let _ = storage.set_item("color-theme", &t); }
     });
 
     let char_statuses = create_memo(move |_| {
@@ -251,8 +249,8 @@ fn App() -> impl IntoView {
         map
     });
 
-    let start_ai_mode_internal = move || {
-        set_is_ai_mode.set(true);
+    let start_ng_plus = move || {
+        set_is_ng_plus.set(true);
         set_guesses.set(vec![]);
         set_guess_statuses_vec.set(vec![]);
         set_game_won.set(false);
@@ -275,13 +273,13 @@ fn App() -> impl IntoView {
                 return;
             }
             if !is_word_in_list(&input) {
-                set_snarky_comment.set("Not a word, dweeb.".to_string());
+                set_snarky_comment.set("Not a word, poser.".to_string());
                 set_jiggle_row.set(true);
                 set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
             }
 
-            if (hard_mode.get() || is_ai_mode.get()) && !guesses.get().is_empty() {
+            if (hard_mode.get() || is_ng_plus.get()) && !guesses.get().is_empty() {
                 let current_guesses = guesses.get();
                 let current_ss = guess_statuses.get();
                 let mut required_spots: [Option<char>; 5] = [None; 5];
@@ -338,7 +336,7 @@ fn App() -> impl IntoView {
             new_guesses.push(input.clone());
 
             let mut current_pattern = vec![];
-            if is_ai_mode.get() {
+            if is_ng_plus.get() {
                 let pool_val = serde_wasm_bindgen::to_value(&ai_pool.get()).unwrap();
                 let val = get_adversarial_step(&input, pool_val);
                 if let Ok(res) = serde_wasm_bindgen::from_value::<AdversarialResult>(val) {
@@ -358,11 +356,7 @@ fn App() -> impl IntoView {
 
             if let Some(storage) = get_storage() {
                 let state = StoredState { 
-                    guesses: new_guesses.clone(), 
-                    statuses: new_ss_vec.clone(),
-                    solution: sol.clone(),
-                    is_ai_mode: is_ai_mode.get(),
-                    ai_pool: ai_pool.get()
+                    guesses: new_guesses.clone(), statuses: new_ss_vec.clone(), solution: sol.clone(), is_ng_plus: is_ng_plus.get(), ai_pool: ai_pool.get()
                 };
                 let _ = storage.set_item("game-state", &serde_json::to_string(&state).unwrap());
             }
@@ -372,11 +366,11 @@ fn App() -> impl IntoView {
             
             let is_win = current_pattern.iter().all(|s| s == "correct");
             let is_loss = new_guesses.len() >= 6 && !is_win;
-            set_snarky_comment.set(get_80s_comment(new_guesses.len(), is_win, is_loss, hard_mode.get(), is_ai_mode.get()));
+            set_snarky_comment.set(get_80s_comment(new_guesses.len(), is_win, is_loss, hard_mode.get(), is_ng_plus.get()));
 
             if is_win {
                 set_game_won.set(true);
-                if !is_ai_mode.get() { set_daily_game_done.set(true); }
+                if !is_ng_plus.get() { set_daily_game_done.set(true); }
                 set_timeout(move || confetti(), std::time::Duration::from_millis(1800));
                 set_stats.update(|s| {
                     s.total_games += 1; s.wins += 1; s.current_streak += 1;
@@ -387,7 +381,9 @@ fn App() -> impl IntoView {
                 set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3500));
             } else if is_loss {
                 set_game_lost.set(true);
-                if !is_ai_mode.get() { set_daily_game_done.set(true); }
+                if !is_ng_plus.get() { set_daily_game_done.set(true); }
+                let final_word = if is_ng_plus.get() { ai_pool.get().first().cloned().unwrap_or(sol) } else { sol };
+                set_snarky_comment.set(format!("SCRUB TIER. IT WAS {}.", final_word));
                 set_stats.update(|s| { s.total_games += 1; s.current_streak = 0; });
                 if let Some(storage) = get_storage() { let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap()); }
                 set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3500));
@@ -441,28 +437,26 @@ fn App() -> impl IntoView {
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </button>
                         <button 
-                            on:click=move |_| if guesses.get().is_empty() && !is_ai_mode.get() { set_hard_mode.update(|h| *h = !*h) } 
+                            on:click=move |_| if guesses.get().is_empty() && !is_ng_plus.get() { set_hard_mode.update(|h| *h = !*h) } 
                             title="Hard Mode" 
-                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if hard_mode.get() || is_ai_mode.get() { "correct-pad border-transparent" } else { "cell-neutral border-current" })
+                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if hard_mode.get() || is_ng_plus.get() { "correct-pad border-transparent" } else { "cell-neutral border-current" })
                         >
-                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if hard_mode.get() || is_ai_mode.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_12px_rgba(253,224,71,1)]" } else { "text-current opacity-40" }) fill="currentColor" viewBox="0 0 24 24">
+                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if hard_mode.get() || is_ng_plus.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_12px_rgba(253,224,71,1)]" } else { "text-current opacity-40" }) fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                             </svg>
                         </button>
                         <button 
-                            on:click=move |_| start_ai_mode_internal()
-                            disabled=move || !daily_game_done.get() || is_ai_mode.get()
-                            title="AI Mode" 
-                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if is_ai_mode.get() { "ai-active-pad border-transparent shadow-[0_0_20px_rgba(255,0,255,0.8)]" } else if daily_game_done.get() { "cell-neutral border-current" } else { "opacity-30 grayscale cursor-not-allowed border-current" })
+                            on:click=move |_| start_ng_plus()
+                            disabled=move || !daily_game_done.get() || is_ng_plus.get()
+                            title="New Game+" 
+                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if is_ng_plus.get() { "ai-active-pad border-transparent shadow-[0_0_20px_rgba(255,0,255,0.8)]" } else if daily_game_done.get() { "cell-neutral border-current" } else { "opacity-30 grayscale cursor-not-allowed border-current" })
                         >
-                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if is_ai_mode.get() { "text-white scale-110 drop-shadow-[0_0_12px_rgba(255,0,255,1)]" } else { "text-current opacity-40" }) fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                            </svg>
+                            <span class=move || format!("text-xl sm:text-2xl font-black transition-all {}", if is_ng_plus.get() { "text-white scale-110" } else { "text-current opacity-40" })>"+"</span>
                         </button>
                     </div>
                     <div class="flex flex-col items-center w-full max-w-[150px] sm:max-w-[200px]">
                         <h1 class="text-xl sm:text-4xl font-black tracking-tighter italic text-center title-text uppercase shrink-0 w-full">"RUSTLE"</h1>
-                        <div class="min-h-6 flex items-center justify-center w-full py-1">
+                        <div class="min-h-6 flex items-center justify-center w-full py-1 text-center">
                             {move || {
                                 let snark = snarky_comment.get();
                                 if !snark.is_empty() {
@@ -491,7 +485,7 @@ fn App() -> impl IntoView {
                             let ss = guess_statuses.get();
                             let is_rev = is_revealing_row.get();
                             let len = gs.len();
-                            let hard = hard_mode.get() || is_ai_mode.get();
+                            let hard = hard_mode.get() || is_ng_plus.get();
                             gs.into_iter().zip(ss.into_iter()).enumerate().map(move |(i, (g, s))| { 
                                 view! { <Row guess=g.to_uppercase() statuses=s is_revealing=is_rev && i == len-1 is_completed=true is_jiggling=Signal::derive(|| false) destroy_trigger=destroy_trigger last_typed_index=-1 is_hard_mode=hard /> } 
                             }).collect_view()
@@ -499,11 +493,11 @@ fn App() -> impl IntoView {
                         {move || if guesses.get().len() < 6 && !game_won.get() { 
                             let current_input = current_input.get().to_uppercase();
                             let last_idx = last_typed_index.get();
-                            let hard = hard_mode.get() || is_ai_mode.get();
+                            let hard = hard_mode.get() || is_ng_plus.get();
                             view! { <Row guess=current_input statuses=vec![] is_revealing=false is_completed=false is_jiggling=Signal::derive(move || jiggle_row.get()) destroy_trigger=destroy_trigger last_typed_index=last_idx is_hard_mode=hard /> }.into_view() 
                         } else { view! {}.into_view() }}
                         {move || {
-                            let hard = hard_mode.get() || is_ai_mode.get();
+                            let hard = hard_mode.get() || is_ng_plus.get();
                             (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(move |_| { view! { <Row guess="".to_string() statuses=vec![] is_revealing=false is_completed=false is_jiggling=Signal::derive(|| false) destroy_trigger=destroy_trigger last_typed_index=-1 is_hard_mode=hard /> } }).collect_view()
                         }}
                     </div>
@@ -520,7 +514,7 @@ fn App() -> impl IntoView {
                                         let status = move || char_statuses.get().get(&c).cloned().unwrap_or_default();
                                         let status_class = move || match status().as_str() { "correct" => "correct", "present" => "present", "absent" => "absent", _ => "key-neutral" };
                                         let pulse = move || if keyboard_pulse.get().0 == c { keyboard_pulse.get().1 } else { "".to_string() };
-                                        let hard = hard_mode.get() || is_ai_mode.get();
+                                        let hard = hard_mode.get() || is_ng_plus.get();
                                         view! { 
                                             <button class=move || format!("relative h-10 sm:h-14 mx-0.5 rounded-xl font-bold flex-1 min-w-[20px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg border-2 border-transparent text-sm sm:text-base {}", status_class()) on:click=move |_| on_key(c.to_string())> 
                                                 {move || { 
@@ -543,7 +537,7 @@ fn App() -> impl IntoView {
             </div>
 
             <Modal title="How to Play".to_string() is_open=show_help set_is_open=set_show_help>
-                <div class="flex flex-col gap-6 text-white text-white">
+                <div class="flex flex-col gap-6 text-white">
                     <div class="space-y-4">
                         <div class="space-y-3">
                             <div class="flex flex-col items-center gap-1">
@@ -582,7 +576,7 @@ fn App() -> impl IntoView {
             </Modal>
 
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
-                <div class="flex flex-col items-center text-center text-white text-white">
+                <div class="flex flex-col items-center text-center text-white">
                     <div class="grid grid-cols-4 w-full gap-4 mb-8">
                         <div class="flex flex-col"><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Played"</div></div>
                         <div class="flex flex-col"><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Win %"</div></div>
@@ -611,7 +605,7 @@ fn App() -> impl IntoView {
                     <Show when=move || game_won.get() || game_lost.get()>
                         <button on:click=move |_| {
                             let sol = solution_data.get().solution.to_uppercase();
-                            let is_hard = hard_mode.get() || is_ai_mode.get();
+                            let is_hard = hard_mode.get() || is_ng_plus.get();
                             let comment = snarky_comment.get();
                             let current_theme = theme.get();
                             let (correct_e, present_e, absent_e) = get_theme_emojis(&current_theme);
@@ -627,7 +621,7 @@ fn App() -> impl IntoView {
                             set_snarky_comment.set("Results Copied, poseur.".to_string());
                             set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));
                             
-                            if !is_ai_mode.get() { start_ai_mode_internal(); }
+                            if !is_ng_plus.get() { start_ng_plus(); }
                         } class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest"> "SHARE" </button>
                     </Show>
                 </div>

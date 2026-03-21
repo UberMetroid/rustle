@@ -62,7 +62,6 @@ fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool) -> 
         return msg;
     }
     
-    // Mid-game snark
     let comments = vec![
         "Gnarly.", "Like, totally.", "Gag me with a spoon.", "Groovy.", 
         "Cyberpunk'd.", "Neon Nights.", "Pixel Perfect.", "Digital Love.",
@@ -236,15 +235,15 @@ fn App() -> impl IntoView {
             let input = current_input.get().to_uppercase();
             let sol = solution_data.get().solution.to_uppercase();
             if input.len() < 5 {
-                set_alert_message.set("Way harsh!".to_string());
+                set_snarky_comment.set("Way harsh! Needs 5.".to_string());
                 set_jiggle_row.set(true);
-                set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
+                set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
             }
             if !is_word_in_list(&input) {
-                set_alert_message.set("What a dweeb.".to_string());
+                set_snarky_comment.set("Not a word, poser.".to_string());
                 set_jiggle_row.set(true);
-                set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
+                set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
             }
             if hard_mode.get() && !guesses.get().is_empty() {
@@ -261,9 +260,9 @@ fn App() -> impl IntoView {
                 for (i, &req) in required_spots.iter().enumerate() {
                     if let Some(c) = req {
                         if input.chars().nth(i).unwrap() != c {
-                            set_alert_message.set("Poser alert!".to_string());
+                            set_snarky_comment.set(format!("Poser! {} goes at spot {}", c, i + 1));
                             set_jiggle_row.set(true);
-                            set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
+                            set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                             return;
                         }
                     }
@@ -284,9 +283,9 @@ fn App() -> impl IntoView {
                 for (c, &req_count) in &required_letters {
                     let input_count = input.chars().filter(|&ic| ic == *c).count();
                     if input_count < req_count {
-                        set_alert_message.set("Bogus logic.".to_string());
+                        set_snarky_comment.set(format!("Needs more {}. Bogus.", c));
                         set_jiggle_row.set(true);
-                        set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
+                        set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                         return;
                     }
                 }
@@ -294,9 +293,9 @@ fn App() -> impl IntoView {
                 for c in input.chars() {
                     if let Some(status) = statuses_map.get(&c) {
                         if status == "absent" {
-                            set_alert_message.set("Major bummer.".to_string());
+                            set_snarky_comment.set(format!("{} is trash. Drop it.", c));
                             set_jiggle_row.set(true);
-                            set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
+                            set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                             return;
                         }
                     }
@@ -313,7 +312,6 @@ fn App() -> impl IntoView {
             set_is_revealing_row.set(true);
             set_timeout(move || set_is_revealing_row.set(false), std::time::Duration::from_millis(2000));
             
-            // 80s Snark Update
             let is_win = input == sol;
             let is_loss = new_guesses.len() >= 6 && !is_win;
             set_snarky_comment.set(get_80s_comment(new_guesses.len(), is_win, is_loss, hard_mode.get()));
@@ -399,11 +397,8 @@ fn App() -> impl IntoView {
                         <h1 class="text-xl sm:text-4xl font-black tracking-tighter italic text-center title-text uppercase shrink-0">"RUSTLE"</h1>
                         <div class="h-6 flex items-center justify-center">
                             {move || {
-                                let alert = alert_message.get();
                                 let snark = snarky_comment.get();
-                                if !alert.is_empty() {
-                                    view! { <div class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white snarky-toast"> {alert} </div> }.into_view()
-                                } else if !snark.is_empty() {
+                                if !snark.is_empty() {
                                     let color = if game_won.get() { "text-green-400" } else if game_lost.get() { "text-red-400" } else { "text-theme-primary" };
                                     view! { <div key=snark.clone() class=format!("text-[10px] sm:text-xs font-black uppercase tracking-widest {} snarky-toast", color)> {snark} </div> }.into_view()
                                 } else { view! {}.into_view() }
@@ -546,8 +541,8 @@ fn App() -> impl IntoView {
                                 text.push('\n');
                             }
                             let _ = window().navigator().clipboard().write_text(&text);
-                            set_alert_message.set("COPIED TO CLIPBOARD".to_string());
-                            set_timeout(move || set_alert_message.set(String::new()), std::time::Duration::from_millis(2000));
+                            set_snarky_comment.set("Copied, poser.".to_string());
+                            set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));
                         } class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase"> "SHARE RESULT" </button>
                     </Show>
                 </div>

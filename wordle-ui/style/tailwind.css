@@ -31,7 +31,7 @@ body {
   transition: background-color 0.5s ease, color 0.5s ease;
 }
 
-/* THEMES - REFINED TO DISTINGUISH DARK FROM BLUE */
+/* THEMES - REFINED FOR VISIBILITY */
 .theme-dark { 
   --app-bg: #000000; 
   --app-text: #ffffff; 
@@ -40,6 +40,14 @@ body {
   --correct-cell-bg-color: #f8fafc; 
   --present-cell-bg-color: #fbbf24; 
 }
+
+/* Fix visibility for Dark theme: Dark text on White/Silver pads */
+.theme-dark .correct, 
+.theme-dark .correct-pad,
+.theme-dark .cell-reveal.correct > div {
+  color: #000000 !important;
+}
+
 .theme-red { --app-bg: #180000; --app-text: #ffffff; --theme-primary: #ff4444; --absent-cell-bg-color: #2d0000; --correct-cell-bg-color: #ff4444; --present-cell-bg-color: #facc15; }
 .theme-orange { --app-bg: #1a0a00; --app-text: #ffffff; --theme-primary: #fb923c; --absent-cell-bg-color: #2d1200; --correct-cell-bg-color: #fb923c; --present-cell-bg-color: #fef08a; }
 .theme-yellow { --app-bg: #1a1400; --app-text: #ffffff; --theme-primary: #facc15; --absent-cell-bg-color: #2d2200; --correct-cell-bg-color: #facc15; --present-cell-bg-color: #ffffff; }
@@ -59,13 +67,9 @@ body {
 .correct-pad {
   background-color: var(--correct-cell-bg-color) !important;
   border-color: var(--correct-cell-bg-color) !important;
-  color: #000 !important;
+  color: #ffffff !important;
   box-shadow: 0 0 15px var(--correct-cell-bg-color);
   transition: all 0.3s ease;
-}
-
-.theme-dark .correct-pad, .theme-red .correct-pad, .theme-purple .correct-pad, .theme-green .correct-pad, .theme-blue .correct-pad {
-    color: #fff !important;
 }
 
 /* POWER EFFECTS */

@@ -61,8 +61,8 @@ fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool) -> 
         if is_hard { msg.push_str(" (Hard Mode)"); }
         return msg;
     }
-    let comments = vec!["Gnarly.", "Totally.", "Groovy.", "Neon.", "Retro.", "Bogus?"];
-    comments[js_sys::Math::floor(js_sys::Math::random() * comments.len() as f64) as usize].to_string()
+    let mid_comments = vec!["Gnarly.", "Totally.", "Groovy.", "Neon.", "Retro.", "Bogus?"];
+    mid_comments[js_sys::Math::floor(js_sys::Math::random() * mid_comments.len() as f64) as usize].to_string()
 }
 
 #[component]
@@ -148,8 +148,8 @@ fn Modal(title: String, is_open: ReadSignal<bool>, set_is_open: WriteSignal<bool
         <Show when=move || is_open.get()>
             <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black bg-opacity-50" on:click=move |_| set_is_open.set(false)>
                 <div class="glass-pad w-full max-w-sm p-6 shadow-2xl transition-all scale-up overflow-y-auto max-h-[90vh]" on:click=move |ev| ev.stop_propagation()>
-                    <div class="flex flex-col items-center mb-6 uppercase text-white">
-                        <div class="w-full flex justify-end -mb-6">
+                    <div class="flex flex-col items-center mb-6 uppercase text-white relative">
+                        <div class="absolute right-0 top-0">
                             <button on:click=move |_| set_is_open.set(false) class="text-2xl font-bold hover:text-red-500 transition-colors"> "×" </button>
                         </div>
                         <h2 class="text-2xl font-black tracking-tighter text-center"> {title_clone.clone()} </h2>
@@ -231,13 +231,13 @@ fn App() -> impl IntoView {
             let input = current_input.get().to_uppercase();
             let sol = solution_data.get().solution.to_uppercase();
             if input.len() < 5 {
-                set_snarky_comment.set("Too short, poseur.".to_string());
+                set_snarky_comment.set("Way harsh! Needs 5.".to_string());
                 set_jiggle_row.set(true);
                 set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
             }
             if !is_word_in_list(&input) {
-                set_snarky_comment.set("What a dweeb.".to_string());
+                set_snarky_comment.set("Not a word, dweeb.".to_string());
                 set_jiggle_row.set(true);
                 set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
@@ -387,7 +387,9 @@ fn App() -> impl IntoView {
                             title="Hard Mode" 
                             class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if hard_mode.get() { "correct-pad border-transparent" } else { "cell-neutral border-current" })
                         >
-                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if hard_mode.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_12px_rgba(253,224,71,1)]" } else { "text-current opacity-40" }) fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if hard_mode.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_12px_rgba(253,224,71,1)]" } else { "text-current opacity-40" }) fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
                         </button>
                         <button disabled=move || !game_won.get() && !game_lost.get() title="AI Mode" class=move || format!("correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95 {}", if !game_won.get() && !game_lost.get() { "opacity-30 grayscale cursor-not-allowed" } else { "cursor-pointer" })>
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
@@ -534,7 +536,7 @@ fn App() -> impl IntoView {
                     </div>
 
                     <div class="w-full border-t border-white border-opacity-10 pt-6 mb-6 text-center">
-                        <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary">"Global Intel"</h3>
+                        <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary">"Global Statistics"</h3>
                         <div class="grid grid-cols-3 w-full gap-2">
                             <div class="flex flex-col p-2 rounded-lg bg-white bg-opacity-5"><div class="text-xl font-black">"1.2M"</div><div class="text-[7px] uppercase opacity-50">"Cracked"</div></div>
                             <div class="flex flex-col p-2 rounded-lg bg-white bg-opacity-5"><div class="text-xl font-black">"4.2"</div><div class="text-[7px] uppercase opacity-50">"Avg Ops"</div></div>
@@ -552,9 +554,9 @@ fn App() -> impl IntoView {
                                 text.push('\n');
                             }
                             let _ = window().navigator().clipboard().write_text(&text);
-                            set_snarky_comment.set("Intel Saved, poseur.".to_string());
+                            set_snarky_comment.set("Results Copied, poseur.".to_string());
                             set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));
-                        } class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest"> "TRANSMIT INTEL" </button>
+                        } class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest"> "SHARE" </button>
                     </Show>
                 </div>
             </Modal>

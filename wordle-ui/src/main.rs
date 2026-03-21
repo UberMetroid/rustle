@@ -53,10 +53,12 @@ fn Cell(
     is_completed: bool,
     surge_trigger: ReadSignal<String>,
     destroy_trigger: ReadSignal<String>,
-    is_last_typed: bool
+    is_last_typed: bool,
+    is_hard_mode: bool
 ) -> impl IntoView {
     let delay = position * 350;
     
+    // Local trigger for single letter entry power ring
     let ring_trigger = create_memo(move |_| {
         if is_last_typed && value != ' ' && !is_completed && !is_revealing {
             js_sys::Date::now().to_string()
@@ -79,6 +81,10 @@ fn Cell(
         if is_revealing {
             base.push_str(" cell-reveal");
         }
+        // Focus graphics on individual letter if Hard Mode is ON
+        if is_hard_mode && value != ' ' && !is_completed {
+            base.push_str(" ring-2 ring-white ring-opacity-50 shadow-[0_0_15px_rgba(255,255,255,0.5)]");
+        }
         base
     };
     
@@ -86,17 +92,32 @@ fn Cell(
     
     view! { 
         <div class=classes style=style>
+            // Single Letter Entry Ring
             {move || {
                 let id = ring_trigger.get();
-                if !id.is_empty() { view! { <div key=id class="power-ring" /> }.into_view() } else { view! {}.into_view() }
+                if !id.is_empty() {
+                    view! { <div key=id class="power-ring" /> }.into_view()
+                } else {
+                    view! {}.into_view()
+                }
             }}
+            // Entire Word Surge (Enter)
             {move || {
                 let id = surge_trigger.get();
-                if !id.is_empty() && !is_completed && !is_revealing { view! { <div key=id class="surge-ring" /> }.into_view() } else { view! {}.into_view() }
+                if !id.is_empty() && !is_completed && !is_revealing {
+                    view! { <div key=id class="surge-ring" /> }.into_view()
+                } else {
+                    view! {}.into_view()
+                }
             }}
+            // Deletion Shatter
             {move || {
                 let id = destroy_trigger.get();
-                if !id.is_empty() && is_last_typed { view! { <div key=id class="destroyed-puff" /> }.into_view() } else { view! {}.into_view() }
+                if !id.is_empty() && is_last_typed {
+                    view! { <div key=id class="destroyed-puff" /> }.into_view()
+                } else {
+                    view! {}.into_view()
+                }
             }}
             <div>{value.to_uppercase().to_string()}</div>
         </div> 
@@ -112,7 +133,8 @@ fn Row(
     is_jiggling: Signal<bool>,
     surge_trigger: ReadSignal<String>,
     destroy_trigger: ReadSignal<String>,
-    last_typed_index: i32
+    last_typed_index: i32,
+    is_hard_mode: bool
 ) -> impl IntoView {
     let statuses: Vec<String> = if is_completed || is_revealing {
         serde_wasm_bindgen::from_value(get_guess_statuses(&solution, &guess)).unwrap_or_default()
@@ -122,7 +144,7 @@ fn Row(
     view! {
         <div class=move || format!("flex justify-center mb-1 {}", if is_jiggling.get() { "jiggle" } else { "" })>
             {guess.chars().chain(std::iter::repeat(' ')).take(5).zip(statuses.into_iter().chain(std::iter::repeat("".to_string()))).enumerate().map(|(i, (c, s))| {
-                view! { <Cell value=c status=s position=i is_revealing=is_revealing is_completed=is_completed surge_trigger=surge_trigger destroy_trigger=destroy_trigger is_last_typed=i as i32 == last_typed_index /> }
+                view! { <Cell value=c status=s position=i is_revealing=is_revealing is_completed=is_completed surge_trigger=surge_trigger destroy_trigger=destroy_trigger is_last_typed=i as i32 == last_typed_index is_hard_mode=is_hard_mode /> }
             }).collect_view()}
         </div>
     }
@@ -216,12 +238,6 @@ fn App() -> impl IntoView {
         map
     });
 
-    let show_alert = move |msg: String| {
-        set_alert_message.set(msg);
-        set_jiggle_row.set(true);
-        set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
-    };
-
     let on_key = move |key: String| {
         if game_won.get() || game_lost.get() { return; }
         
@@ -229,20 +245,21 @@ fn App() -> impl IntoView {
             let input = current_input.get().to_uppercase();
             let sol = solution_data.get().solution.to_uppercase();
             if input.len() < 5 {
-                show_alert("NOT ENOUGH LETTERS".to_string());
+                set_alert_message.set("NOT ENOUGH LETTERS".to_string());
+                set_jiggle_row.set(true);
+                set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
             }
             if !is_word_in_list(&input) {
-                show_alert("NOT IN WORD LIST".to_string());
+                set_alert_message.set("NOT IN WORD LIST".to_string());
+                set_jiggle_row.set(true);
+                set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
             }
 
-            // ENHANCED HARD MODE VALIDATION
             if hard_mode.get() && !guesses.get().is_empty() {
                 let sol_upper = sol.to_uppercase();
                 let current_guesses = guesses.get();
-                
-                // 1. Check for Correct letters (Green) must be in the same spot
                 let mut required_spots: [Option<char>; 5] = [None; 5];
                 for g in &current_guesses {
                     let g_upper = g.to_uppercase();
@@ -254,22 +271,20 @@ fn App() -> impl IntoView {
                 for (i, &req) in required_spots.iter().enumerate() {
                     if let Some(c) = req {
                         if input.chars().nth(i).unwrap() != c {
-                            show_alert(format!("MUST USE {} IN SPOT {}", c, i + 1));
+                            set_alert_message.set(format!("MUST USE {} IN SPOT {}", c, i + 1));
+                            set_jiggle_row.set(true);
+                            set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                             return;
                         }
                     }
                 }
-
-                // 2. Check for Present letters (Yellow) must be used somewhere
                 let mut required_letters: HashMap<char, usize> = HashMap::new();
                 for g in &current_guesses {
                     let g_upper = g.to_uppercase();
                     let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol_upper, &g_upper)).unwrap_or_default();
                     let mut current_g_counts: HashMap<char, usize> = HashMap::new();
                     for (c, s) in g_upper.chars().zip(statuses.iter()) {
-                        if s == "correct" || s == "present" {
-                            *current_g_counts.entry(c).or_insert(0) += 1;
-                        }
+                        if s == "correct" || s == "present" { *current_g_counts.entry(c).or_insert(0) += 1; }
                     }
                     for (c, count) in current_g_counts {
                         let entry = required_letters.entry(c).or_insert(0);
@@ -279,17 +294,19 @@ fn App() -> impl IntoView {
                 for (c, &req_count) in &required_letters {
                     let input_count = input.chars().filter(|&ic| ic == *c).count();
                     if input_count < req_count {
-                        show_alert(format!("MUST CONTAIN {}", c));
+                        set_alert_message.set(format!("MUST CONTAIN {}", c));
+                        set_jiggle_row.set(true);
+                        set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                         return;
                     }
                 }
-
-                // 3. Block Absent letters (Gray) - User explicit requirement
                 let statuses_map = char_statuses.get();
                 for c in input.chars() {
                     if let Some(status) = statuses_map.get(&c) {
                         if status == "absent" {
-                            show_alert(format!("{} IS NOT IN THE WORD", c));
+                            set_alert_message.set(format!("{} IS NOT IN THE WORD", c));
+                            set_jiggle_row.set(true);
+                            set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                             return;
                         }
                     }
@@ -301,15 +318,12 @@ fn App() -> impl IntoView {
             new_guesses.push(input.clone());
             set_guesses.set(new_guesses.clone());
             set_current_input.set(String::new());
-            
             if let Some(storage) = get_storage() {
                 let state = StoredState { guesses: new_guesses.clone(), solution: sol.clone() };
                 let _ = storage.set_item("game-state", &serde_json::to_string(&state).unwrap());
             }
-
             set_is_revealing_row.set(true);
             set_timeout(move || set_is_revealing_row.set(false), std::time::Duration::from_millis(2000));
-
             if input == sol {
                 set_game_won.set(true);
                 set_timeout(move || confetti(), std::time::Duration::from_millis(1800));
@@ -351,40 +365,20 @@ fn App() -> impl IntoView {
         }
     });
 
-    let on_share = move |_| {
-        let sol = solution_data.get().solution.to_uppercase();
-        let mut text = format!("Rustle {} {}/6\n\n", solution_data.get().solution_index, if game_won.get() { guesses.get().len().to_string() } else { "X".to_string() });
-        for g in guesses.get() {
-            let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &g.to_uppercase())).unwrap_or_default();
-            for s in statuses { text.push_str(match s.as_str() { "correct" => "🟩", "present" => "🟨", _ => "⬛" }); }
-            text.push('\n');
-        }
-        let _ = window().navigator().clipboard().write_text(&text);
-        set_alert_message.set("COPIED TO CLIPBOARD".to_string());
-        set_timeout(move || set_alert_message.set(String::new()), std::time::Duration::from_millis(2000));
-    };
-
-    create_effect(move |_| {
-        let t = theme.get();
-        if let Some(el) = document().document_element() { let _ = el.set_attribute("class", &format!("theme-{}", t)); }
-        if let Some(storage) = get_storage() { let _ = storage.set_item("color-theme", &t); }
-    });
-
-    create_effect(move |_| {
-        let h = hard_mode.get();
-        if let Some(storage) = get_storage() { let _ = storage.set_item("hard-mode", if h { "true" } else { "false" }); }
-    });
-
     view! {
-        <div class="flex min-h-screen flex-col items-center py-4 sm:py-8 transition-all duration-500 px-2 overflow-x-hidden">
-            <div class="w-full max-w-[600px] flex flex-col items-center">
-                <nav class="w-full grid grid-cols-3 items-center px-4 mb-4 sm:mb-8 glass-pad py-2">
-                    <div class="flex gap-2 justify-start text-white">
+        <div class="flex flex-col h-screen transition-all duration-500 px-2 overflow-x-hidden">
+            // Balanced flex container for equal spacing
+            <div class="flex-1 flex flex-col justify-evenly items-center max-w-[600px] mx-auto w-full py-4">
+                
+                // TOP BAR
+                <nav class="w-full grid grid-cols-3 items-center px-4 glass-pad py-3">
+                    <div class="flex gap-2 justify-start">
                         <button on:click=move |_| set_show_stats.set(true) class="correct-pad w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
                         <button on:click=move |_| set_show_settings.set(true) class="correct-pad w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            // GEAR ICON RESTORED
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
                     <h1 class="text-2xl sm:text-4xl font-black tracking-tighter italic text-center title-text uppercase">"RUSTLE"</h1>
@@ -394,68 +388,61 @@ fn App() -> impl IntoView {
                                 let themes = vec!["dark", "red", "orange", "yellow", "green", "blue", "purple", "light"];
                                 let current = theme.get();
                                 let index = themes.iter().position(|&t| t == current).unwrap_or(0);
-                                view! {
-                                    <input type="range" min="0" max="7" step="1" value=index class="theme-slider"
-                                        on:input=move |ev| {
-                                            let val = event_target_value(&ev).parse::<usize>().unwrap_or(0);
-                                            set_theme.set(themes[val].to_string());
-                                        }
-                                    />
-                                }
+                                view! { <input type="range" min="0" max="7" step="1" value=index class="theme-slider" on:input=move |ev| { let val = event_target_value(&ev).parse::<usize>().unwrap_or(0); set_theme.set(themes[val].to_string()); } /> }
                             }}
                         </div>
                     </div>
                 </nav>
 
-                <div class="glass-pad p-4 sm:p-8 mb-4">
+                // GAME GRID
+                <div class="glass-pad p-4 sm:p-8">
                     <div class="flex flex-col gap-1 sm:gap-2">
                         {move || {
                             let gs = guesses.get();
                             let sol = solution_data.get().solution.to_uppercase();
                             let is_rev = is_revealing_row.get();
                             let len = gs.len();
+                            let hard = hard_mode.get();
                             gs.into_iter().enumerate().map(move |(i, g)| { 
-                                view! { <Row guess=g.to_uppercase() solution=sol.clone() is_revealing=is_rev && i == len-1 is_completed=true is_jiggling=Signal::derive(|| false) surge_trigger=surge_trigger destroy_trigger=destroy_trigger last_typed_index=-1 /> } 
+                                view! { <Row guess=g.to_uppercase() solution=sol.clone() is_revealing=is_rev && i == len-1 is_completed=true is_jiggling=Signal::derive(|| false) surge_trigger=surge_trigger destroy_trigger=destroy_trigger last_typed_index=-1 is_hard_mode=hard /> } 
                             }).collect_view()
                         }}
                         {move || if guesses.get().len() < 6 && !game_won.get() { 
                             let current_input = current_input.get().to_uppercase();
                             let solution = solution_data.get().solution.to_uppercase();
                             let last_idx = last_typed_index.get();
-                            view! { <Row guess=current_input solution=solution is_revealing=false is_completed=false is_jiggling=Signal::derive(move || jiggle_row.get()) surge_trigger=surge_trigger destroy_trigger=destroy_trigger last_typed_index=last_idx /> }.into_view() 
+                            let hard = hard_mode.get();
+                            view! { <Row guess=current_input solution=solution is_revealing=false is_completed=false is_jiggling=Signal::derive(move || jiggle_row.get()) surge_trigger=surge_trigger destroy_trigger=destroy_trigger last_typed_index=last_idx is_hard_mode=hard /> }.into_view() 
                         } else { view! {}.into_view() }}
-                        {move || (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(|_| { view! { <Row guess="".to_string() solution="".to_string() is_revealing=false is_completed=false is_jiggling=Signal::derive(|| false) surge_trigger=surge_trigger destroy_trigger=destroy_trigger last_typed_index=-1 /> } }).collect_view()}
+                        {move || {
+                            let hard = hard_mode.get();
+                            (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(move |_| { view! { <Row guess="".to_string() solution="".to_string() is_revealing=false is_completed=false is_jiggling=Signal::derive(|| false) surge_trigger=surge_trigger destroy_trigger=destroy_trigger last_typed_index=-1 is_hard_mode=hard /> } }).collect_view()
+                        }}
                     </div>
+                </div>
+
+                // KEYBOARD
+                <div class="w-full max-w-[550px] px-2 py-4 glass-pad flex flex-col items-center text-white shadow-2xl">
+                    {move || {
+                        let rows = vec![vec!['Q','W','E','R','T','Y','U','I','O','P'], vec!['A','S','D','F','G','H','J','K','L'], vec!['Z','X','C','V','B','N','M']];
+                        rows.into_iter().enumerate().map(|(i, row)| {
+                            view! {
+                                <div class="flex justify-center mb-2 w-full">
+                                    {if i == 2 { view! { <button class="h-12 sm:h-14 px-2 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] flex items-center justify-center key-neutral" on:click=move |_| on_key("ENTER".to_string())> <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg> </button> }.into_view() } else { view! {}.into_view() }}
+                                    {row.into_iter().map(|c| {
+                                        let status = move || char_statuses.get().get(&c).cloned().unwrap_or_default();
+                                        let status_class = move || match status().as_str() { "correct" => "correct", "present" => "present", "absent" => "absent", _ => "key-neutral" };
+                                        view! { <button class=move || format!("h-12 sm:h-14 mx-0.5 rounded-xl font-bold flex-1 min-w-[25px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg border-2 border-transparent {}", status_class()) on:click=move |_| on_key(c.to_string())> {c.to_string()} </button> }
+                                    }).collect_view()}
+                                    {if i == 2 { view! { <button class="h-12 sm:h-14 px-2 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] flex items-center justify-center key-neutral" on:click=move |_| on_key("DELETE".to_string())> <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg> </button> }.into_view() } else { view! {}.into_view() }}
+                                </div>
+                            }
+                        }).collect_view()
+                    }}
                 </div>
             </div>
 
-            <div class="mt-auto w-full max-w-[550px] px-2 py-4 glass-pad flex flex-col items-center text-white shadow-2xl">
-                {move || {
-                    let rows = vec![vec!['Q','W','E','R','T','Y','U','I','O','P'], vec!['A','S','D','F','G','H','J','K','L'], vec!['Z','X','C','V','B','N','M']];
-                    rows.into_iter().enumerate().map(|(i, row)| {
-                        view! {
-                            <div class="flex justify-center mb-2 w-full">
-                                {if i == 2 { view! { 
-                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] flex items-center justify-center key-neutral" on:click=move |_| on_key("ENTER".to_string())> 
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
-                                    </button> 
-                                }.into_view() } else { view! {}.into_view() }}
-                                {row.into_iter().map(|c| {
-                                    let status = move || char_statuses.get().get(&c).cloned().unwrap_or_default();
-                                    let status_class = move || match status().as_str() { "correct" => "correct", "present" => "present", "absent" => "absent", _ => "key-neutral" };
-                                    view! { <button class=move || format!("h-12 sm:h-14 mx-0.5 rounded-xl font-bold flex-1 min-w-[25px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg border-2 border-transparent {}", status_class()) on:click=move |_| on_key(c.to_string())> {c.to_string()} </button> }
-                                }).collect_view()}
-                                {if i == 2 { view! { 
-                                    <button class="h-12 sm:h-14 px-2 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] flex items-center justify-center key-neutral" on:click=move |_| on_key("DELETE".to_string())> 
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg>
-                                    </button> 
-                                }.into_view() } else { view! {}.into_view() }}
-                            </div>
-                        }
-                    }).collect_view()
-                }}
-            </div>
-
+            // MODALS
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
                 <div class="flex flex-col items-center text-center text-white">
                     <div class="flex w-full justify-around mb-6">
@@ -473,17 +460,28 @@ fn App() -> impl IntoView {
                         }).collect_view()}
                     </div>
                     <Show when=move || game_won.get() || game_lost.get()>
-                        <button on:click=on_share class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase"> "SHARE RESULT" </button>
+                        <button on:click=move |_| {
+                            let sol = solution_data.get().solution.to_uppercase();
+                            let mut text = format!("Rustle {} {}/6\n\n", solution_data.get().solution_index, if game_won.get() { guesses.get().len().to_string() } else { "X".to_string() });
+                            for g in guesses.get() {
+                                let statuses: Vec<String> = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &g.to_uppercase())).unwrap_or_default();
+                                for s in statuses { text.push_str(match s.as_str() { "correct" => "🟩", "present" => "🟨", _ => "⬛" }); }
+                                text.push('\n');
+                            }
+                            let _ = window().navigator().clipboard().write_text(&text);
+                            set_alert_message.set("COPIED TO CLIPBOARD".to_string());
+                            set_timeout(move || set_alert_message.set(String::new()), std::time::Duration::from_millis(2000));
+                        } class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase"> "SHARE RESULT" </button>
                     </Show>
                 </div>
             </Modal>
 
             <Modal title="Settings".to_string() is_open=show_settings set_is_open=set_show_settings>
-                <div class="flex flex-col gap-6 text-white">
+                <div class="flex flex-col gap-6 text-white text-white">
                     <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30">
                         <div>
-                            <div class="font-bold text-white">"Hard Mode"</div>
-                            <div class="text-xs opacity-70 text-white">"Strict validation of clues"</div>
+                            <div class="font-bold">"Hard Mode"</div>
+                            <div class="text-xs opacity-70">"Strict validation of clues"</div>
                             {move || if !guesses.get().is_empty() { view! { <div class="text-[10px] text-red-400 mt-1 font-bold uppercase tracking-tighter italic">"Game in progress"</div> }.into_view() } else { view! {}.into_view() }}
                         </div>
                         <button on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) }
@@ -492,7 +490,7 @@ fn App() -> impl IntoView {
                         </button>
                     </div>
                     <div class="space-y-4">
-                        <h3 class="text-sm font-black uppercase tracking-widest text-center opacity-80 text-white">"How to Play"</h3>
+                        <h3 class="text-sm font-black uppercase tracking-widest text-center opacity-80">"How to Play"</h3>
                         <div class="space-y-3">
                             <div class="flex flex-col items-center gap-1">
                                 <div class="flex">

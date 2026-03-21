@@ -5,8 +5,8 @@
 :root {
   --animation-speed: 1000ms;
   --animation-speed-fast: 250ms;
-  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
-  --default-cell-border-color: rgba(255, 255, 255, 0.2);
+  --default-cell-bg-color: rgba(0, 0, 0, 0.3);
+  --default-cell-border-color: rgba(255, 255, 255, 0.1);
   --default-cell-text-color: #ffffff;
   --absent-cell-bg-color: #334155;
   --correct-cell-bg-color: #22c55e;
@@ -32,33 +32,33 @@ body {
   position: relative;
 }
 
-/* Theme Definitions - EXACT COLOR SYNC */
+/* Refined Theme Definitions - HIGH DISTINCTION (Neon on Glass) */
 
-/* 0: Dark */
+/* 0: Dark (Blue/Sky) */
 .theme-dark {
-  --app-bg: #0f172a;
+  --app-bg: #020617;
   --app-text: #f8fafc;
-  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
-  --default-cell-border-color: rgba(255, 255, 255, 0.1);
-  --default-cell-text-color: #f8fafc;
-  --key-bg: rgba(255, 255, 255, 0.1);
-  --key-text: #f8fafc;
+  --default-cell-bg-color: rgba(30, 41, 59, 0.7);
+  --default-cell-border-color: #38bdf8;
+  --default-cell-text-color: #38bdf8;
+  --key-bg: rgba(30, 41, 59, 0.7);
+  --key-text: #38bdf8;
   --theme-primary: #38bdf8;
   --absent-cell-bg-color: #1e293b;
-  --correct-cell-bg-color: #22c55e;
-  --present-cell-bg-color: #eab308;
+  --correct-cell-bg-color: #059669;
+  --present-cell-bg-color: #d97706;
 }
 
 /* 1: Red */
 .theme-red {
   --app-bg: #450a0a;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
-  --default-cell-border-color: rgba(255, 255, 255, 0.15);
-  --default-cell-text-color: #ffffff;
-  --key-bg: rgba(255, 255, 255, 0.1);
-  --key-text: #ffffff;
-  --theme-primary: #fca5a5;
+  --default-cell-bg-color: rgba(127, 29, 29, 0.7);
+  --default-cell-border-color: #f87171;
+  --default-cell-text-color: #fca5a5;
+  --key-bg: rgba(127, 29, 29, 0.7);
+  --key-text: #fca5a5;
+  --theme-primary: #f87171;
   --absent-cell-bg-color: #7f1d1d;
   --correct-cell-bg-color: #dc2626;
   --present-cell-bg-color: #ef4444;
@@ -68,12 +68,12 @@ body {
 .theme-orange {
   --app-bg: #431407;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
-  --default-cell-border-color: rgba(255, 255, 255, 0.15);
-  --default-cell-text-color: #ffffff;
-  --key-bg: rgba(255, 255, 255, 0.1);
-  --key-text: #ffffff;
-  --theme-primary: #fcd34d;
+  --default-cell-bg-color: rgba(124, 45, 18, 0.7);
+  --default-cell-border-color: #fb923c;
+  --default-cell-text-color: #fdba74;
+  --key-bg: rgba(124, 45, 18, 0.7);
+  --key-text: #fdba74;
+  --theme-primary: #fb923c;
   --absent-cell-bg-color: #7c2d12;
   --correct-cell-bg-color: #ea580c;
   --present-cell-bg-color: #f97316;
@@ -83,42 +83,42 @@ body {
 .theme-yellow {
   --app-bg: #422006;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
-  --default-cell-border-color: rgba(255, 255, 255, 0.15);
-  --default-cell-text-color: #ffffff;
-  --key-bg: rgba(255, 255, 255, 0.1);
-  --key-text: #ffffff;
-  --theme-primary: #fef08a;
+  --default-cell-bg-color: rgba(113, 63, 18, 0.7);
+  --default-cell-border-color: #facc15;
+  --default-cell-text-color: #fef08a;
+  --key-bg: rgba(113, 63, 18, 0.7);
+  --key-text: #fef08a;
+  --theme-primary: #facc15;
   --absent-cell-bg-color: #713f12;
-  --correct-cell-bg-color: #eab308;
-  --present-cell-bg-color: #facc15;
+  --correct-cell-bg-color: #ca8a04;
+  --present-cell-bg-color: #eab308;
 }
 
 /* 4: Green */
 .theme-green {
   --app-bg: #064e3b;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
-  --default-cell-border-color: rgba(255, 255, 255, 0.15);
-  --default-cell-text-color: #ffffff;
-  --key-bg: rgba(255, 255, 255, 0.1);
-  --key-text: #ffffff;
-  --theme-primary: #86efac;
+  --default-cell-bg-color: rgba(6, 95, 70, 0.7);
+  --default-cell-border-color: #4ade80;
+  --default-cell-text-color: #86efac;
+  --key-bg: rgba(6, 95, 70, 0.7);
+  --key-text: #86efac;
+  --theme-primary: #4ade80;
   --absent-cell-bg-color: #065f46;
-  --correct-cell-bg-color: #22c55e;
-  --present-cell-bg-color: #4ade80;
+  --correct-cell-bg-color: #16a34a;
+  --present-cell-bg-color: #22c55e;
 }
 
 /* 5: Blue */
 .theme-blue {
   --app-bg: #1e3a8a;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
-  --default-cell-border-color: rgba(255, 255, 255, 0.15);
-  --default-cell-text-color: #ffffff;
-  --key-bg: rgba(255, 255, 255, 0.1);
-  --key-text: #ffffff;
-  --theme-primary: #93c5fd;
+  --default-cell-bg-color: rgba(30, 64, 175, 0.7);
+  --default-cell-border-color: #60a5fa;
+  --default-cell-text-color: #93c5fd;
+  --key-bg: rgba(30, 64, 175, 0.7);
+  --key-text: #93c5fd;
+  --theme-primary: #60a5fa;
   --absent-cell-bg-color: #1e40af;
   --correct-cell-bg-color: #2563eb;
   --present-cell-bg-color: #3b82f6;
@@ -128,30 +128,30 @@ body {
 .theme-purple {
   --app-bg: #4c1d95;
   --app-text: #ffffff;
-  --default-cell-bg-color: rgba(255, 255, 255, 0.1);
-  --default-cell-border-color: rgba(255, 255, 255, 0.15);
-  --default-cell-text-color: #ffffff;
-  --key-bg: rgba(255, 255, 255, 0.1);
-  --key-text: #ffffff;
-  --theme-primary: #ddd6fe;
+  --default-cell-bg-color: rgba(91, 33, 182, 0.7);
+  --default-cell-border-color: #c084fc;
+  --default-cell-text-color: #ddd6fe;
+  --key-bg: rgba(91, 33, 182, 0.7);
+  --key-text: #ddd6fe;
+  --theme-primary: #c084fc;
   --absent-cell-bg-color: #5b21b6;
-  --correct-cell-bg-color: #a855f7;
-  --present-cell-bg-color: #c084fc;
+  --correct-cell-bg-color: #9333ea;
+  --present-cell-bg-color: #a855f7;
 }
 
 /* 7: Light */
 .theme-light {
-  --app-bg: #f8fafc;
+  --app-bg: #f1f5f9;
   --app-text: #0f172a;
-  --default-cell-bg-color: rgba(0, 0, 0, 0.05);
-  --default-cell-border-color: rgba(0, 0, 0, 0.1);
+  --default-cell-bg-color: rgba(255, 255, 255, 0.8);
+  --default-cell-border-color: #64748b;
   --default-cell-text-color: #0f172a;
-  --key-bg: rgba(0, 0, 0, 0.05);
+  --key-bg: rgba(255, 255, 255, 0.8);
   --key-text: #0f172a;
   --theme-primary: #10b981;
-  --absent-cell-bg-color: #94a3b8;
-  --correct-cell-bg-color: #22c55e;
-  --present-cell-bg-color: #eab308;
+  --absent-cell-bg-color: #cbd5e1;
+  --correct-cell-bg-color: #10b981;
+  --present-cell-bg-color: #f59e0b;
 }
 
 /* CRT Overlay */
@@ -165,7 +165,7 @@ body {
   z-index: 999;
   background-size: 100% 2px, 3px 100%;
   pointer-events: none;
-  opacity: 0.2;
+  opacity: 0.1;
 }
 
 /* Unified "Pad" Glass Style */
@@ -198,12 +198,11 @@ body {
   box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
-/* Shared Status Classes for Tiles AND Keys */
+/* Status Classes */
 .absent {
   background-color: var(--absent-cell-bg-color) !important;
   border-color: var(--absent-cell-bg-color) !important;
-  color: white !important;
-  opacity: 0.6;
+  color: rgba(255, 255, 255, 0.5) !important;
 }
 .correct {
   background-color: var(--correct-cell-bg-color) !important;
@@ -252,7 +251,7 @@ body {
   100% { transform: translateX(0); }
 }
 
-/* Toggle Slider Styling */
+/* Slider Toggle Styling */
 .theme-slider {
   -webkit-appearance: none;
   appearance: none;

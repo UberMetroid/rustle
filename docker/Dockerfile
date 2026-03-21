@@ -17,19 +17,21 @@ RUN trunk build --release
 ## Stage 2: Production image
 FROM nginx:1.24.0-alpine AS prod
 
-# Remove default config that tries to use port 80
-RUN rm /etc/nginx/conf.d/default.conf
+# Clean defaults
+RUN rm -rf /etc/nginx/conf.d/* /usr/share/nginx/html/*
 
+# Use our single hardened config
 COPY docker/etc/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY docker/etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
 
 # Copy build output
 COPY --from=builder /app/wordle-ui/dist /usr/share/nginx/html
-COPY docker/build_system.sh .
-RUN ./build_system.sh && rm ./build_system.sh
 
-# Run Nginx on a non-privileged port
-EXPOSE 7583
+# Set up non-root user
+RUN addgroup -g 1001 -S reactle && \
+    adduser -S -D -H -u 1001 -G reactle reactle && \
+    chown -R reactle:reactle /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx /tmp
+
 USER reactle
+EXPOSE 7583
 
 CMD ["nginx", "-g", "daemon off;"]

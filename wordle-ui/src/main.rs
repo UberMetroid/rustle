@@ -438,66 +438,50 @@ fn App() -> impl IntoView {
         }
     });
 
-    create_effect(move |_| {
-        let h = hard_mode.get();
-        if let Some(storage) = get_storage() { let _ = storage.set_item("hard-mode", if h { "true" } else { "false" }); }
-    });
-
     view! {
-        <div class="flex flex-col h-full transition-all duration-500 px-2 bg-app-bg text-app-text">
-            <div class="flex-1 flex flex-col justify-evenly items-center max-w-[600px] mx-auto w-full py-4 overflow-hidden h-full">
-                <nav class="w-full grid grid-cols-3 items-center px-4 py-2 shrink-0">
-                    <div class="flex gap-2 justify-start items-center">
-                        <button on:click=move |_| set_show_stats.set(true) title="Score" class="correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
-                            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                        </button>
-                        <button on:click=move |_| set_show_help.set(true) title="How to Play" class="correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
-                            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        </button>
-                        <button 
-                            on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) } 
-                            title="Hard Mode" 
-                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if hard_mode.get() || is_ng_plus.get() { "correct-pad border-transparent" } else { "cell-neutral border-current" })
-                        >
-                            <svg class=move || format!("w-5 h-5 sm:w-6 sm:h-6 transition-all {}", if hard_mode.get() || is_ng_plus.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_12px_rgba(253,224,71,1)]" } else { "text-current opacity-40" }) fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
-                        </button>
-                        <button 
-                            on:click=move |_| start_ng_plus()
-                            disabled=move || !daily_game_done.get()
-                            title="New Game+" 
-                            class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if is_ng_plus.get() { "ai-active-pad border-transparent shadow-[0_0_20px_rgba(255,0,255,0.8)]" } else if daily_game_done.get() { "cell-neutral border-current" } else { "opacity-30 grayscale cursor-not-allowed border-current" })
-                        >
-                            <span class=move || format!("text-xl sm:text-2xl font-black transition-all {}", if is_ng_plus.get() { "text-white scale-110" } else { "text-current opacity-40" })>"+"</span>
-                        </button>
-                    </div>
-                    <div class="flex flex-col items-center w-full max-w-[150px] sm:max-w-[200px]">
-                        <h1 class="text-xl sm:text-4xl font-black tracking-tighter italic text-center title-text uppercase shrink-0 w-full">"RUSTLE"</h1>
-                        <div class="min-h-6 flex items-center justify-center w-full py-1 text-center">
-                            {move || {
-                                let snark = snarky_comment.get();
-                                if !snark.is_empty() {
-                                    let color = if game_won.get() { "text-green-400" } else if game_lost.get() { "text-red-400" } else { "text-theme-primary" };
-                                    view! { <div key=snark.clone() class=format!("text-[10px] sm:text-xs font-black uppercase tracking-widest {} snarky-toast text-center w-full px-1", color)> {snark} </div> }.into_view()
-                                } else { view! {}.into_view() }
-                            }}
-                        </div>
-                    </div>
-                    <div class="flex justify-end items-center pointer-events-none">
-                        <div class="glass-pad p-1.5 sm:p-2 rounded-2xl flex items-center shadow-lg pointer-events-auto relative z-[50]">
-                            {move || {
-                                let themes = vec!["dark", "red", "orange", "yellow", "green", "blue", "purple", "light"];
-                                let current = theme.get();
-                                let index = themes.iter().position(|&t| t == current).unwrap_or(0);
-                                view! { <input type="range" min="0" max="7" step="1" value=index class="theme-slider w-20 sm:w-32" on:input=move |ev| { let val = event_target_value(&ev).parse::<usize>().unwrap_or(0); set_theme.set(themes[val].to_string()); } /> }
-                            }}
-                        </div>
-                    </div>
-                </nav>
+        <div class="flex flex-col h-full transition-all duration-500 bg-app-bg text-app-text overflow-hidden">
+            <header class="w-full flex flex-col items-center py-4 shrink-0">
+                <h1 class="text-3xl sm:text-5xl font-black tracking-tighter italic text-center title-text uppercase">"RUSTLE"</h1>
+                <div class="min-h-8 flex items-center justify-center w-full max-w-sm px-4 mt-1">
+                    {move || {
+                        let snark = snarky_comment.get();
+                        if !snark.is_empty() {
+                            let color = if game_won.get() { "text-green-400" } else if game_lost.get() { "text-red-400" } else { "text-theme-primary" };
+                            view! { <div key=snark.clone() class=format!("text-xs sm:text-sm font-black uppercase tracking-widest {} snarky-toast text-center", color)> {snark} </div> }.into_view()
+                        } else { view! {}.into_view() }
+                    }}
+                </div>
+            </header>
 
-                <div class="flex items-center justify-center shrink min-h-0 py-2">
-                    <div class="flex flex-col gap-1 sm:gap-2 max-h-full aspect-[5/6]">
+            <main class="flex-1 flex items-center justify-center w-full max-w-4xl mx-auto px-2 sm:px-4 min-h-0">
+                <aside class="flex flex-col gap-4 py-4 shrink-0">
+                    <button on:click=move |_| set_show_stats.set(true) title="Score" class="correct-pad w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center rounded-2xl shadow-lg border-2 border-transparent transition-all active:scale-90">
+                        <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    </button>
+                    <button on:click=move |_| set_show_help.set(true) title="How to Play" class="correct-pad w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center rounded-2xl shadow-lg border-2 border-transparent transition-all active:scale-90">
+                        <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </button>
+                    <button 
+                        on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) } 
+                        title="Hard Mode" 
+                        class=move || format!("w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center rounded-2xl shadow-lg border-2 transition-all active:scale-90 {}", if hard_mode.get() || is_ng_plus.get() { "correct-pad border-transparent" } else { "cell-neutral border-current" })
+                    >
+                        <svg class=move || format!("w-6 h-6 sm:w-8 sm:h-8 transition-all {}", if hard_mode.get() || is_ng_plus.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_12px_rgba(253,224,71,1)]" } else { "text-current opacity-40" }) fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </button>
+                    <button 
+                        on:click=move |_| start_ng_plus()
+                        disabled=move || !daily_game_done.get()
+                        title="New Game+" 
+                        class=move || format!("w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center rounded-2xl shadow-lg border-2 transition-all active:scale-90 {}", if is_ng_plus.get() { "ai-active-pad border-transparent shadow-[0_0_25px_rgba(255,0,255,1)]" } else if daily_game_done.get() { "cell-neutral border-current" } else { "opacity-30 grayscale cursor-not-allowed border-current" })
+                    >
+                        <span class=move || format!("text-2xl sm:text-4xl font-black transition-all {}", if is_ng_plus.get() { "text-white scale-110" } else { "text-current opacity-40" })>"+"</span>
+                    </button>
+                </aside>
+
+                <div class="flex-1 flex flex-col items-center justify-center min-h-0 py-4 px-2 sm:px-8">
+                    <div class="flex flex-col gap-1 sm:gap-2 h-full max-h-[500px] aspect-[5/6]">
                         {move || {
                             let gs = guesses.get();
                             let ss = guess_statuses.get();
@@ -521,38 +505,56 @@ fn App() -> impl IntoView {
                     </div>
                 </div>
 
-                <div class="w-full max-w-[550px] px-1 flex flex-col items-center shrink-0">
-                    {move || {
-                        let rows = vec![vec!['Q','W','E','R','T','Y','U','I','O','P'], vec!['A','S','D','F','G','H','J','K','L'], vec!['Z','X','C','V','B','N','M']];
-                        rows.into_iter().enumerate().map(|(i, row)| {
-                            view! {
-                                <div class="flex justify-center mb-1.5 w-full">
-                                    {if i == 2 { view! { <button class="h-10 sm:h-14 px-1.5 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] key-neutral flex items-center justify-center" on:click=move |_| on_key("ENTER".to_string())> <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg> </button> }.into_view() } else { view! {}.into_view() }}
-                                    {row.into_iter().map(|c| {
-                                        let status = move || char_statuses.get().get(&c).cloned().unwrap_or_default();
-                                        let status_class = move || match status().as_str() { "correct" => "correct", "present" => "present", "absent" => "absent", _ => "key-neutral" };
-                                        let pulse = move || if keyboard_pulse.get().0 == c { keyboard_pulse.get().1 } else { "".to_string() };
-                                        let hard = hard_mode.get() || is_ng_plus.get();
-                                        view! { 
-                                            <button class=move || format!("relative h-10 sm:h-14 mx-0.5 rounded-xl font-bold flex-1 min-w-[20px] transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg border-2 border-transparent text-sm sm:text-base {}", status_class()) on:click=move |_| on_key(c.to_string())> 
-                                                {move || { 
-                                                    let id = pulse(); 
-                                                    if !id.is_empty() { 
-                                                        if hard { view! { <div key=id class="power-ring" /> }.into_view() }
-                                                        else { view! { <div key=id class="power-underline" /> }.into_view() }
-                                                    } else { view! {}.into_view() } 
-                                                }}
-                                                {c.to_string()} 
-                                            </button> 
-                                        }
-                                    }).collect_view()}
-                                    {if i == 2 { view! { <button class="h-10 sm:h-14 px-1.5 mx-0.5 rounded-xl font-bold transition-all duration-500 hover:brightness-110 active:scale-95 shadow-lg flex-[1.5] key-neutral flex items-center justify-center" on:click=move |_| on_key("DELETE".to_string())> <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg> </button> }.into_view() } else { view! {}.into_view() }}
+                <aside class="flex flex-col items-center justify-center py-4 shrink-0">
+                    <div class="glass-pad p-3 rounded-3xl flex items-center shadow-lg relative z-[50]">
+                        {move || {
+                            let themes = vec!["dark", "red", "orange", "yellow", "green", "blue", "purple", "light"];
+                            let current = theme.get();
+                            let index = themes.iter().position(|&t| t == current).unwrap_or(0);
+                            view! { 
+                                <div class="theme-slider-container">
+                                    <input type="range" min="0" max="7" step="1" value=index class="theme-slider" on:input=move |ev| { 
+                                        let val = event_target_value(&ev).parse::<usize>().unwrap_or(0); 
+                                        set_theme.set(themes[val].to_string()); 
+                                    } /> 
                                 </div>
                             }
-                        }).collect_view()
-                    }}
-                </div>
-            </div>
+                        }}
+                    </div>
+                </aside>
+            </main>
+
+            <footer class="w-full max-w-2xl mx-auto p-2 pb-6 shrink-0">
+                {move || {
+                    let rows = vec![vec!['Q','W','E','R','T','Y','U','I','O','P'], vec!['A','S','D','F','G','H','J','K','L'], vec!['Z','X','C','V','B','N','M']];
+                    rows.into_iter().enumerate().map(|(i, row)| {
+                        view! {
+                            <div class="flex justify-center mb-1.5 w-full gap-1 sm:gap-1.5 px-1">
+                                {if i == 2 { view! { <button class="key-large px-3 rounded-xl font-black transition-all duration-300 hover:brightness-110 active:scale-90 shadow-lg flex-[1.5] key-neutral flex items-center justify-center" on:click=move |_| on_key("ENTER".to_string())> <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg> </button> }.into_view() } else { view! {}.into_view() }}
+                                {row.into_iter().map(|c| {
+                                    let status = move || char_statuses.get().get(&c).cloned().unwrap_or_default();
+                                    let status_class = move || match status().as_str() { "correct" => "correct", "present" => "present", "absent" => "absent", _ => "key-neutral" };
+                                    let pulse = move || if keyboard_pulse.get().0 == c { keyboard_pulse.get().1 } else { "".to_string() };
+                                    let hard = hard_mode.get() || is_ng_plus.get();
+                                    view! { 
+                                        <button class=move || format!("key-large relative rounded-xl font-black flex-1 min-w-[30px] transition-all duration-300 hover:brightness-110 active:scale-90 shadow-lg border-2 border-transparent {}", status_class()) on:click=move |_| on_key(c.to_string())> 
+                                            {move || { 
+                                                let id = pulse(); 
+                                                if !id.is_empty() { 
+                                                    if hard { view! { <div key=id class="power-ring" /> }.into_view() }
+                                                    else { view! { <div key=id class="power-underline" /> }.into_view() }
+                                                } else { view! {}.into_view() } 
+                                            }}
+                                            {c.to_string()} 
+                                        </button> 
+                                    }
+                                }).collect_view()}
+                                {if i == 2 { view! { <button class="key-large px-3 rounded-xl font-black transition-all duration-300 hover:brightness-110 active:scale-90 shadow-lg flex-[1.5] key-neutral flex items-center justify-center" on:click=move |_| on_key("DELETE".to_string())> <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg> </button> }.into_view() } else { view! {}.into_view() }}
+                            </div>
+                        }
+                    }).collect_view()
+                }}
+            </footer>
 
             <Modal title="How to Play".to_string() is_open=show_help set_is_open=set_show_help>
                 <div class="flex flex-col gap-6 text-white text-center">

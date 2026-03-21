@@ -58,7 +58,6 @@ fn Cell(
 ) -> impl IntoView {
     let delay = position * 350;
     
-    // Local trigger for single letter entry power ring
     let ring_trigger = create_memo(move |_| {
         if is_last_typed && value != ' ' && !is_completed && !is_revealing {
             js_sys::Date::now().to_string()
@@ -81,7 +80,6 @@ fn Cell(
         if is_revealing {
             base.push_str(" cell-reveal");
         }
-        // Focus graphics on individual letter if Hard Mode is ON
         if is_hard_mode && value != ' ' && !is_completed {
             base.push_str(" ring-2 ring-white ring-opacity-50 shadow-[0_0_15px_rgba(255,255,255,0.5)]");
         }
@@ -92,32 +90,17 @@ fn Cell(
     
     view! { 
         <div class=classes style=style>
-            // Single Letter Entry Ring
             {move || {
                 let id = ring_trigger.get();
-                if !id.is_empty() {
-                    view! { <div key=id class="power-ring" /> }.into_view()
-                } else {
-                    view! {}.into_view()
-                }
+                if !id.is_empty() { view! { <div key=id class="power-ring" /> }.into_view() } else { view! {}.into_view() }
             }}
-            // Entire Word Surge (Enter)
             {move || {
                 let id = surge_trigger.get();
-                if !id.is_empty() && !is_completed && !is_revealing {
-                    view! { <div key=id class="surge-ring" /> }.into_view()
-                } else {
-                    view! {}.into_view()
-                }
+                if !id.is_empty() && !is_completed && !is_revealing { view! { <div key=id class="surge-ring" /> }.into_view() } else { view! {}.into_view() }
             }}
-            // Deletion Shatter
             {move || {
                 let id = destroy_trigger.get();
-                if !id.is_empty() && is_last_typed {
-                    view! { <div key=id class="destroyed-puff" /> }.into_view()
-                } else {
-                    view! {}.into_view()
-                }
+                if !id.is_empty() && is_last_typed { view! { <div key=id class="destroyed-puff" /> }.into_view() } else { view! {}.into_view() }
             }}
             <div>{value.to_uppercase().to_string()}</div>
         </div> 
@@ -367,7 +350,6 @@ fn App() -> impl IntoView {
 
     view! {
         <div class="flex flex-col h-screen transition-all duration-500 px-2 overflow-x-hidden">
-            // Balanced flex container for equal spacing
             <div class="flex-1 flex flex-col justify-evenly items-center max-w-[600px] mx-auto w-full py-4">
                 
                 // TOP BAR
@@ -376,9 +358,19 @@ fn App() -> impl IntoView {
                         <button on:click=move |_| set_show_stats.set(true) class="correct-pad w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
+                        
+                        // NEW HARD MODE TOGGLE BUTTON (Next to gear)
+                        <button 
+                            on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) }
+                            class=move || format!("correct-pad w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95 {}", if !guesses.get().is_empty() { "opacity-50 grayscale cursor-not-allowed" } else { "cursor-pointer" })
+                        >
+                            <svg class=move || format!("w-6 h-6 transition-all {}", if hard_mode.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_8px_rgba(253,224,71,0.8)]" } else { "text-white opacity-40" }) fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </button>
+
                         <button on:click=move |_| set_show_settings.set(true) class="correct-pad w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
-                            // GEAR ICON RESTORED
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.756 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
                     <h1 class="text-2xl sm:text-4xl font-black tracking-tighter italic text-center title-text uppercase">"RUSTLE"</h1>
@@ -478,17 +470,6 @@ fn App() -> impl IntoView {
 
             <Modal title="Settings".to_string() is_open=show_settings set_is_open=set_show_settings>
                 <div class="flex flex-col gap-6 text-white text-white">
-                    <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30">
-                        <div>
-                            <div class="font-bold">"Hard Mode"</div>
-                            <div class="text-xs opacity-70">"Strict validation of clues"</div>
-                            {move || if !guesses.get().is_empty() { view! { <div class="text-[10px] text-red-400 mt-1 font-bold uppercase tracking-tighter italic">"Game in progress"</div> }.into_view() } else { view! {}.into_view() }}
-                        </div>
-                        <button on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) }
-                            class=move || format!("w-12 h-6 rounded-full transition-colors duration-300 relative {} {}", if hard_mode.get() { "bg-green-500" } else { "bg-gray-600" }, if !guesses.get().is_empty() { "opacity-50 cursor-not-allowed" } else { "cursor-pointer" })>
-                            <div class=move || format!("absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 {}", if hard_mode.get() { "left-7" } else { "left-1" }) />
-                        </button>
-                    </div>
                     <div class="space-y-4">
                         <h3 class="text-sm font-black uppercase tracking-widest text-center opacity-80">"How to Play"</h3>
                         <div class="space-y-3">

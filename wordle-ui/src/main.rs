@@ -1,5 +1,5 @@
 use leptos::*;
-use wordle_engine::{get_solution, is_word_in_list, get_guess_statuses, get_ai_word_list, get_adversarial_step, SolutionData, AdversarialResult};
+use wordle_engine::{get_solution, is_word_in_list, get_guess_statuses, get_ai_word_list, get_adversarial_step, SolutionData, AdversarialResult, calculate_statuses};
 use serde::{Serialize, Deserialize};
 use wasm_bindgen::prelude::*;
 use std::collections::HashMap;
@@ -51,18 +51,16 @@ fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool, is_
     if is_ng {
         if is_win { return "SYSTEM BREACHED. UNREAL.".to_string(); }
         if is_loss { return "THE SYSTEM WINS. LOG OFF.".to_string(); }
-        let msgs = vec!["CALCULATING...", "I AM THE SYSTEM.", "GLITCH DETECTED.", "PLAY A GAME?", "ACCESS DENIED.", "DATA CORRUPTION...", "MAX ENTROPY."];
+        let msgs = vec!["CALCULATING...", "I AM THE SYSTEM.", "GLITCH DETECTED.", "PLAY A GAME?", "ACCESS DENIED.", "DATA CORRUPTION...", "TRON CALLED.", "MAX ENTROPY."];
         return msgs[js_sys::Math::floor(js_sys::Math::random() * msgs.len() as f64) as usize].to_string();
     }
-    if is_loss { 
-        return vec!["Poseur.", "Total barf bag.", "Gag me.", "Wasted.", "Bummer."][js_sys::Math::floor(js_sys::Math::random() * 5.0) as usize].to_string();
-    }
+    if is_loss { return "Poseur.".to_string(); }
     if is_win {
         let win_msgs = match tries {
             1 => vec!["HACKER!", "Pure Luck.", "Sus physics.", "God Mode."],
             2 => vec!["Radical!", "Tubular!", "Showoff.", "Excellent!"],
             3 => vec!["Solid mid.", "Typical.", "Choice.", "Right on."],
-            4 => vec!["Finally.", "Getting slow?", "Analog brain."],
+            4 => vec!["Finally.", "Took your time.", "Getting slow?", "Analog brain."],
             5 => vec!["Panic yet?", "Sweaty.", "Close one.", "Danger Zone."],
             6 => vec!["Barely.", "Yikes.", "Scrub tier.", "Bogus win."],
             _ => vec!["Win."],
@@ -250,14 +248,23 @@ fn App() -> impl IntoView {
     });
 
     let start_ng_plus = move || {
+        let daily_sol = solution_data.get().solution.to_uppercase();
         set_is_ng_plus.set(true);
         set_guesses.set(vec![]);
         set_guess_statuses_vec.set(vec![]);
         set_game_won.set(false);
         set_game_lost.set(false);
         set_snarky_comment.set("THE SYSTEM IS ONLINE.".to_string());
-        let list: Vec<String> = serde_wasm_bindgen::from_value(get_ai_word_list()).unwrap_or_default();
-        set_ai_pool.set(list);
+        
+        let full_list: Vec<String> = serde_wasm_bindgen::from_value(get_ai_word_list()).unwrap_or_default();
+        // FIND MOST UNLIKELY WORD RELATIVE TO DAILY WORD (ZERO COMMON LETTERS)
+        let mut filtered_pool: Vec<String> = full_list.iter()
+            .filter(|w| calculate_statuses(&daily_sol, w).iter().all(|s| s == "absent"))
+            .cloned()
+            .collect();
+        
+        if filtered_pool.is_empty() { filtered_pool = full_list; }
+        set_ai_pool.set(filtered_pool);
         if let Some(storage) = get_storage() { let _ = storage.remove_item("game-state"); }
     };
 
@@ -437,7 +444,7 @@ fn App() -> impl IntoView {
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </button>
                         <button 
-                            on:click=move |_| if guesses.get().is_empty() && !is_ng_plus.get() { set_hard_mode.update(|h| *h = !*h) } 
+                            on:click=move |_| if guesses.get().is_empty() { set_hard_mode.update(|h| *h = !*h) } 
                             title="Hard Mode" 
                             class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if hard_mode.get() || is_ng_plus.get() { "correct-pad border-transparent" } else { "cell-neutral border-current" })
                         >
@@ -537,7 +544,7 @@ fn App() -> impl IntoView {
             </div>
 
             <Modal title="How to Play".to_string() is_open=show_help set_is_open=set_show_help>
-                <div class="flex flex-col gap-6 text-white">
+                <div class="flex flex-col gap-6 text-white text-center">
                     <div class="space-y-4">
                         <div class="space-y-3">
                             <div class="flex flex-col items-center gap-1">
@@ -584,7 +591,7 @@ fn App() -> impl IntoView {
                         <div class="flex flex-col"><div class="text-3xl font-black">{move || stats.get().best_streak}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Best"</div></div>
                     </div>
                     
-                    <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary">"Guess Distribution"</h3>
+                    <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary text-center">"Guess Distribution"</h3>
                     <div class="w-full space-y-1.5 mb-8 text-left">
                         {move || stats.get().distribution.iter().enumerate().map(|(i, count)| {
                             let wins = stats.get().wins;

@@ -1,36 +1,29 @@
 # syntax = docker/dockerfile:1
 
-# Stage 1: Build Rust Wasm
-FROM rust:1.94.0-slim-bullseye AS rust_builder
+# Stage 1: Build Rust App (No Node.js needed!)
+FROM rust:1.94.0-slim-bullseye AS builder
 RUN apt-get update && apt-get install -y curl pkg-config libssl-dev build-essential
-RUN curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-WORKDIR /rust-app
-COPY wordle-engine ./wordle-engine
-WORKDIR /rust-app/wordle-engine
-RUN wasm-pack build --target web
+# Install wasm32 target
+RUN rustup target add wasm32-unknown-unknown
+# Install trunk
+RUN cargo install trunk
 
-# Stage 2: Build Node App
-FROM node:18.12.1-alpine3.15 AS node_modules
 WORKDIR /app
-COPY package-lock.json package.json ./
-RUN npm install
-COPY . .
-# Copy Wasm package from rust_builder
-COPY --from=rust_builder /rust-app/wordle-engine/pkg ./src/wordle-engine-pkg
-# Disable ESLint for the generated glue code
-RUN sed -i '1i/* eslint-disable */' ./src/wordle-engine-pkg/wordle_engine.js
+COPY Cargo.toml ./
+COPY wordle-engine ./wordle-engine
+COPY wordle-ui ./wordle-ui
 
-FROM node_modules AS prod_builder
-RUN npm run build
+WORKDIR /app/wordle-ui
+RUN trunk build --release
 
-## Stage 3: Production image
+## Stage 2: Production image
 FROM nginx:1.24.0-alpine AS prod
 COPY docker/etc/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY docker/etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
-# Copy build files directly to root
-COPY --from=prod_builder /app/build /usr/share/nginx/html
+# Copy Trunk build output to Nginx html folder
+COPY --from=builder /app/wordle-ui/dist /usr/share/nginx/html
 COPY docker/build_system.sh .
 RUN ./build_system.sh && rm ./build_system.sh
-# port use by Nginx within docker network.
+
 EXPOSE 7583
 USER reactle

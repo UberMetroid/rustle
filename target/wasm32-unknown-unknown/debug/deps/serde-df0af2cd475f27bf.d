@@ -1,0 +1,14 @@
+/home/jeryd/Projects/rust-wordle/target/wasm32-unknown-unknown/debug/deps/serde-df0af2cd475f27bf.d: /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/jeryd/Projects/rust-wordle/target/wasm32-unknown-unknown/debug/build/serde-6680508c6da3d58c/out/private.rs
+
+/home/jeryd/Projects/rust-wordle/target/wasm32-unknown-unknown/debug/deps/libserde-df0af2cd475f27bf.rlib: /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/jeryd/Projects/rust-wordle/target/wasm32-unknown-unknown/debug/build/serde-6680508c6da3d58c/out/private.rs
+
+/home/jeryd/Projects/rust-wordle/target/wasm32-unknown-unknown/debug/deps/libserde-df0af2cd475f27bf.rmeta: /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/jeryd/Projects/rust-wordle/target/wasm32-unknown-unknown/debug/build/serde-6680508c6da3d58c/out/private.rs
+
+/home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/home/jeryd/Projects/rust-wordle/target/wasm32-unknown-unknown/debug/build/serde-6680508c6da3d58c/out/private.rs:
+
+# env-dep:OUT_DIR=/home/jeryd/Projects/rust-wordle/target/wasm32-unknown-unknown/debug/build/serde-6680508c6da3d58c/out

@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "wordle-engine",
+    "wordle-ui"
+]
+resolver = "2"

@@ -4,6 +4,7 @@ use serde::{Serialize, Deserialize};
 use wasm_bindgen::prelude::*;
 use std::collections::HashMap;
 use leptos::ev::keydown;
+use wasm_bindgen::JsCast;
 
 mod word_engine {
     pub use wordle_engine::*;
@@ -154,7 +155,7 @@ fn Modal(title: String, is_open: ReadSignal<bool>, set_is_open: WriteSignal<bool
                         <h2 class="text-2xl font-black tracking-tighter"> {title_clone.clone()} </h2>
                         <button on:click=move |_| set_is_open.set(false) class="text-2xl font-bold hover:text-red-500 transition-colors"> "×" </button>
                     </div>
-                    <div>
+                    <div class="text-white">
                         {children.with_value(|children| children())}
                     </div>
                 </div>
@@ -356,8 +357,8 @@ fn App() -> impl IntoView {
     });
 
     view! {
-        <div class="flex flex-col min-h-screen transition-all duration-500 px-2 overflow-hidden bg-app-bg text-app-text">
-            <div class="flex-1 flex flex-col justify-evenly items-center max-w-[600px] mx-auto w-full py-2 overflow-hidden h-full">
+        <div class="flex flex-col h-full transition-all duration-500 px-2 bg-app-bg text-app-text">
+            <div class="flex-1 flex flex-col justify-evenly items-center max-w-[600px] mx-auto w-full py-4 overflow-hidden h-full">
                 <nav class="w-full grid grid-cols-3 items-center px-4 glass-pad py-2 shrink-0">
                     <div class="flex gap-2 justify-start items-center">
                         <button on:click=move |_| set_show_stats.set(true) title="Score" class="correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
@@ -433,7 +434,7 @@ fn App() -> impl IntoView {
             </div>
 
             <Modal title="How to Play".to_string() is_open=show_help set_is_open=set_show_help>
-                <div class="flex flex-col gap-6 text-white">
+                <div class="flex flex-col gap-6 text-white text-white">
                     <div class="space-y-4">
                         <div class="space-y-3">
                             <div class="flex flex-col items-center gap-1">
@@ -472,8 +473,8 @@ fn App() -> impl IntoView {
             </Modal>
 
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
-                <div class="flex flex-col items-center text-center text-white">
-                    <div class="flex w-full justify-around mb-6 text-white text-white">
+                <div class="flex flex-col items-center text-center text-white text-white">
+                    <div class="flex w-full justify-around mb-6">
                         <div><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70">"Played"</div></div>
                         <div><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70">"Win %"</div></div>
                         <div><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70">"Streak"</div></div>
@@ -515,5 +516,8 @@ fn App() -> impl IntoView {
     }
 }
 
-fn main() { console_error_panic_hook::set_once(); mount_to_body(|| view! { <App/> }) }
-fn document() -> web_sys::Document { leptos::document() }
+fn main() { 
+    console_error_panic_hook::set_once(); 
+    let root = document().get_element_by_id("root").expect("could not find #root element");
+    mount_to(root.unchecked_into(), || view! { <App/> }) 
+}

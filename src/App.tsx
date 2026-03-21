@@ -44,11 +44,10 @@ import {
   findFirstUnusedReveal,
   getGameDate,
   getIsLatestGame,
+  getSolution,
   isWinningWord,
   isWordInWordList,
   setGameDate,
-  solution,
-  solutionGameDate,
   unicodeLength,
 } from './lib/words'
 import init from './wordle-engine-pkg'
@@ -68,29 +67,14 @@ function App() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
   const [currentRowClass, setCurrentRowClass] = useState('')
   const [isGameLost, setIsGameLost] = useState(false)
+  const [isWasmReady, setIsWasmReady] = useState(false)
+  const [solutionData, setSolutionData] = useState<any>(null)
 
   const [currentTheme, setCurrentTheme] = useState(
     localStorage.getItem('color-theme') || 'default'
   )
   const [isRevealing, setIsRevealing] = useState(false)
-  const [guesses, setGuesses] = useState<string[]>(() => {
-    const loaded = loadGameStateFromLocalStorage(isLatestGame)
-    if (loaded?.solution !== solution) {
-      return []
-    }
-    const gameWasWon = loaded.guesses.includes(solution)
-    if (gameWasWon) {
-      setIsGameWon(true)
-    }
-    if (loaded.guesses.length === MAX_CHALLENGES && !gameWasWon) {
-      setIsGameLost(true)
-      showErrorAlert(CORRECT_WORD_MESSAGE(solution), {
-        persist: true,
-      })
-    }
-    return loaded.guesses
-  })
-
+  const [guesses, setGuesses] = useState<string[]>([])
   const [stats, setStats] = useState(() => loadStats())
 
   const [isHardMode, setIsHardMode] = useState(
@@ -100,16 +84,40 @@ function App() {
   )
 
   useEffect(() => {
-    init().catch(console.error)
-  }, [])
+    init()
+      .then(() => {
+        setIsWasmReady(true)
+        const data = getSolution(gameDate)
+        setSolutionData(data)
+
+        // Load game state now that we have the solution
+        const loaded = loadGameStateFromLocalStorage(isLatestGame)
+        if (data && loaded?.solution === data.solution) {
+          setGuesses(loaded.guesses)
+          const gameWasWon = loaded.guesses.includes(data.solution)
+          if (gameWasWon) {
+            setIsGameWon(true)
+          }
+          if (loaded.guesses.length === MAX_CHALLENGES && !gameWasWon) {
+            setIsGameLost(true)
+            showErrorAlert(CORRECT_WORD_MESSAGE(data.solution), {
+              persist: true,
+            })
+          }
+        } else {
+          setGuesses([])
+        }
+      })
+      .catch(console.error)
+  }, [gameDate, isLatestGame, showErrorAlert])
 
   useEffect(() => {
-    if (!loadGameStateFromLocalStorage(true)) {
+    if (isWasmReady && !loadGameStateFromLocalStorage(true)) {
       setTimeout(() => {
         setIsInfoModalOpen(true)
       }, WELCOME_INFO_MODAL_MS)
     }
-  })
+  }, [isWasmReady])
 
   useEffect(() => {
     DISCOURAGE_INAPP_BROWSERS &&
@@ -121,7 +129,6 @@ function App() {
   }, [showErrorAlert])
 
   useEffect(() => {
-    // Apply current theme
     const themes = [
       'theme-cyberpunk',
       'theme-nord',
@@ -152,14 +159,19 @@ function App() {
   }
 
   useEffect(() => {
-    saveGameStateToLocalStorage(getIsLatestGame(), { guesses, solution })
-  }, [guesses])
+    if (solutionData) {
+      saveGameStateToLocalStorage(getIsLatestGame(), {
+        guesses,
+        solution: solutionData.solution,
+      })
+    }
+  }, [guesses, solutionData])
 
   useEffect(() => {
-    if (isGameWon) {
+    if (isGameWon && solutionData) {
       const winMessage =
         WIN_MESSAGES[Math.floor(Math.random() * WIN_MESSAGES.length)]
-      const delayMs = REVEAL_TIME_MS * solution.length
+      const delayMs = REVEAL_TIME_MS * solutionData.solution.length
 
       showSuccessAlert(winMessage, {
         delayMs,
@@ -167,16 +179,18 @@ function App() {
       })
     }
 
-    if (isGameLost) {
+    if (isGameLost && solutionData) {
       setTimeout(() => {
         setIsStatsModalOpen(true)
-      }, (solution.length + 1) * REVEAL_TIME_MS)
+      }, (solutionData.solution.length + 1) * REVEAL_TIME_MS)
     }
-  }, [isGameWon, isGameLost, showSuccessAlert])
+  }, [isGameWon, isGameLost, showSuccessAlert, solutionData])
 
   const onChar = (value: string) => {
     if (
-      unicodeLength(`${currentGuess}${value}`) <= solution.length &&
+      solutionData &&
+      unicodeLength(`${currentGuess}${value}`) <=
+        solutionData.solution.length &&
       guesses.length < MAX_CHALLENGES &&
       !isGameWon
     ) {
@@ -191,11 +205,11 @@ function App() {
   }
 
   const onEnter = () => {
-    if (isGameWon || isGameLost) {
+    if (isGameWon || isGameLost || !solutionData) {
       return
     }
 
-    if (!(unicodeLength(currentGuess) === solution.length)) {
+    if (!(unicodeLength(currentGuess) === solutionData.solution.length)) {
       setCurrentRowClass('jiggle')
       return showErrorAlert(NOT_ENOUGH_LETTERS_MESSAGE, {
         onClose: clearCurrentRowClass,
@@ -210,7 +224,11 @@ function App() {
     }
 
     if (isHardMode) {
-      const firstMissingReveal = findFirstUnusedReveal(currentGuess, guesses)
+      const firstMissingReveal = findFirstUnusedReveal(
+        currentGuess,
+        guesses,
+        solutionData.solution
+      )
       if (firstMissingReveal) {
         setCurrentRowClass('jiggle')
         return showErrorAlert(firstMissingReveal, {
@@ -222,12 +240,12 @@ function App() {
     setIsRevealing(true)
     setTimeout(() => {
       setIsRevealing(false)
-    }, REVEAL_TIME_MS * solution.length)
+    }, REVEAL_TIME_MS * solutionData.solution.length)
 
-    const winningWord = isWinningWord(currentGuess)
+    const winningWord = isWinningWord(currentGuess, solutionData.solution)
 
     if (
-      unicodeLength(currentGuess) === solution.length &&
+      unicodeLength(currentGuess) === solutionData.solution.length &&
       guesses.length < MAX_CHALLENGES &&
       !isGameWon
     ) {
@@ -246,12 +264,20 @@ function App() {
           setStats(addStatsForCompletedGame(stats, guesses.length + 1))
         }
         setIsGameLost(true)
-        showErrorAlert(CORRECT_WORD_MESSAGE(solution), {
+        showErrorAlert(CORRECT_WORD_MESSAGE(solutionData.solution), {
           persist: true,
-          delayMs: REVEAL_TIME_MS * solution.length + 1,
+          delayMs: REVEAL_TIME_MS * solutionData.solution.length + 1,
         })
       }
     }
+  }
+
+  if (!isWasmReady || !solutionData) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-xl font-bold">Loading Wordle Rust...</p>
+      </div>
+    )
   }
 
   return (
@@ -276,7 +302,7 @@ function App() {
         <div className="mx-auto flex w-full grow flex-col px-1 pt-2 pb-8 sm:px-6 md:max-w-7xl lg:px-8 short:pb-2 short:pt-2">
           <div className="flex grow flex-col justify-center pb-6 short:pb-2">
             <Grid
-              solution={solution}
+              solution={solutionData.solution}
               guesses={guesses}
               currentGuess={currentGuess}
               isRevealing={isRevealing}
@@ -287,7 +313,7 @@ function App() {
             onChar={onChar}
             onDelete={onDelete}
             onEnter={onEnter}
-            solution={solution}
+            solution={solutionData.solution}
             guesses={guesses}
             isRevealing={isRevealing}
           />
@@ -298,7 +324,10 @@ function App() {
           <StatsModal
             isOpen={isStatsModalOpen}
             handleClose={() => setIsStatsModalOpen(false)}
-            solution={solution}
+            solution={solutionData.solution}
+            solutionIndex={solutionData.solutionIndex}
+            solutionGameDate={solutionData.solutionGameDate}
+            tomorrow={solutionData.tomorrow}
             guesses={guesses}
             gameStats={stats}
             isLatestGame={isLatestGame}
@@ -319,7 +348,7 @@ function App() {
           />
           <DatePickerModal
             isOpen={isDatePickerModalOpen}
-            initialDate={solutionGameDate}
+            initialDate={solutionData.solutionGameDate}
             handleSelectDate={(d) => {
               setIsDatePickerModalOpen(false)
               setGameDate(d)

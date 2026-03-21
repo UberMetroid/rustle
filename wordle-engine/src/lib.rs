@@ -1,6 +1,10 @@
 use wasm_bindgen::prelude::*;
 use unicode_segmentation::UnicodeSegmentation;
 use serde::{Serialize, Deserialize};
+use chrono::{Utc, Datelike, Duration, TimeZone};
+
+mod words;
+use words::{WORDS, VALID_GUESSES};
 
 #[wasm_bindgen]
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Copy)]
@@ -18,6 +22,47 @@ impl CharStatus {
             CharStatus::Correct => "correct".to_string(),
         }
     }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Solution {
+    pub solution: String,
+    #[serde(rename = "solutionGameDate")]
+    pub solution_game_date: u64,
+    #[serde(rename = "solutionIndex")]
+    pub solution_index: i64,
+    pub tomorrow: u64,
+}
+
+const FIRST_GAME_DATE_MS: i64 = 1640995200000; // Jan 1 2022 00:00:00 UTC
+
+#[wasm_bindgen]
+pub fn get_solution(timestamp_ms: u64) -> JsValue {
+    let date = Utc.timestamp_millis_opt(timestamp_ms as i64).unwrap();
+    let start_of_day = Utc.with_ymd_and_hms(date.year(), date.month(), date.day(), 0, 0, 0).unwrap();
+    
+    let first_game_date = Utc.timestamp_millis_opt(FIRST_GAME_DATE_MS).unwrap();
+    
+    let diff = start_of_day.signed_duration_since(first_game_date);
+    let index = diff.num_days();
+    
+    let word = WORDS[(index as usize) % WORDS.len()].to_uppercase();
+    let tomorrow = (start_of_day + Duration::days(1)).timestamp_millis() as u64;
+
+    let res = Solution {
+        solution: word,
+        solution_game_date: start_of_day.timestamp_millis() as u64,
+        solution_index: index,
+        tomorrow,
+    };
+
+    serde_wasm_bindgen::to_value(&res).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn is_word_in_list(word: &str) -> bool {
+    let lower_word = word.to_lowercase();
+    WORDS.contains(&lower_word.as_str()) || VALID_GUESSES.contains(&lower_word.as_str())
 }
 
 #[wasm_bindgen]
@@ -59,8 +104,6 @@ pub fn get_guess_statuses(solution: &str, guess: &str) -> JsValue {
         }
     }
 
-    // Convert to vector of strings for compatibility with existing TS code if needed,
-    // or use serde to pass the enum array.
     let status_strings: Vec<String> = statuses.iter().map(|s| s.to_string()).collect();
     serde_wasm_bindgen::to_value(&status_strings).unwrap()
 }

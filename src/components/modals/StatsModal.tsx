@@ -16,7 +16,6 @@ import {
 } from '../../constants/strings'
 import { GameStats } from '../../lib/localStorage'
 import { shareStatus } from '../../lib/share'
-import { solutionGameDate, tomorrow } from '../../lib/words'
 import { Histogram } from '../stats/Histogram'
 import { MigrationIntro } from '../stats/MigrationIntro'
 import { StatBar } from '../stats/StatBar'
@@ -26,6 +25,9 @@ type Props = {
   isOpen: boolean
   handleClose: () => void
   solution: string
+  solutionIndex: number
+  solutionGameDate: Date
+  tomorrow: number
   guesses: string[]
   gameStats: GameStats
   isLatestGame: boolean
@@ -42,6 +44,9 @@ export const StatsModal = ({
   isOpen,
   handleClose,
   solution,
+  solutionIndex,
+  solutionGameDate,
+  tomorrow,
   guesses,
   gameStats,
   isLatestGame,
@@ -116,11 +121,10 @@ export const StatsModal = ({
               onClick={() => {
                 shareStatus(
                   solution,
+                  solutionIndex,
                   guesses,
                   isGameLost,
                   isHardMode,
-                  false, // isDarkMode (deprecated)
-                  false, // isHighContrastMode (deprecated)
                   handleShareToClipboard,
                   handleShareFailure
                 )

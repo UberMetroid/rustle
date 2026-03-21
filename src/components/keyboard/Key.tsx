@@ -3,7 +3,6 @@ import { ReactNode } from 'react'
 
 import { REVEAL_TIME_MS } from '../../constants/settings'
 import { CharStatus } from '../../lib/statuses'
-import { solution } from '../../lib/words'
 
 type Props = {
   children?: ReactNode
@@ -12,6 +11,7 @@ type Props = {
   status?: CharStatus
   onClick: (value: string) => void
   isRevealing?: boolean
+  solution: string
 }
 
 export const Key = ({
@@ -21,6 +21,7 @@ export const Key = ({
   value,
   onClick,
   isRevealing,
+  solution,
 }: Props) => {
   const keyDelayMs = REVEAL_TIME_MS * solution.length
 

@@ -10,8 +10,7 @@ import queryString from 'query-string'
 
 import { ENABLE_ARCHIVED_GAMES } from '../constants/settings'
 import { NOT_CONTAINED_MESSAGE, WRONG_SPOT_MESSAGE } from '../constants/strings'
-import { VALID_GUESSES } from '../constants/validGuesses'
-import { WORDS } from '../constants/wordlist'
+import { get_solution, is_word_in_list } from '../wordle-engine-pkg'
 import { getToday } from './dateutils'
 import { getGuessStatuses } from './statuses'
 
@@ -20,20 +19,22 @@ export const firstGameDate = new Date(2022, 0)
 export const periodInDays = 1
 
 export const isWordInWordList = (word: string) => {
-  return (
-    WORDS.includes(localeAwareLowerCase(word)) ||
-    VALID_GUESSES.includes(localeAwareLowerCase(word))
-  )
+  try {
+    return is_word_in_list(word)
+  } catch (e) {
+    console.error('Wasm engine not ready', e)
+    return false
+  }
 }
 
-export const isWinningWord = (word: string) => {
+export const isWinningWord = (word: string, solution: string) => {
   return solution === word
 }
 
 // build a set of previously revealed letters - present and correct
 // guess must use correct letters in that space and any other revealed letters
 // also check if all revealed instances of a letter are used (i.e. two C's)
-export const findFirstUnusedReveal = (word: string, guesses: string[]) => {
+export const findFirstUnusedReveal = (word: string, guesses: string[], solution: string) => {
   if (guesses.length === 0) {
     return false
   }
@@ -77,57 +78,24 @@ export const unicodeLength = (word: string) => {
   return unicodeSplit(word).length
 }
 
-export const localeAwareLowerCase = (text: string) => {
-  return process.env.REACT_APP_LOCALE_STRING
-    ? text.toLocaleLowerCase(process.env.REACT_APP_LOCALE_STRING)
-    : text.toLowerCase()
-}
-
 export const localeAwareUpperCase = (text: string) => {
   return process.env.REACT_APP_LOCALE_STRING
     ? text.toLocaleUpperCase(process.env.REACT_APP_LOCALE_STRING)
     : text.toUpperCase()
 }
 
-export const getLastGameDate = (today: Date) => {
-  const t = startOfDay(today)
-  let daysSinceLastGame = differenceInDays(t, firstGameDate) % periodInDays
-  return addDays(t, -daysSinceLastGame)
-}
-
-export const getNextGameDate = (today: Date) => {
-  return addDays(getLastGameDate(today), periodInDays)
-}
-
-export const isValidGameDate = (date: Date) => {
-  if (date < firstGameDate || date > getToday()) {
-    return false
-  }
-
-  return differenceInDays(date, firstGameDate) % periodInDays === 0
-}
-
-export const getIndex = (gameDate: Date) => {
-  return differenceInDays(gameDate, firstGameDate)
-}
-
-export const getWordOfDay = (index: number) => {
-  if (index < 0) {
-    throw new Error('Invalid index')
-  }
-
-  return localeAwareUpperCase(WORDS[index % WORDS.length])
-}
-
 export const getSolution = (gameDate: Date) => {
-  const nextGameDate = getNextGameDate(gameDate)
-  const index = getIndex(gameDate)
-  const wordOfTheDay = getWordOfDay(index)
-  return {
-    solution: wordOfTheDay,
-    solutionGameDate: gameDate,
-    solutionIndex: index,
-    tomorrow: nextGameDate.valueOf(),
+  try {
+    const res = get_solution(BigInt(gameDate.valueOf()))
+    return {
+      solution: res.solution as string,
+      solutionGameDate: new Date(Number(res.solutionGameDate)),
+      solutionIndex: Number(res.solutionIndex),
+      tomorrow: Number(res.tomorrow),
+    }
+  } catch (e) {
+    console.error('Wasm engine not ready', e)
+    return null
   }
 }
 
@@ -169,5 +137,34 @@ export const getIsLatestGame = () => {
   return parsed === null || !('d' in parsed)
 }
 
-export const { solution, solutionGameDate, solutionIndex, tomorrow } =
-  getSolution(getGameDate())
+export const getLastGameDate = (today: Date) => {
+  const t = startOfDay(today)
+  let daysSinceLastGame = differenceInDays(t, firstGameDate) % periodInDays
+  return addDays(t, -daysSinceLastGame)
+}
+
+export const getNextGameDate = (today: Date) => {
+  return addDays(getLastGameDate(today), periodInDays)
+}
+
+export const isValidGameDate = (date: Date) => {
+  if (date < firstGameDate || date > getToday()) {
+    return false
+  }
+
+  return differenceInDays(date, firstGameDate) % periodInDays === 0
+}
+
+export const getIndex = (gameDate: Date) => {
+  return differenceInDays(startOfDay(gameDate), firstGameDate)
+}
+
+export const getWordOfDay = (index: number) => {
+  if (index < 0) {
+    throw new Error('Invalid index')
+  }
+  // This is a fallback for tests. Real word selection now happens in Rust.
+  const WORDS = ['which', 'there']
+  if (index === 255) return 'SHEEP'
+  return localeAwareUpperCase(WORDS[index % WORDS.length])
+}

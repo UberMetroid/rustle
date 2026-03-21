@@ -3,7 +3,7 @@ import { UAParser } from 'ua-parser-js'
 import { MAX_CHALLENGES } from '../constants/settings'
 import { GAME_TITLE } from '../constants/strings'
 import { getGuessStatuses } from './statuses'
-import { solutionIndex, unicodeSplit } from './words'
+import { unicodeSplit } from './words'
 
 const webShareApiDeviceTypes: string[] = ['mobile', 'smarttv', 'wearable']
 const parser = new UAParser()
@@ -12,11 +12,10 @@ const device = parser.getDevice()
 
 export const shareStatus = (
   solution: string,
+  solutionIndex: number,
   guesses: string[],
   lost: boolean,
   isHardMode: boolean,
-  isDarkMode: boolean,
-  isHighContrastMode: boolean,
   handleShareToClipboard: () => void,
   handleShareFailure: () => void
 ) => {
@@ -27,7 +26,7 @@ export const shareStatus = (
     generateEmojiGrid(
       solution,
       guesses,
-      getEmojiTiles(isDarkMode, isHighContrastMode)
+      getEmojiTiles()
     )
 
   const shareData = { text: textToShare }
@@ -96,10 +95,10 @@ const attemptShare = (shareData: object) => {
   )
 }
 
-const getEmojiTiles = (isDarkMode: boolean, isHighContrastMode: boolean) => {
+const getEmojiTiles = () => {
   let tiles: string[] = []
-  tiles.push(isHighContrastMode ? '🟧' : '🟩')
-  tiles.push(isHighContrastMode ? '🟦' : '🟨')
-  tiles.push(isDarkMode ? '⬛' : '⬜')
+  tiles.push('🟩')
+  tiles.push('🟨')
+  tiles.push('⬛')
   return tiles
 }

@@ -60,7 +60,7 @@ fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool, is_
             1 => vec!["HACKER!", "Pure Luck.", "Sus physics.", "God Mode."],
             2 => vec!["Radical!", "Tubular!", "Showoff.", "Excellent!"],
             3 => vec!["Solid mid.", "Typical.", "Choice.", "Right on."],
-            4 => vec!["Finally.", "Getting slow?", "Analog brain."],
+            4 => vec!["Finally.", "Took your time.", "Getting slow?", "Analog brain."],
             5 => vec!["Panic yet?", "Sweaty.", "Close one.", "Danger Zone."],
             6 => vec!["Barely.", "Yikes.", "Scrub tier.", "Bogus win."],
             _ => vec!["Win."],
@@ -250,7 +250,7 @@ fn App() -> impl IntoView {
     let start_ng_plus = move || {
         let daily_sol = solution_data.get().solution.to_uppercase();
         set_is_ng_plus.set(true);
-        set_hard_mode.set(true); // FORCE HARD MODE FOR NEW GAME+
+        set_hard_mode.set(true);
         set_guesses.set(vec![]);
         set_guess_statuses_vec.set(vec![]);
         set_game_won.set(false);
@@ -258,7 +258,6 @@ fn App() -> impl IntoView {
         set_snarky_comment.set("THE SYSTEM IS ONLINE.".to_string());
         
         let full_list: Vec<String> = serde_wasm_bindgen::from_value(get_ai_word_list()).unwrap_or_default();
-        // FIND MOST UNLIKELY WORD RELATIVE TO DAILY WORD (ZERO COMMON LETTERS)
         let mut filtered_pool: Vec<String> = full_list.iter()
             .filter(|w| calculate_statuses(&daily_sol, w).iter().all(|s| s == "absent"))
             .cloned()
@@ -439,7 +438,7 @@ fn App() -> impl IntoView {
                 <nav class="w-full grid grid-cols-3 items-center px-4 py-2 shrink-0">
                     <div class="flex gap-2 justify-start items-center">
                         <button on:click=move |_| set_show_stats.set(true) title="Score" class="correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
-                            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
                         <button on:click=move |_| set_show_help.set(true) title="How to Play" class="correct-pad w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 border-transparent transition-all active:scale-95">
                             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -612,9 +611,11 @@ fn App() -> impl IntoView {
 
                     <Show when=move || game_won.get() || game_lost.get()>
                         <button on:click=move |_| {
-                            let sol = solution_data.get().solution.to_uppercase();
                             let is_hard = hard_mode.get() || is_ng_plus.get();
                             let comment = snarky_comment.get();
+                            // SANITIZE COMMENT FOR SHARING (NO SPOILERS)
+                            let shared_comment = if game_lost.get() { "TOTAL BUMMER. POSEUR.".to_string() } else { comment };
+                            
                             let current_theme = theme.get();
                             let (correct_e, present_e, absent_e) = get_theme_emojis(&current_theme);
                             let mut text = format!("RUSTLE {} {}/6 {}\n\n", solution_data.get().solution_index, if game_won.get() { guesses.get().len().to_string() } else { "X".to_string() }, if is_hard { "⚡" } else { "" });
@@ -624,7 +625,7 @@ fn App() -> impl IntoView {
                                 text.push('\n');
                             }
                             text.push('\n');
-                            text.push_str(&comment);
+                            text.push_str(&shared_comment);
                             let _ = window().navigator().clipboard().write_text(&text);
                             set_snarky_comment.set("Results Copied, poseur.".to_string());
                             set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));

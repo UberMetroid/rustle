@@ -45,24 +45,30 @@ fn get_storage() -> Option<web_sys::Storage> {
     window().local_storage().ok().flatten()
 }
 
-fn get_snarky_comment(tries: usize, is_hard: bool, theme: &str) -> String {
-    let mut comments = match tries {
-        1 => vec!["Hacks.", "Bot behavior.", "Pure luck."],
-        2 => vec!["Showoff.", "Sus.", "Tryhard much?"],
-        3 => vec!["Solid mid.", "Typical.", "Average."],
-        4 => vec!["Finally.", "Took your time.", "Getting slow?"],
-        5 => vec!["Panic yet?", "Sweaty.", "Close one."],
-        6 => vec!["Barely.", "Yikes.", "Scrub tier."],
-        _ => vec!["How?"],
-    };
+fn get_80s_comment(tries: usize, is_win: bool, is_loss: bool, is_hard: bool) -> String {
+    if is_loss { return "Game Over, Poseur.".to_string(); }
+    if is_win {
+        let mut win_msgs = match tries {
+            1 => vec!["HACK THE PLANET!", "Pure Luck.", "Sus physics."],
+            2 => vec!["Radical!", "Tubular!", "Showoff."],
+            3 => vec!["Righteous.", "Choice.", "Solid mid."],
+            4 => vec!["Finally.", "Took your time.", "Getting slow?"],
+            5 => vec!["Panic yet?", "Sweaty.", "Close one."],
+            6 => vec!["Barely.", "Yikes.", "Scrub tier."],
+            _ => vec!["Win."],
+        };
+        let mut msg = win_msgs[js_sys::Math::floor(js_sys::Math::random() * win_msgs.len() as f64) as usize].to_string();
+        if is_hard { msg.push_str(" (Hard Mode simp)"); }
+        return msg;
+    }
     
-    let mut msg = comments[js_sys::Math::floor(js_sys::Math::random() * comments.len() as f64) as usize].to_string();
-    
-    if is_hard { msg.push_str(" (Hard Mode simp)"); }
-    else if theme == "red" { msg.push_str(" Rage much?"); }
-    else if theme == "dark" { msg.push_str(" So edgy."); }
-    
-    msg
+    // Mid-game snark
+    let comments = vec![
+        "Gnarly.", "Like, totally.", "Gag me with a spoon.", "Groovy.", 
+        "Cyberpunk'd.", "Neon Nights.", "Pixel Perfect.", "Digital Love.",
+        "Error 404: Skill.", "Loading...", "Retro Reboot.", "Processing..."
+    ];
+    comments[js_sys::Math::floor(js_sys::Math::random() * comments.len() as f64) as usize].to_string()
 }
 
 #[component]
@@ -105,7 +111,7 @@ fn Cell(
         base
     };
     
-    let style = move || if is_revealing { format!("animation-delay: {}ms;", position * 250) } else { "".to_string() };
+    let style = move || if is_revealing { format!("animation-delay: {}ms;", position * 150) } else { "".to_string() };
     
     view! { 
         <div class=classes style=style>
@@ -177,7 +183,7 @@ fn App() -> impl IntoView {
     let (hard_mode, set_hard_mode) = create_signal(false);
     let (stats, set_stats) = create_signal(GameStats::default());
     let (keyboard_pulse, set_keyboard_pulse) = create_signal((' ', "".to_string()));
-    let (snarky_win_msg, set_snarky_win_msg) = create_signal(String::new());
+    let (snarky_comment, set_snarky_comment) = create_signal(String::new());
 
     let now = js_sys::Date::now();
     let solution_data = create_memo(move |_| {
@@ -230,13 +236,13 @@ fn App() -> impl IntoView {
             let input = current_input.get().to_uppercase();
             let sol = solution_data.get().solution.to_uppercase();
             if input.len() < 5 {
-                set_alert_message.set("NOT ENOUGH LETTERS".to_string());
+                set_alert_message.set("Way harsh!".to_string());
                 set_jiggle_row.set(true);
                 set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
             }
             if !is_word_in_list(&input) {
-                set_alert_message.set("NOT IN WORD LIST".to_string());
+                set_alert_message.set("What a dweeb.".to_string());
                 set_jiggle_row.set(true);
                 set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                 return;
@@ -255,7 +261,7 @@ fn App() -> impl IntoView {
                 for (i, &req) in required_spots.iter().enumerate() {
                     if let Some(c) = req {
                         if input.chars().nth(i).unwrap() != c {
-                            set_alert_message.set(format!("MUST USE {} IN SPOT {}", c, i + 1));
+                            set_alert_message.set("Poser alert!".to_string());
                             set_jiggle_row.set(true);
                             set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                             return;
@@ -278,7 +284,7 @@ fn App() -> impl IntoView {
                 for (c, &req_count) in &required_letters {
                     let input_count = input.chars().filter(|&ic| ic == *c).count();
                     if input_count < req_count {
-                        set_alert_message.set(format!("MUST CONTAIN {}", c));
+                        set_alert_message.set("Bogus logic.".to_string());
                         set_jiggle_row.set(true);
                         set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                         return;
@@ -288,7 +294,7 @@ fn App() -> impl IntoView {
                 for c in input.chars() {
                     if let Some(status) = statuses_map.get(&c) {
                         if status == "absent" {
-                            set_alert_message.set(format!("{} IS NOT IN THE WORD", c));
+                            set_alert_message.set("Major bummer.".to_string());
                             set_jiggle_row.set(true);
                             set_timeout(move || { set_alert_message.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
                             return;
@@ -306,9 +312,14 @@ fn App() -> impl IntoView {
             }
             set_is_revealing_row.set(true);
             set_timeout(move || set_is_revealing_row.set(false), std::time::Duration::from_millis(2000));
-            if input == sol {
+            
+            // 80s Snark Update
+            let is_win = input == sol;
+            let is_loss = new_guesses.len() >= 6 && !is_win;
+            set_snarky_comment.set(get_80s_comment(new_guesses.len(), is_win, is_loss, hard_mode.get()));
+
+            if is_win {
                 set_game_won.set(true);
-                set_snarky_win_msg.set(get_snarky_comment(new_guesses.len(), hard_mode.get(), &theme.get()));
                 set_timeout(move || confetti(), std::time::Duration::from_millis(1800));
                 set_stats.update(|s| {
                     s.total_games += 1; s.wins += 1; s.current_streak += 1;
@@ -317,7 +328,7 @@ fn App() -> impl IntoView {
                 });
                 if let Some(storage) = get_storage() { let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap()); }
                 set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3500));
-            } else if new_guesses.len() >= 6 {
+            } else if is_loss {
                 set_game_lost.set(true);
                 set_stats.update(|s| { s.total_games += 1; s.current_streak = 0; });
                 if let Some(storage) = get_storage() { let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap()); }
@@ -386,15 +397,17 @@ fn App() -> impl IntoView {
                     </div>
                     <div class="flex flex-col items-center">
                         <h1 class="text-xl sm:text-4xl font-black tracking-tighter italic text-center title-text uppercase shrink-0">"RUSTLE"</h1>
-                        // INTEGRATED NOTIFICATION AREA
                         <div class="h-6 flex items-center justify-center">
-                            {move || if !alert_message.get().is_empty() {
-                                view! { <div class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white snarky-toast"> {alert_message.get()} </div> }.into_view()
-                            } else if game_won.get() {
-                                view! { <div class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-green-400 snarky-toast"> {snarky_win_msg.get()} </div> }.into_view()
-                            } else if game_lost.get() {
-                                view! { <div class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-red-400 snarky-toast"> {format!("The word was: {}", solution_data.get().solution.to_uppercase())} </div> }.into_view()
-                            } else { view! {}.into_view() }}
+                            {move || {
+                                let alert = alert_message.get();
+                                let snark = snarky_comment.get();
+                                if !alert.is_empty() {
+                                    view! { <div class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white snarky-toast"> {alert} </div> }.into_view()
+                                } else if !snark.is_empty() {
+                                    let color = if game_won.get() { "text-green-400" } else if game_lost.get() { "text-red-400" } else { "text-theme-primary" };
+                                    view! { <div key=snark.clone() class=format!("text-[10px] sm:text-xs font-black uppercase tracking-widest {} snarky-toast", color)> {snark} </div> }.into_view()
+                                } else { view! {}.into_view() }
+                            }}
                         </div>
                     </div>
                     <div class="flex justify-end items-center pointer-events-none">

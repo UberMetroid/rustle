@@ -249,13 +249,15 @@ fn App() -> impl IntoView {
 
     let start_ng_plus = move || {
         let daily_sol = solution_data.get().solution.to_uppercase();
+        let was_active = is_ng_plus.get();
         set_is_ng_plus.set(true);
         set_hard_mode.set(true);
         set_guesses.set(vec![]);
         set_guess_statuses_vec.set(vec![]);
         set_game_won.set(false);
         set_game_lost.set(false);
-        set_snarky_comment.set("THE SYSTEM IS ONLINE.".to_string());
+        set_current_input.set(String::new());
+        set_snarky_comment.set(if was_active { "SYSTEM REBOOT." } else { "THE SYSTEM IS ONLINE." }.to_string());
         
         let full_list: Vec<String> = serde_wasm_bindgen::from_value(get_ai_word_list()).unwrap_or_default();
         let mut filtered_pool: Vec<String> = full_list.iter()
@@ -379,7 +381,6 @@ fn App() -> impl IntoView {
                 set_game_won.set(true);
                 if !is_ng_plus.get() { set_daily_game_done.set(true); }
                 
-                // MASSIVE Confetti for NG+ Win
                 if is_ng_plus.get() {
                     set_timeout(move || confetti(), std::time::Duration::from_millis(1800));
                     set_timeout(move || confetti(), std::time::Duration::from_millis(2000));
@@ -464,7 +465,7 @@ fn App() -> impl IntoView {
                         </button>
                         <button 
                             on:click=move |_| start_ng_plus()
-                            disabled=move || !daily_game_done.get() || is_ng_plus.get()
+                            disabled=move || !daily_game_done.get()
                             title="New Game+" 
                             class=move || format!("w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl shadow-lg border-2 transition-all active:scale-95 {}", if is_ng_plus.get() { "ai-active-pad border-transparent shadow-[0_0_20px_rgba(255,0,255,0.8)]" } else if daily_game_done.get() { "cell-neutral border-current" } else { "opacity-30 grayscale cursor-not-allowed border-current" })
                         >
@@ -623,8 +624,7 @@ fn App() -> impl IntoView {
                         <button on:click=move |_| {
                             let is_hard = hard_mode.get() || is_ng_plus.get();
                             let comment = snarky_comment.get();
-                            // SANITIZE COMMENT FOR SHARING (NO SPOILERS)
-                            let shared_comment = if game_lost.get() { "TOTAL BUMMER. POSEUR.".to_string() } else { comment };
+                            let shared_comment = if game_lost.get() && !comment.contains("BREACHED") { "TOTAL BUMMER. POSEUR.".to_string() } else { comment };
                             
                             let current_theme = theme.get();
                             let (correct_e, present_e, absent_e) = get_theme_emojis(&current_theme);
@@ -645,7 +645,6 @@ fn App() -> impl IntoView {
                             set_snarky_comment.set("Results Copied, poseur.".to_string());
                             set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));
                             
-                            // TRIGGER NG+ IF NOT ALREADY ACTIVE
                             if !is_ng_plus.get() { start_ng_plus(); }
                         } class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-widest"> "SHARE" </button>
                     </Show>

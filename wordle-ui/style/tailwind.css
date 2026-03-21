@@ -44,6 +44,9 @@ body {
   --key-bg: #334155;
   --key-text: #f8fafc;
   --theme-primary: #38bdf8;
+  --absent-cell-bg-color: #334155;
+  --correct-cell-bg-color: #22c55e;
+  --present-cell-bg-color: #eab308;
 }
 
 /* 1: Red */
@@ -55,7 +58,10 @@ body {
   --default-cell-text-color: #fecaca;
   --key-bg: #991b1b;
   --key-text: #fecaca;
-  --theme-primary: #ef4444;
+  --theme-primary: #fca5a5;
+  --absent-cell-bg-color: #991b1b;
+  --correct-cell-bg-color: #dc2626;
+  --present-cell-bg-color: #ef4444;
 }
 
 /* 2: Orange */
@@ -67,7 +73,10 @@ body {
   --default-cell-text-color: #ffedd5;
   --key-bg: #9a3412;
   --key-text: #ffedd5;
-  --theme-primary: #f97316;
+  --theme-primary: #fcd34d;
+  --absent-cell-bg-color: #9a3412;
+  --correct-cell-bg-color: #ea580c;
+  --present-cell-bg-color: #f97316;
 }
 
 /* 3: Yellow */
@@ -79,7 +88,10 @@ body {
   --default-cell-text-color: #fef9c3;
   --key-bg: #854d0e;
   --key-text: #fef9c3;
-  --theme-primary: #eab308;
+  --theme-primary: #fef08a;
+  --absent-cell-bg-color: #854d0e;
+  --correct-cell-bg-color: #eab308;
+  --present-cell-bg-color: #facc15;
 }
 
 /* 4: Green */
@@ -91,7 +103,10 @@ body {
   --default-cell-text-color: #d1fae5;
   --key-bg: #047857;
   --key-text: #d1fae5;
-  --theme-primary: #22c55e;
+  --theme-primary: #86efac;
+  --absent-cell-bg-color: #047857;
+  --correct-cell-bg-color: #22c55e;
+  --present-cell-bg-color: #4ade80;
 }
 
 /* 5: Blue */
@@ -103,7 +118,10 @@ body {
   --default-cell-text-color: #dbeafe;
   --key-bg: #1d4ed8;
   --key-text: #dbeafe;
-  --theme-primary: #3b82f6;
+  --theme-primary: #93c5fd;
+  --absent-cell-bg-color: #1d4ed8;
+  --correct-cell-bg-color: #2563eb;
+  --present-cell-bg-color: #3b82f6;
 }
 
 /* 6: Purple */
@@ -115,7 +133,10 @@ body {
   --default-cell-text-color: #ede9fe;
   --key-bg: #6d28d9;
   --key-text: #ede9fe;
-  --theme-primary: #a855f7;
+  --theme-primary: #ddd6fe;
+  --absent-cell-bg-color: #6d28d9;
+  --correct-cell-bg-color: #a855f7;
+  --present-cell-bg-color: #c084fc;
 }
 
 /* 7: Light */
@@ -128,6 +149,23 @@ body {
   --key-bg: #e2e8f0;
   --key-text: #0f172a;
   --theme-primary: #10b981;
+  --absent-cell-bg-color: #94a3b8;
+  --correct-cell-bg-color: #22c55e;
+  --present-cell-bg-color: #eab308;
+}
+
+/* CRT Overlay for Retro - integrated into dark */
+.theme-dark::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+              linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+  z-index: 999;
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+  opacity: 0.2;
 }
 
 /* Unified "Pad" Glass Style */
@@ -146,7 +184,7 @@ body {
   box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
-/* Cell Overrides */
+/* Cell Overrides - Use CSS Variables from Theme */
 .absent {
   background-color: var(--absent-cell-bg-color) !important;
   border-color: var(--absent-cell-bg-color) !important;
@@ -171,9 +209,12 @@ body {
 
 @keyframes flip {
   0% { transform: rotateX(0); }
+  45% { transform: rotateX(90deg); }
+  55% { transform: rotateX(90deg); }
   100% { transform: rotateX(180deg); }
 }
 
+/* During the 50% part of flip, the background-color is set by the classes absent/correct/present */
 .cell-reveal > div {
   transform: rotateX(180deg);
 }
@@ -213,7 +254,7 @@ body {
   border: 2px solid white;
   box-shadow: 0 2px 6px rgba(0,0,0,0.4);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.1s;
 }
 
 .toast-slide {
@@ -227,6 +268,6 @@ body {
 
 .title-text {
   color: var(--theme-primary);
-  text-shadow: 0 0 10px rgba(0,0,0,0.5);
+  text-shadow: 0 0 15px var(--theme-primary);
   transition: all 0.5s ease;
 }

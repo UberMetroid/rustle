@@ -45,8 +45,12 @@ fn Cell(value: char, status: String, position: usize, is_revealing: bool) -> imp
     let delay = position * 350;
     let classes = move || {
         let mut base = "w-12 h-12 sm:w-14 sm:h-14 border-solid border-2 flex items-center justify-center mx-0.5 text-2xl sm:text-4xl font-bold rounded-xl transition-all duration-300".to_string();
-        if !status.is_empty() { base.push_str(&format!(" {}", status)); }
-        if is_revealing { base.push_str(" cell-reveal"); }
+        if is_revealing {
+            base.push_str(" cell-reveal");
+        }
+        if !status.is_empty() {
+            base.push_str(&format!(" {}", status));
+        }
         base
     };
     let style = move || format!("animation-delay: {}ms;", delay);
@@ -78,8 +82,8 @@ fn Modal(title: String, is_open: ReadSignal<bool>, set_is_open: WriteSignal<bool
             <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50" on:click=move |_| set_is_open.set(false)>
                 <div class="glass-pad w-full max-w-sm p-6 shadow-2xl transition-all scale-up" on:click=move |ev| ev.stop_propagation()>
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-black tracking-tighter"> {title_clone.clone()} </h2>
-                        <button on:click=move |_| set_is_open.set(false) class="text-2xl font-bold hover:text-red-500"> "×" </button>
+                        <h2 class="text-2xl font-black tracking-tighter text-white"> {title_clone.clone()} </h2>
+                        <button on:click=move |_| set_is_open.set(false) class="text-2xl font-bold text-white hover:text-red-500 transition-colors"> "×" </button>
                     </div>
                     <div>
                         {children.with_value(|children| children())}
@@ -100,6 +104,7 @@ fn App() -> impl IntoView {
     let (show_settings, set_show_settings) = create_signal(false);
     let (jiggle_row, set_jiggle_row) = create_signal(false);
     let (alert_message, set_alert_message) = create_signal(String::new());
+    let (is_revealing_row, set_is_revealing_row) = create_signal(false);
     
     let (theme, set_theme) = create_signal(
         window().local_storage().unwrap().unwrap()
@@ -215,9 +220,13 @@ fn App() -> impl IntoView {
             let state = StoredState { guesses: new_guesses.clone(), solution: sol.clone() };
             let _ = storage.set_item("game-state", &serde_json::to_string(&state).unwrap());
 
+            // Trigger reveal animation only for this row
+            set_is_revealing_row.set(true);
+            set_timeout(move || set_is_revealing_row.set(false), std::time::Duration::from_millis(2000));
+
             if input == sol {
                 set_game_won.set(true);
-                confetti();
+                set_timeout(move || confetti(), std::time::Duration::from_millis(1800));
                 set_stats.update(|s| {
                     s.total_games += 1;
                     s.wins += 1;
@@ -226,7 +235,7 @@ fn App() -> impl IntoView {
                     s.distribution[new_guesses.len() - 1] += 1;
                 });
                 let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap());
-                set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(2000));
+                set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3000));
             } else if new_guesses.len() >= 6 {
                 set_game_lost.set(true);
                 set_stats.update(|s| {
@@ -234,7 +243,7 @@ fn App() -> impl IntoView {
                     s.current_streak = 0;
                 });
                 let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap());
-                set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(2000));
+                set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3000));
             }
         } else if key == "DELETE" {
             set_current_input.update(|s| { s.pop(); });
@@ -275,53 +284,71 @@ fn App() -> impl IntoView {
 
     view! {
         <div class="flex h-screen flex-col items-center justify-between py-4 sm:py-8 overflow-hidden transition-all duration-500 text-black dark:text-white px-2">
-            <div class="w-full max-w-[550px] flex flex-col items-center">
-                <nav class="w-full flex justify-between items-center px-4 mb-4 sm:mb-8 py-3 glass-pad">
-                    <div class="flex gap-3">
-                        <button on:click=move |_| set_show_stats.set(true) class="hover:scale-110 transition-transform">
+            <div class="w-full max-w-[600px] flex flex-col items-center">
+                <nav class="w-full grid grid-cols-3 items-center px-4 mb-4 sm:mb-8">
+                    // Left Buttons
+                    <div class="flex gap-2 justify-start">
+                        <button on:click=move |_| set_show_stats.set(true) class="glass-pad p-2 rounded-xl hover:scale-110 transition-transform shadow-lg">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
-                        <button on:click=move |_| set_show_settings.set(true) class="hover:scale-110 transition-transform">
+                        <button on:click=move |_| set_show_settings.set(true) class="glass-pad p-2 rounded-xl hover:scale-110 transition-transform shadow-lg">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.756 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
                     </div>
-                    <h1 class="text-2xl sm:text-3xl font-black tracking-tighter italic mr-4 title-text transition-all duration-500">"RUSTLE"</h1>
                     
-                    {move || {
-                        let themes = vec!["dark", "red", "orange", "yellow", "green", "blue", "purple", "light"];
-                        let current = theme.get();
-                        let index = themes.iter().position(|&t| t == current).unwrap_or(0);
-                        view! {
-                            <input 
-                                type="range" 
-                                min="0" 
-                                max="7" 
-                                step="1" 
-                                value=index
-                                class="theme-slider"
-                                on:input=move |ev| {
-                                    let val = event_target_value(&ev).parse::<usize>().unwrap_or(0);
-                                    set_theme.set(themes[val].to_string());
+                    // Centered Title
+                    <h1 class="text-2xl sm:text-4xl font-black tracking-tighter italic text-center title-text">"RUSTLE"</h1>
+                    
+                    // Right Slider
+                    <div class="flex justify-end">
+                        <div class="glass-pad p-2 rounded-3xl flex items-center shadow-lg">
+                            {move || {
+                                let themes = vec!["dark", "red", "orange", "yellow", "green", "blue", "purple", "light"];
+                                let current = theme.get();
+                                let index = themes.iter().position(|&t| t == current).unwrap_or(0);
+                                view! {
+                                    <input 
+                                        type="range" 
+                                        min="0" 
+                                        max="7" 
+                                        step="1" 
+                                        value=index
+                                        class="theme-slider"
+                                        on:input=move |ev| {
+                                            let val = event_target_value(&ev).parse::<usize>().unwrap_or(0);
+                                            set_theme.set(themes[val].to_string());
+                                        }
+                                    />
                                 }
-                            />
-                        }
-                    }}
+                            }}
+                        </div>
+                    </div>
                 </nav>
 
                 <div class="glass-pad p-4 sm:p-8">
                     <div class="flex flex-col gap-1 sm:gap-2">
-                        {move || guesses.get().into_iter().map(|g| { view! { <Row guess=g solution=solution_data.get().solution is_revealing=true is_jiggling=Signal::derive(|| false) /> } }).collect_view()}
+                        {move || {
+                            let gs = guesses.get();
+                            let sol = solution_data.get().solution;
+                            let is_rev = is_revealing_row.get();
+                            let len = gs.len();
+                            gs.into_iter().enumerate().map(move |(i, g)| { 
+                                view! { <Row guess=g solution=sol.clone() is_revealing=is_rev && i == len-1 is_jiggling=Signal::derive(|| false) /> } 
+                            }).collect_view()
+                        }}
+                        
                         {move || if guesses.get().len() < 6 && !game_won.get() { 
                             let current_input = current_input.get();
                             let solution = solution_data.get().solution;
                             view! { <Row guess=current_input solution=solution is_revealing=false is_jiggling=Signal::derive(move || jiggle_row.get()) /> }.into_view() 
                         } else { view! {}.into_view() }}
+                        
                         {move || (0..(6_usize.saturating_sub(guesses.get().len() + if guesses.get().len() < 6 && !game_won.get() { 1 } else { 0 }))).map(|_| { view! { <Row guess="".to_string() solution="".to_string() is_revealing=false is_jiggling=Signal::derive(|| false) /> } }).collect_view()}
                     </div>
                 </div>
             </div>
 
-            <div class="mt-4 w-full max-w-[550px] px-4 py-4 glass-pad flex flex-col items-center text-white">
+            <div class="mt-4 w-full max-w-[550px] px-4 py-4 glass-pad flex flex-col items-center text-white shadow-2xl">
                 {move || {
                     let rows = vec![vec!['Q','W','E','R','T','Y','U','I','O','P'], vec!['A','S','D','F','G','H','J','K','L'], vec!['Z','X','C','V','B','N','M']];
                     rows.into_iter().enumerate().map(|(i, row)| {
@@ -353,17 +380,17 @@ fn App() -> impl IntoView {
             <Modal title="Statistics".to_string() is_open=show_stats set_is_open=set_show_stats>
                 <div class="flex flex-col items-center text-center">
                     <div class="flex w-full justify-around mb-6">
-                        <div><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70">"Played"</div></div>
-                        <div><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70">"Win %"</div></div>
-                        <div><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70">"Streak"</div></div>
-                        <div><div class="text-3xl font-black">{move || stats.get().best_streak}</div><div class="text-xs uppercase opacity-70">"Best"</div></div>
+                        <div><div class="text-3xl font-black text-white">{move || stats.get().total_games}</div><div class="text-xs uppercase opacity-70 text-white">"Played"</div></div>
+                        <div><div class="text-3xl font-black text-white">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-xs uppercase opacity-70 text-white">"Win %"</div></div>
+                        <div><div class="text-3xl font-black text-white">{move || stats.get().current_streak}</div><div class="text-xs uppercase opacity-70 text-white">"Streak"</div></div>
+                        <div><div class="text-3xl font-black text-white">{move || stats.get().best_streak}</div><div class="text-xs uppercase opacity-70 text-white">"Best"</div></div>
                     </div>
-                    <h3 class="text-sm font-bold uppercase mb-2">"Guess Distribution"</h3>
+                    <h3 class="text-sm font-bold uppercase mb-2 text-white">"Guess Distribution"</h3>
                     <div class="w-full space-y-1 mb-6 text-left">
                         {move || stats.get().distribution.iter().enumerate().map(|(i, count)| {
                             let wins = stats.get().wins;
                             let width = if wins > 0 { (*count as f32 * 100.0 / wins as f32).max(10.0) } else { 10.0 };
-                            view! { <div class="flex items-center gap-2 text-xs"><div class="w-2">{i+1}</div><div class="bg-gray-500 text-white font-bold p-0.5 rounded text-right pr-2 transition-all duration-1000" style=format!("width: {}%", width)>{*count}</div></div> }
+                            view! { <div class="flex items-center gap-2 text-xs text-white"><div class="w-2">{i+1}</div><div class="bg-gray-500 text-white font-bold p-0.5 rounded text-right pr-2 transition-all duration-1000" style=format!("width: {}%", width)>{*count}</div></div> }
                         }).collect_view()}
                     </div>
                     <Show when=move || game_won.get() || game_lost.get()>
@@ -376,7 +403,7 @@ fn App() -> impl IntoView {
 
             <Modal title="Settings".to_string() is_open=show_settings set_is_open=set_show_settings>
                 <div class="flex flex-col gap-4">
-                    <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30">
+                    <div class="flex justify-between items-center py-2 border-b border-gray-500 border-opacity-30 text-white">
                         <div>
                             <div class="font-bold">"Hard Mode"</div>
                             <div class="text-xs opacity-70">"Strict validation of clues"</div>
@@ -388,7 +415,7 @@ fn App() -> impl IntoView {
                             <div class=move || format!("absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 {}", if hard_mode.get() { "left-7" } else { "left-1" }) />
                         </button>
                     </div>
-                    <div class="text-xs opacity-50 italic">"Rustle Version 1.0.0 (Pure Rust)"</div>
+                    <div class="text-xs opacity-50 italic text-white text-center mt-2">"Rustle Version 1.0.0 (Pure Rust)"</div>
                 </div>
             </Modal>
 

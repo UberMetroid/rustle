@@ -132,10 +132,10 @@ pub fn get_ai_word_list() -> JsValue {
     serde_wasm_bindgen::to_value(&list).unwrap_or(JsValue::NULL)
 }
 
-fn calculate_status_mask(solution: &str, guess: &str) -> u8 {
+fn calculate_status_mask(solution: &str, guess: &str) -> u16 {
     let sol_chars: Vec<char> = solution.chars().collect();
     let guess_chars: Vec<char> = guess.chars().collect();
-    let mut mask: u8 = 0;
+    let mut mask: u16 = 0;
     let mut sol_used = [false; 5];
     let mut guess_used = [false; 5];
 
@@ -166,7 +166,7 @@ fn calculate_status_mask(solution: &str, guess: &str) -> u8 {
 pub fn get_adversarial_step(guess: &str, current_pool: JsValue) -> JsValue {
     let pool: Vec<String> = serde_wasm_bindgen::from_value(current_pool).unwrap_or_default();
 
-    let mut buckets: HashMap<u8, Vec<String>> = HashMap::new();
+    let mut buckets: HashMap<u16, Vec<String>> = HashMap::new();
 
     for sol in &pool {
         let mask = calculate_status_mask(sol, guess);
@@ -198,4 +198,35 @@ pub fn get_adversarial_step(guess: &str, current_pool: JsValue) -> JsValue {
         new_pool: best_bucket,
     };
     serde_wasm_bindgen::to_value(&result).unwrap_or(JsValue::NULL)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_calculate_status_mask() {
+        let mask = calculate_status_mask("apple", "maple");
+        
+        let mut expected_mask: u16 = 0;
+        // m -> absent -> 0
+        // a -> present -> 1
+        expected_mask |= 1 << 2;
+        // p -> correct -> 2
+        expected_mask |= 2 << (2 * 2);
+        // l -> correct -> 2
+        expected_mask |= 2 << (3 * 2);
+        // e -> correct -> 2
+        expected_mask |= 2 << (4 * 2);
+
+        assert_eq!(mask, expected_mask);
+        
+        // Ensure no overflow!
+        let mask_all_correct = calculate_status_mask("words", "words");
+        let mut all_correct_mask: u16 = 0;
+        for i in 0..5 {
+            all_correct_mask |= 2 << (i * 2);
+        }
+        assert_eq!(mask_all_correct, all_correct_mask);
+    }
 }

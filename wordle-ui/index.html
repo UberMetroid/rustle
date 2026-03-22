@@ -6,8 +6,19 @@
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta property="og:title" content="RUSTLE">
+    <meta property="og:description" content="A brutal, high-performance WebAssembly engine masquerading as a Wordle clone.">
+    <meta property="og:image" content="/icons/icon-512x512.png">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <title>RUSTLE</title>
+    <style>
+        @media (prefers-reduced-motion: reduce) {
+            .animate-pulse, .jiggle, .power-ring {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+    </style>
     <link data-trunk rel="tailwind-css" href="style/tailwind.css">
     <link data-trunk rel="copy-file" href="public/manifest.json">
     <link data-trunk rel="copy-file" href="public/sw.js">

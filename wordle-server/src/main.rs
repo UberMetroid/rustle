@@ -9,8 +9,9 @@ use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::Row;
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
+use tower_governor::{governor::GovernorConfigBuilder, key_extractor::SmartIpKeyExtractor, GovernorLayer};
 use tower_http::cors::CorsLayer;
+use tower_http::compression::CompressionLayer;
 use tower_http::services::ServeDir;
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -168,10 +169,14 @@ async fn main() {
         GovernorConfigBuilder::default()
             .per_millisecond(500)
             .burst_size(10)
+            .key_extractor(SmartIpKeyExtractor)
             .finish()
             .unwrap_or_else(|| {
                 // Fallback to a safe default if the builder fails
-                GovernorConfigBuilder::default().finish().unwrap()
+                GovernorConfigBuilder::default()
+                    .key_extractor(SmartIpKeyExtractor)
+                    .finish()
+                    .unwrap()
             }),
     );
 
@@ -184,6 +189,7 @@ async fn main() {
             }),
         )
         .fallback_service(ServeDir::new("dist"))
+        .layer(CompressionLayer::new())
         .layer(CorsLayer::permissive())
         .with_state(state);
 

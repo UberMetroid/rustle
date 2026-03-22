@@ -201,7 +201,20 @@ fn App() -> impl IntoView {
     });
 
     let start_ng_plus = move || {
-        if !daily_game_done.get() { return; }
+        if !daily_game_done.get() {
+            let msgs = vec![
+                "FINISH THE DAILY GAME FIRST, GENIUS.",
+                "ONE THING AT A TIME.",
+                "EAGER, ARE WE? DO THE DAILY FIRST.",
+                "ACCESS DENIED. DAILY GAME INCOMPLETE.",
+                "BEAT THE DAILY TO UNLOCK.",
+                "NOT YET, CHAMP.",
+                "WALK BEFORE YOU RUN."
+            ];
+            set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
+            set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(3000));
+            return;
+        }
         let was_active = is_ng_plus.get();
         set_is_ng_plus.set(true); set_hard_mode.set(true); set_guesses.set(vec![]); set_guess_statuses_vec.set(vec![]); set_game_won.set(false); set_game_lost.set(false); set_current_input.set(String::new()); set_session_points.set(0);
         if !was_active { let msgs = vec!["NEW GAME+ ENABLED.", "PROTOCOL INITIALIZED."]; set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string()); }

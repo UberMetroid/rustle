@@ -1,9 +1,9 @@
-use wasm_bindgen::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
+use wasm_bindgen::prelude::*;
 
 mod words;
-pub use words::{WORDS, VALID_GUESSES};
+pub use words::{VALID_GUESSES, WORDS};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct SolutionData {
@@ -26,12 +26,12 @@ pub fn get_solution(timestamp: u64) -> JsValue {
     let day = timestamp / 86400000;
     let index = (day % WORDS.len() as u64) as usize;
     let tomorrow = (day + 1) * 86400000;
-    
+
     let sol = SolutionData {
         solution: WORDS[index].to_uppercase(),
         solution_game_date: day,
         solution_index: index as i64,
-        tomorrow
+        tomorrow,
     };
     serde_wasm_bindgen::to_value(&sol).unwrap_or(JsValue::NULL)
 }
@@ -81,24 +81,37 @@ pub fn calculate_statuses(solution: &str, guess: &str) -> Vec<String> {
 #[wasm_bindgen]
 pub fn check_hard_mode(guess: &str, prev_guesses: JsValue, prev_statuses: JsValue) -> String {
     let prev_g: Vec<String> = serde_wasm_bindgen::from_value(prev_guesses).unwrap_or_default();
-    let prev_s: Vec<Vec<String>> = serde_wasm_bindgen::from_value(prev_statuses).unwrap_or_default();
+    let prev_s: Vec<Vec<String>> =
+        serde_wasm_bindgen::from_value(prev_statuses).unwrap_or_default();
 
     let guess_chars: Vec<char> = guess.chars().collect();
 
     for (pg, statuses) in prev_g.iter().zip(prev_s.iter()) {
         let prev_chars: Vec<char> = pg.chars().collect();
-        
+
         for i in 0..5 {
-            if i < prev_chars.len() && i < statuses.len() && statuses[i] == "correct"
-                && (i >= guess_chars.len() || guess_chars[i] != prev_chars[i]) {
-                    let nth = match i { 0 => "1ST", 1 => "2ND", 2 => "3RD", 3 => "4TH", _ => "5TH" };
-                    return format!("{} LETTER MUST BE {}.", nth, prev_chars[i]);
-                }
+            if i < prev_chars.len()
+                && i < statuses.len()
+                && statuses[i] == "correct"
+                && (i >= guess_chars.len() || guess_chars[i] != prev_chars[i])
+            {
+                let nth = match i {
+                    0 => "1ST",
+                    1 => "2ND",
+                    2 => "3RD",
+                    3 => "4TH",
+                    _ => "5TH",
+                };
+                return format!("{} LETTER MUST BE {}.", nth, prev_chars[i]);
+            }
         }
 
         let mut required_counts = HashMap::new();
         for i in 0..5 {
-            if i < prev_chars.len() && i < statuses.len() && (statuses[i] == "correct" || statuses[i] == "present") {
+            if i < prev_chars.len()
+                && i < statuses.len()
+                && (statuses[i] == "correct" || statuses[i] == "present")
+            {
                 *required_counts.entry(prev_chars[i]).or_insert(0) += 1;
             }
         }
@@ -182,7 +195,7 @@ pub fn get_adversarial_step(guess: &str, current_pool: JsValue) -> JsValue {
 
     let result = AdversarialResult {
         pattern,
-        new_pool: best_bucket
+        new_pool: best_bucket,
     };
     serde_wasm_bindgen::to_value(&result).unwrap_or(JsValue::NULL)
 }

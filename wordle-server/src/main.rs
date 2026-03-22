@@ -1,17 +1,17 @@
 use axum::{
-    extract::{State, Json},
+    extract::{Json, State},
     routing::{get, post},
     Router,
 };
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use tower_http::services::ServeDir;
-use tower_http::cors::CorsLayer;
 use chrono::Utc;
-use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
-use std::net::SocketAddr;
+use serde::{Deserialize, Serialize};
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::Row;
+use std::collections::HashMap;
+use std::net::SocketAddr;
+use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
+use tower_http::cors::CorsLayer;
+use tower_http::services::ServeDir;
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 struct TeamData {
@@ -64,9 +64,10 @@ struct AppState {
 #[tokio::main]
 async fn main() {
     let _ = dotenvy::dotenv().ok();
-    
-    let db_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:data/wordle.db?mode=rwc".to_string());
-    
+
+    let db_url = std::env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "sqlite:data/wordle.db?mode=rwc".to_string());
+
     // Ensure data directory exists if using the default path
     if db_url.starts_with("sqlite:data/") {
         let _ = std::fs::create_dir_all("data");
@@ -75,7 +76,9 @@ async fn main() {
     // Initialize SQLite Database
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
-        .connect(&db_url).await.expect("Failed to connect to SQLite DB");
+        .connect(&db_url)
+        .await
+        .expect("Failed to connect to SQLite DB");
 
     // Initialize Schema
     sqlx::query(
@@ -84,23 +87,32 @@ async fn main() {
             points INTEGER DEFAULT 0,
             players INTEGER DEFAULT 0,
             yesterday_total INTEGER DEFAULT 0
-        );"
-    ).execute(&pool).await.unwrap();
+        );",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS sys_state (
             id INTEGER PRIMARY KEY CHECK (id = 1),
             current_date TEXT,
             yesterday_winner TEXT
-        );"
-    ).execute(&pool).await.unwrap();
+        );",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS players (
             player_id TEXT PRIMARY KEY,
             team TEXT
-        );"
-    ).execute(&pool).await.unwrap();
+        );",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
 
     // Ensure all teams exist
     for team in ["red", "orange", "yellow", "green", "blue"] {
@@ -123,20 +135,27 @@ async fn main() {
         loop {
             tokio::time::sleep(std::time::Duration::from_secs(10)).await;
             let current_date = Utc::now().format("%Y-%m-%d").to_string();
-            
-            if let Ok(row) = sqlx::query("SELECT current_date FROM sys_state WHERE id = 1").fetch_one(&pool_clone).await {
+
+            if let Ok(row) = sqlx::query("SELECT current_date FROM sys_state WHERE id = 1")
+                .fetch_one(&pool_clone)
+                .await
+            {
                 let db_date: String = row.get("current_date");
                 if db_date != current_date {
-                    if let Ok(winner_row) = sqlx::query("SELECT name FROM teams ORDER BY points DESC LIMIT 1").fetch_one(&pool_clone).await {
+                    if let Ok(winner_row) =
+                        sqlx::query("SELECT name FROM teams ORDER BY points DESC LIMIT 1")
+                            .fetch_one(&pool_clone)
+                            .await
+                    {
                         let winner: String = winner_row.get("name");
-                        
+
                         if let Ok(mut tx) = pool_clone.begin().await {
                             let _ = sqlx::query("UPDATE sys_state SET current_date = ?, yesterday_winner = ? WHERE id = 1")
                                 .bind(&current_date).bind(&winner).execute(&mut *tx).await;
-                            
+
                             let _ = sqlx::query("UPDATE teams SET yesterday_total = points, points = 0, players = 0").execute(&mut *tx).await;
                             let _ = sqlx::query("DELETE FROM players").execute(&mut *tx).await;
-                            
+
                             let _ = tx.commit().await;
                         }
                     }
@@ -150,19 +169,29 @@ async fn main() {
             .per_millisecond(500)
             .burst_size(10)
             .finish()
-            .unwrap()
+            .unwrap(),
     );
 
     let app = Router::new()
         .route("/global-stats.json", get(get_stats))
-        .route("/api/score", post(submit_score).layer(GovernorLayer { config: Box::leak(governor_conf) }))
+        .route(
+            "/api/score",
+            post(submit_score).layer(GovernorLayer {
+                config: Box::leak(governor_conf),
+            }),
+        )
         .fallback_service(ServeDir::new("dist"))
         .layer(CorsLayer::permissive())
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:7583").await.unwrap();
     println!("Listening on port 7583");
-    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await.unwrap();
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
+    .unwrap();
 }
 
 async fn get_stats(State(state): State<AppState>) -> Json<GlobalStats> {
@@ -171,18 +200,25 @@ async fn get_stats(State(state): State<AppState>) -> Json<GlobalStats> {
         ..Default::default()
     };
 
-    if let Ok(row) = sqlx::query("SELECT current_date, yesterday_winner FROM sys_state WHERE id = 1").fetch_one(&state.pool).await {
+    if let Ok(row) =
+        sqlx::query("SELECT current_date, yesterday_winner FROM sys_state WHERE id = 1")
+            .fetch_one(&state.pool)
+            .await
+    {
         stats.current_date = row.get("current_date");
         stats.yesterday_winner = row.get("yesterday_winner");
     }
 
-    if let Ok(rows) = sqlx::query("SELECT name, points, players, yesterday_total FROM teams").fetch_all(&state.pool).await {
+    if let Ok(rows) = sqlx::query("SELECT name, points, players, yesterday_total FROM teams")
+        .fetch_all(&state.pool)
+        .await
+    {
         for row in rows {
             let name: String = row.get("name");
             let pts: i64 = row.get("points");
             let plyrs: i64 = row.get("players");
             let yt: i64 = row.get("yesterday_total");
-            
+
             let t_data = TeamData {
                 points: pts as i32,
                 players: plyrs as u32,
@@ -199,7 +235,7 @@ async fn get_stats(State(state): State<AppState>) -> Json<GlobalStats> {
             }
         }
     }
-    
+
     Json(stats)
 }
 
@@ -207,35 +243,45 @@ async fn submit_score(State(state): State<AppState>, Json(payload): Json<ScorePa
     if payload.points_delta < -5 || payload.points_delta > 10 {
         return;
     }
-    
+
     let valid_teams = ["red", "orange", "yellow", "green", "blue"];
     if !valid_teams.contains(&payload.team.as_str()) {
         return;
     }
 
     if let Ok(mut tx) = state.pool.begin().await {
-        let prev_team_opt: Option<String> = sqlx::query("SELECT team FROM players WHERE player_id = ?")
-            .bind(&payload.player_id)
-            .fetch_optional(&mut *tx).await.ok().flatten().map(|r| r.get("team"));
+        let prev_team_opt: Option<String> =
+            sqlx::query("SELECT team FROM players WHERE player_id = ?")
+                .bind(&payload.player_id)
+                .fetch_optional(&mut *tx)
+                .await
+                .ok()
+                .flatten()
+                .map(|r| r.get("team"));
 
         if prev_team_opt.as_deref() != Some(payload.team.as_str()) {
             if let Some(prev) = prev_team_opt {
-                let _ = sqlx::query("UPDATE teams SET players = MAX(0, players - 1) WHERE name = ?")
-                    .bind(prev)
-                    .execute(&mut *tx).await;
+                let _ =
+                    sqlx::query("UPDATE teams SET players = MAX(0, players - 1) WHERE name = ?")
+                        .bind(prev)
+                        .execute(&mut *tx)
+                        .await;
             }
             let _ = sqlx::query("INSERT INTO players (player_id, team) VALUES (?, ?) ON CONFLICT(player_id) DO UPDATE SET team = ?")
                 .bind(&payload.player_id).bind(&payload.team).bind(&payload.team)
                 .execute(&mut *tx).await;
-            
+
             let _ = sqlx::query("UPDATE teams SET players = players + 1 WHERE name = ?")
                 .bind(&payload.team)
-                .execute(&mut *tx).await;
+                .execute(&mut *tx)
+                .await;
         }
 
         let _ = sqlx::query("UPDATE teams SET points = points + ? WHERE name = ?")
-            .bind(payload.points_delta).bind(&payload.team)
-            .execute(&mut *tx).await;
+            .bind(payload.points_delta)
+            .bind(&payload.team)
+            .execute(&mut *tx)
+            .await;
 
         let _ = tx.commit().await;
     }

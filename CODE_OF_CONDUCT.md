@@ -1,127 +1,42 @@
-# Contributor Covenant Code of Conduct
+# Core Principles of Conduct
 
-## Our Pledge
+## The Physics of Interaction
 
-We as members, contributors, and leaders pledge to make participation in our
-community a harassment-free experience for everyone, regardless of age, body
-size, visible or invisible disability, ethnicity, sex characteristics, gender
-identity and expression, level of experience, education, socio-economic status,
-nationality, personal appearance, race, religion, or sexual identity
-and orientation.
+We are all biological agents navigating an entropic universe. Progress—whether in code, culture, or personal growth—is fundamentally driven by a recursive algorithm of trial, error, and refinement. Perfection is mathematically impossible; continuous iteration is the only reliable strategy for survival and improvement.
 
-We pledge to act and interact in ways that contribute to an open, welcoming,
-diverse, inclusive, and healthy community.
+This community is a shared computational space. To maximize our collective output and minimize destructive friction, we operate on the following first principles:
 
-## Our Standards
+### 1. Learning Requires Failure
+No agent operates with perfect information. Mistakes, bad code, and ignorant questions are not signs of malice; they are the required inputs for the learning algorithm. 
+- **For the Teacher:** Do not mock the ignorant. Provide the missing data points clearly and concisely.
+- **For the Student:** Do not hide your errors. Expose your ignorance so the system can correct it. Accept feedback not as a personal attack, but as a necessary patch to your internal model.
 
-Examples of behavior that contributes to a positive environment for our
-community include:
+### 2. Signal Over Noise
+In a complex system, noise is the enemy of progress. Emotional outbursts, ad hominem attacks, and petty tribalism are high-entropy events that degrade the signal.
+- Communicate with precision.
+- Assume good faith until empirically proven otherwise. 
+- If a conversation devolves into a purely emotional feedback loop, step away and let the system cool down before re-engaging.
 
-* Demonstrating empathy and kindness toward other people
-* Being respectful of differing opinions, viewpoints, and experiences
-* Giving and gracefully accepting constructive feedback
-* Accepting responsibility and apologizing to those affected by our mistakes,
-  and learning from the experience
-* Focusing on what is best not just for us as individuals, but for the
-  overall community
+### 3. Objective Truth Over Ego
+Code either compiles or it doesn't. Systems either scale or they break. 
+- We evaluate contributions based on empirical reality and measurable outcomes, not on the identity, background, or social status of the contributor.
+- You are not your code. When your ideas are dismantled, do not defend them out of pride. Discard them and adopt the superior model.
 
-Examples of unacceptable behavior include:
+## Boundaries of the Sandbox
 
-* The use of sexualized language or imagery, and sexual attention or
-  advances of any kind
-* Trolling, insulting or derogatory comments, and personal or political attacks
-* Public or private harassment
-* Publishing others' private information, such as a physical or email
-  address, without their explicit permission
-* Other conduct which could reasonably be considered inappropriate in a
-  professional setting
+While failure is expected, intentional sabotage of the shared environment is not. The following behaviors introduce unacceptable levels of destructive friction and will result in immediate removal from the system:
 
-## Enforcement Responsibilities
+1. **Malicious Sabotage:** Intentional injection of destructive code, security vulnerabilities, or infrastructure abuse.
+2. **Tribal Warfare:** Organizing harassment, doxxing, or sustained personal attacks against other agents.
+3. **Biological Essentialism:** Attacking or dismissing individuals based on their immutable biological traits or background parameters.
 
-Community leaders are responsible for clarifying and enforcing our standards of
-acceptable behavior and will take appropriate and fair corrective action in
-response to any behavior that they deem inappropriate, threatening, offensive,
-or harmful.
+## System Enforcement
 
-Community leaders have the right and responsibility to remove, edit, or reject
-comments, commits, code, wiki edits, issues, and other contributions that are
-not aligned to this Code of Conduct, and will communicate reasons for moderation
-decisions when appropriate.
+If an agent continuously generates destructive friction that threatens the integrity of the community, the maintainers will intervene. 
 
-## Scope
+**Enforcement Protocol:**
+1. **Calibration:** A direct, private request to adjust behavior.
+2. **Quarantine:** Temporary suspension of write-access to the repository and community spaces to force a cool-down period.
+3. **Termination:** Permanent ban from the project.
 
-This Code of Conduct applies within all community spaces, and also applies when
-an individual is officially representing the community in public spaces.
-Examples of representing our community include using an official e-mail address,
-posting via an official social media account, or acting as an appointed
-representative at an online or offline event.
-
-## Enforcement
-
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement by opening an issue or contacting the repository owner directly.
-All complaints will be reviewed and investigated promptly and fairly.
-
-All community leaders are obligated to respect the privacy and security of the
-reporter of any incident.
-
-## Enforcement Guidelines
-
-Community leaders will follow these Community Impact Guidelines in determining
-the consequences for any action they deem in violation of this Code of Conduct:
-
-### 1. Correction
-
-**Community Impact**: Use of inappropriate language or other behavior deemed
-unprofessional or unwelcome in the community.
-
-**Consequence**: A private, written warning from community leaders, providing
-clarity around the nature of the violation and an explanation of why the
-behavior was inappropriate. A public apology may be requested.
-
-### 2. Warning
-
-**Community Impact**: A violation through a single incident or series
-of actions.
-
-**Consequence**: A warning with consequences for continued behavior. No
-interaction with the people involved, including unsolicited interaction with
-those enforcing the Code of Conduct, for a specified period of time. This
-includes avoiding interactions in community spaces as well as external channels
-like social media. Violating these terms may lead to a temporary or
-permanent ban.
-
-### 3. Temporary Ban
-
-**Community Impact**: A serious violation of community standards, including
-sustained inappropriate behavior.
-
-**Consequence**: A temporary ban from any sort of interaction or public
-communication with the community for a specified period of time. No public or
-private interaction with the people involved, including unsolicited interaction
-with those enforcing the Code of Conduct, is allowed during this period.
-Violating these terms may lead to a permanent ban.
-
-### 4. Permanent Ban
-
-**Community Impact**: Demonstrating a pattern of violation of community
-standards, including sustained inappropriate behavior,  harassment of an
-individual, or aggression toward or disparagement of classes of individuals.
-
-**Consequence**: A permanent ban from any sort of public interaction within
-the community.
-
-## Attribution
-
-This Code of Conduct is adapted from the [Contributor Covenant][homepage],
-version 2.0, available at
-https://www.contributor-covenant.org/version/2/0/code_of_conduct.html.
-
-Community Impact Guidelines were inspired by [Mozilla's code of conduct
-enforcement ladder](https://github.com/mozilla/diversity).
-
-[homepage]: https://www.contributor-covenant.org
-
-For answers to common questions about this code of conduct, see the FAQ at
-https://www.contributor-covenant.org/faq. Translations are available at
-https://www.contributor-covenant.org/translations.
+If you encounter behavior that violates these principles, escalate the issue by opening a private channel or issue directly with the repository maintainers. The system will review the logs and take empirical action.

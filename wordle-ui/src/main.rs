@@ -278,6 +278,8 @@ fn App() -> impl IntoView {
             if let Ok(Some(t)) = storage.get_item("color-theme") { 
                 set_theme.set(t.clone()); 
                 post_score(t, 0); 
+            } else {
+                post_score(theme.get(), 0);
             }
             if let Ok(Some(h)) = storage.get_item("hard-mode") { set_hard_mode.set(h == "true"); }
             if let Ok(Some(s)) = storage.get_item("game-stats") { if let Ok(parsed) = serde_json::from_str::<GameStats>(&s) { set_stats.set(parsed); } }

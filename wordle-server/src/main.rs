@@ -4,17 +4,16 @@ use axum::{
     Router,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap};
-use std::sync::Arc;
-use tokio::sync::RwLock;
+use std::collections::HashMap;
 use tower_http::services::ServeDir;
 use tower_http::cors::CorsLayer;
 use chrono::Utc;
 use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
 use std::net::SocketAddr;
+use sqlx::sqlite::SqlitePoolOptions;
+use sqlx::Row;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 struct TeamData {
     pub points: i32,
     pub players: u32,
@@ -57,56 +56,81 @@ struct ScorePayload {
     points_delta: i32,
 }
 
-type AppState = Arc<RwLock<GlobalStats>>;
+#[derive(Clone)]
+struct AppState {
+    pool: sqlx::SqlitePool,
+}
 
 #[tokio::main]
 async fn main() {
-    let state_file = "global-stats.json";
-    
-    let initial_state = if let Ok(data) = std::fs::read_to_string(state_file) {
-        serde_json::from_str(&data).unwrap_or_default()
-    } else {
-        GlobalStats::default()
-    };
+    // Initialize SQLite Database
+    let pool = SqlitePoolOptions::new()
+        .max_connections(5)
+        .connect("sqlite:wordle.db?mode=rwc").await.expect("Failed to connect to SQLite DB");
 
-    let state = Arc::new(RwLock::new(initial_state));
+    // Initialize Schema
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS teams (
+            name TEXT PRIMARY KEY,
+            points INTEGER DEFAULT 0,
+            players INTEGER DEFAULT 0,
+            yesterday_total INTEGER DEFAULT 0
+        );"
+    ).execute(&pool).await.unwrap();
 
-    let state_clone = state.clone();
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS sys_state (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            current_date TEXT,
+            yesterday_winner TEXT
+        );"
+    ).execute(&pool).await.unwrap();
+
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS players (
+            player_id TEXT PRIMARY KEY,
+            team TEXT
+        );"
+    ).execute(&pool).await.unwrap();
+
+    // Ensure all teams exist
+    for team in ["red", "orange", "yellow", "green", "blue"] {
+        sqlx::query("INSERT OR IGNORE INTO teams (name, points, players, yesterday_total) VALUES (?, 0, 0, 0)")
+            .bind(team)
+            .execute(&pool).await.unwrap();
+    }
+
+    // Ensure sys_state exists
+    let today = Utc::now().format("%Y-%m-%d").to_string();
+    sqlx::query("INSERT OR IGNORE INTO sys_state (id, current_date, yesterday_winner) VALUES (1, ?, 'none')")
+        .bind(&today)
+        .execute(&pool).await.unwrap();
+
+    let state = AppState { pool: pool.clone() };
+
+    // Background task for Midnight Rollover
+    let pool_clone = pool.clone();
     tokio::spawn(async move {
         loop {
             tokio::time::sleep(std::time::Duration::from_secs(10)).await;
             let current_date = Utc::now().format("%Y-%m-%d").to_string();
-            let mut w = state_clone.write().await;
             
-            if w.current_date != current_date {
-                let mut max_pts = w.yellow.points;
-                let mut winner = "yellow".to_string();
-                
-                let teams = vec![
-                    ("red", w.red.points),
-                    ("green", w.green.points),
-                    ("blue", w.blue.points),
-                    ("orange", w.orange.points),
-                ];
-                for (name, pts) in teams {
-                    if pts > max_pts { max_pts = pts; winner = name.to_string(); }
-                }
-                
-                w.yesterday_winner = winner;
-                w.yellow.yesterday_total = w.yellow.points; w.yellow.points = 0; w.yellow.players = 0;
-                w.red.yesterday_total = w.red.points; w.red.points = 0; w.red.players = 0;
-                w.green.yesterday_total = w.green.points; w.green.points = 0; w.green.players = 0;
-                w.blue.yesterday_total = w.blue.points; w.blue.points = 0; w.blue.players = 0;
-                w.orange.yesterday_total = w.orange.points; w.orange.points = 0; w.orange.players = 0;
-                
-                w.active_players.clear();
-                w.current_date = current_date;
-            }
-            
-            if let Ok(data) = serde_json::to_string(&*w) {
-                let temp_path = "global-stats.json.tmp";
-                if std::fs::write(temp_path, data).is_ok() {
-                    let _ = std::fs::rename(temp_path, state_file);
+            if let Ok(row) = sqlx::query("SELECT current_date FROM sys_state WHERE id = 1").fetch_one(&pool_clone).await {
+                let db_date: String = row.get("current_date");
+                if db_date != current_date {
+                    if let Ok(winner_row) = sqlx::query("SELECT name FROM teams ORDER BY points DESC LIMIT 1").fetch_one(&pool_clone).await {
+                        let winner: String = winner_row.get("name");
+                        
+                        if let Ok(mut tx) = pool_clone.begin().await {
+                            let _ = sqlx::query("UPDATE sys_state SET current_date = ?, yesterday_winner = ? WHERE id = 1")
+                                .bind(&current_date).bind(&winner).execute(&mut *tx).await;
+                            
+                            let _ = sqlx::query("UPDATE teams SET yesterday_total = points, points = 0, players = 0").execute(&mut *tx).await;
+                            let _ = sqlx::query("DELETE FROM players").execute(&mut *tx).await;
+                            
+                            let _ = tx.commit().await;
+                        }
+                    }
                 }
             }
         }
@@ -133,47 +157,75 @@ async fn main() {
 }
 
 async fn get_stats(State(state): State<AppState>) -> Json<GlobalStats> {
-    let mut response = state.read().await.clone();
-    response.server_utc_timestamp = Utc::now().timestamp_millis() as u64;
-    Json(response)
+    let mut stats = GlobalStats::default();
+    stats.server_utc_timestamp = Utc::now().timestamp_millis() as u64;
+
+    if let Ok(row) = sqlx::query("SELECT current_date, yesterday_winner FROM sys_state WHERE id = 1").fetch_one(&state.pool).await {
+        stats.current_date = row.get("current_date");
+        stats.yesterday_winner = row.get("yesterday_winner");
+    }
+
+    if let Ok(rows) = sqlx::query("SELECT name, points, players, yesterday_total FROM teams").fetch_all(&state.pool).await {
+        for row in rows {
+            let name: String = row.get("name");
+            let pts: i64 = row.get("points");
+            let plyrs: i64 = row.get("players");
+            let yt: i64 = row.get("yesterday_total");
+            
+            let t_data = TeamData {
+                points: pts as i32,
+                players: plyrs as u32,
+                yesterday_total: yt as i32,
+            };
+
+            match name.as_str() {
+                "red" => stats.red = t_data,
+                "orange" => stats.orange = t_data,
+                "yellow" => stats.yellow = t_data,
+                "green" => stats.green = t_data,
+                "blue" => stats.blue = t_data,
+                _ => {}
+            }
+        }
+    }
+    
+    Json(stats)
 }
 
 async fn submit_score(State(state): State<AppState>, Json(payload): Json<ScorePayload>) {
     if payload.points_delta < -5 || payload.points_delta > 10 {
         return;
     }
-
-    let mut w = state.write().await;
     
-    let previous_team = w.active_players.insert(payload.player_id.clone(), payload.team.clone());
-    
-    if previous_team.as_deref() != Some(payload.team.as_str()) {
-        if let Some(prev) = previous_team {
-            match prev.as_str() {
-                "yellow" => { w.yellow.players = w.yellow.players.saturating_sub(1); }
-                "red" => { w.red.players = w.red.players.saturating_sub(1); }
-                "green" => { w.green.players = w.green.players.saturating_sub(1); }
-                "blue" => { w.blue.players = w.blue.players.saturating_sub(1); }
-                "orange" => { w.orange.players = w.orange.players.saturating_sub(1); }
-                _ => {}
-            }
-        }
-        match payload.team.as_str() {
-            "yellow" => { w.yellow.players += 1; }
-            "red" => { w.red.players += 1; }
-            "green" => { w.green.players += 1; }
-            "blue" => { w.blue.players += 1; }
-            "orange" => { w.orange.players += 1; }
-            _ => {}
-        }
+    let valid_teams = ["red", "orange", "yellow", "green", "blue"];
+    if !valid_teams.contains(&payload.team.as_str()) {
+        return;
     }
 
-    match payload.team.as_str() {
-        "yellow" => { w.yellow.points += payload.points_delta; }
-        "red" => { w.red.points += payload.points_delta; }
-        "green" => { w.green.points += payload.points_delta; }
-        "blue" => { w.blue.points += payload.points_delta; }
-        "orange" => { w.orange.points += payload.points_delta; }
-        _ => {}
+    if let Ok(mut tx) = state.pool.begin().await {
+        let prev_team_opt: Option<String> = sqlx::query("SELECT team FROM players WHERE player_id = ?")
+            .bind(&payload.player_id)
+            .fetch_optional(&mut *tx).await.ok().flatten().map(|r| r.get("team"));
+
+        if prev_team_opt.as_deref() != Some(payload.team.as_str()) {
+            if let Some(prev) = prev_team_opt {
+                let _ = sqlx::query("UPDATE teams SET players = MAX(0, players - 1) WHERE name = ?")
+                    .bind(prev)
+                    .execute(&mut *tx).await;
+            }
+            let _ = sqlx::query("INSERT INTO players (player_id, team) VALUES (?, ?) ON CONFLICT(player_id) DO UPDATE SET team = ?")
+                .bind(&payload.player_id).bind(&payload.team).bind(&payload.team)
+                .execute(&mut *tx).await;
+            
+            let _ = sqlx::query("UPDATE teams SET players = players + 1 WHERE name = ?")
+                .bind(&payload.team)
+                .execute(&mut *tx).await;
+        }
+
+        let _ = sqlx::query("UPDATE teams SET points = points + ? WHERE name = ?")
+            .bind(payload.points_delta).bind(&payload.team)
+            .execute(&mut *tx).await;
+
+        let _ = tx.commit().await;
     }
 }

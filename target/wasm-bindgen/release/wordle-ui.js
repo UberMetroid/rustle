@@ -358,7 +358,7 @@ function __wbg_get_imports() {
             const ret = arg0.createTextNode(v0);
             return ret;
         },
-        __wbg_cyberpunkVictory_8df1148035022e4d: function(arg0, arg1, arg2, arg3) {
+        __wbg_cyberpunkVictory_5d3e208df0028ee7: function(arg0, arg1, arg2, arg3) {
             var v0 = getCachedStringFromWasm0(arg0, arg1);
             cyberpunkVictory(v0, arg2 !== 0, arg3 !== 0);
         },
@@ -741,22 +741,22 @@ function __wbg_get_imports() {
             return ret;
         },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { dtor_idx: 186, function: Function { arguments: [NamedExternref("MouseEvent")], shim_idx: 187, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h5d463d9a916fa73a, wasm_bindgen__convert__closures_____invoke__h01981ce9e7c543bb);
+            // Cast intrinsic for `Closure(Closure { dtor_idx: 187, function: Function { arguments: [NamedExternref("MouseEvent")], shim_idx: 188, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+            const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h35bb25201d845256, wasm_bindgen__convert__closures_____invoke__h73152f4ee4f6919f);
             return ret;
         },
         __wbindgen_cast_0000000000000002: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { dtor_idx: 355, function: Function { arguments: [NamedExternref("Event")], shim_idx: 356, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+            // Cast intrinsic for `Closure(Closure { dtor_idx: 356, function: Function { arguments: [NamedExternref("Event")], shim_idx: 357, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
             const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h2adb6c10969f4231, wasm_bindgen__convert__closures_____invoke__h10c013d297b780df);
             return ret;
         },
         __wbindgen_cast_0000000000000003: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { dtor_idx: 362, function: Function { arguments: [], shim_idx: 363, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+            // Cast intrinsic for `Closure(Closure { dtor_idx: 363, function: Function { arguments: [], shim_idx: 364, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
             const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h9d7db0927e3d6abf, wasm_bindgen__convert__closures_____invoke__h6498318c6e4b1211);
             return ret;
         },
         __wbindgen_cast_0000000000000004: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { dtor_idx: 368, function: Function { arguments: [Externref], shim_idx: 369, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
+            // Cast intrinsic for `Closure(Closure { dtor_idx: 369, function: Function { arguments: [Externref], shim_idx: 370, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
             const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h6969ced1749e654c, wasm_bindgen__convert__closures_____invoke__h0ced39a78b05ac6f);
             return ret;
         },
@@ -801,8 +801,8 @@ function wasm_bindgen__convert__closures_____invoke__h6498318c6e4b1211(arg0, arg
     wasm.wasm_bindgen__convert__closures_____invoke__h6498318c6e4b1211(arg0, arg1);
 }
 
-function wasm_bindgen__convert__closures_____invoke__h01981ce9e7c543bb(arg0, arg1, arg2) {
-    wasm.wasm_bindgen__convert__closures_____invoke__h01981ce9e7c543bb(arg0, arg1, arg2);
+function wasm_bindgen__convert__closures_____invoke__h73152f4ee4f6919f(arg0, arg1, arg2) {
+    wasm.wasm_bindgen__convert__closures_____invoke__h73152f4ee4f6919f(arg0, arg1, arg2);
 }
 
 function wasm_bindgen__convert__closures_____invoke__h10c013d297b780df(arg0, arg1, arg2) {

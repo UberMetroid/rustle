@@ -1,0 +1,13 @@
+version: 2
+updates:
+  # Maintain Cargo dependencies
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      rust-dependencies:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore(deps): "

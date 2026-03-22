@@ -1,0 +1,35 @@
+name: Rust CI
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: Code Quality & Compilation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install minimal stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: clippy, rustfmt
+          
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        
+      - name: Check Formatting
+        run: cargo fmt --all -- --check
+        
+      - name: Clippy Linter
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+        
+      - name: Check Compilation
+        run: cargo check --workspace

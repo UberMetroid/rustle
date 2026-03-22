@@ -480,7 +480,7 @@ fn App() -> impl IntoView {
 
     view! {
         <div class="flex flex-col h-full bg-app-bg text-app-text overflow-hidden transition-all duration-500 relative">
-            <div class="absolute top-2 right-2 text-[8px] font-mono opacity-30 pointer-events-none z-50">"v1.5.0"</div>
+            <div class="absolute top-2 right-2 text-[8px] font-mono opacity-30 pointer-events-none z-50">"v1.6.0"</div>
             <header class="w-full flex flex-col items-center pt-2 sm:pt-4 shrink-0 relative z-50">
                 <div class="flex items-center gap-3">
                     <h1 class="text-3xl sm:text-5xl font-black tracking-tighter italic text-center title-text uppercase">"RUSTLE"</h1>

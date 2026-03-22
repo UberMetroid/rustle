@@ -1,6 +1,6 @@
-pub mod models;
 pub mod db;
 pub mod handlers;
+pub mod models;
 
 use axum::{
     routing::{get, post},
@@ -8,30 +8,39 @@ use axum::{
 };
 use chrono::Utc;
 use sqlx::Row;
+use std::sync::Arc;
 use tower_governor::{
-    governor::GovernorConfigBuilder, key_extractor::SmartIpKeyExtractor, GovernorLayer,
+    governor::GovernorConfigBuilder,
+    key_extractor::SmartIpKeyExtractor,
+    GovernorLayer,
 };
-use tower_http::compression::CompressionLayer;
-use tower_http::cors::CorsLayer;
-use tower_http::services::ServeDir;
+use tower_http::{
+    compression::CompressionLayer,
+    cors::{Any, CorsLayer},
+    services::ServeDir,
+};
 
-use crate::models::AppState;
 use crate::handlers::{get_stats, submit_score};
+use crate::models::AppState;
 
-/// Creates the Axum router with all routes, state, and middleware configured.
-pub fn create_router(state: AppState) -> Router {
-    let governor_conf = std::sync::Arc::new(
+const RATE_LIMIT_PER_MILLIS: u64 = 500;
+const RATE_LIMIT_BURST: u32 = 10;
+
+fn create_cors_layer() -> CorsLayer {
+    CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any)
+}
+
+pub fn create_router(state: AppState, dist_path: &str) -> Router {
+    let governor_conf = Arc::new(
         GovernorConfigBuilder::default()
-            .per_millisecond(500)
-            .burst_size(10)
+            .per_millisecond(RATE_LIMIT_PER_MILLIS)
+            .burst_size(RATE_LIMIT_BURST)
             .key_extractor(SmartIpKeyExtractor)
             .finish()
-            .unwrap_or_else(|| {
-                GovernorConfigBuilder::default()
-                    .key_extractor(SmartIpKeyExtractor)
-                    .finish()
-                    .unwrap()
-            }),
+            .unwrap(),
     );
 
     Router::new()
@@ -42,43 +51,71 @@ pub fn create_router(state: AppState) -> Router {
                 config: governor_conf,
             }),
         )
-        .fallback_service(ServeDir::new("dist"))
+        .fallback_service(ServeDir::new(dist_path))
         .layer(CompressionLayer::new())
-        .layer(CorsLayer::permissive())
+        .layer(create_cors_layer())
         .with_state(state)
 }
 
-/// Spawns a long-running background task that checks every 10 seconds if the date has changed.
-/// If a new day is detected, it archives team points and resets scores.
 pub fn spawn_rollover_task(pool: sqlx::SqlitePool) {
     tokio::spawn(async move {
+        let mut last_processed_date: Option<String> = None;
+
         loop {
             tokio::time::sleep(std::time::Duration::from_secs(10)).await;
             let current_date = Utc::now().format("%Y-%m-%d").to_string();
 
-            if let Ok(row) = sqlx::query("SELECT current_date FROM sys_state WHERE id = 1")
-                .fetch_one(&pool)
-                .await
-            {
+            if last_processed_date.as_ref() == Some(&current_date) {
+                continue;
+            }
+
+            let result: Option<(String, String)> = sqlx::query(
+                "SELECT current_date, yesterday_winner FROM sys_state WHERE id = 1"
+            )
+            .fetch_optional(&pool)
+            .await
+            .ok()
+            .flatten()
+            .map(|row| {
                 let db_date: String = row.get("current_date");
-                if db_date != current_date {
-                    if let Ok(winner_row) =
-                        sqlx::query("SELECT name FROM teams ORDER BY points DESC LIMIT 1")
-                            .fetch_one(&pool)
-                            .await
-                    {
-                        let winner: String = winner_row.get("name");
+                let winner: String = row.get("yesterday_winner");
+                (db_date, winner)
+            });
 
-                        if let Ok(mut tx) = pool.begin().await {
-                            let _ = sqlx::query("UPDATE sys_state SET current_date = ?, yesterday_winner = ? WHERE id = 1")
-                                .bind(&current_date).bind(&winner).execute(&mut *tx).await;
+            if let Some((db_date, _)) = result {
+                if db_date == current_date {
+                    last_processed_date = Some(current_date);
+                    continue;
+                }
+            }
 
-                            let _ = sqlx::query("UPDATE teams SET yesterday_total = points, points = 0, players = 0").execute(&mut *tx).await;
-                            let _ = sqlx::query("DELETE FROM players").execute(&mut *tx).await;
+            if let Ok(winner_row) = sqlx::query(
+                "SELECT name FROM teams ORDER BY points DESC LIMIT 1"
+            )
+            .fetch_one(&pool)
+            .await
+            {
+                let winner: String = winner_row.get("name");
 
-                            let _ = tx.commit().await;
-                        }
-                    }
+                if let Ok(mut tx) = pool.begin().await {
+                    let _ = sqlx::query(
+                        "UPDATE sys_state SET current_date = ?, yesterday_winner = ? WHERE id = 1"
+                    )
+                    .bind(&current_date)
+                    .bind(&winner)
+                    .execute(&mut *tx)
+                    .await;
+
+                    let _ = sqlx::query(
+                        "UPDATE teams SET yesterday_total = points, points = 0, players = 0"
+                    )
+                    .execute(&mut *tx)
+                    .await;
+
+                    let _ = sqlx::query("DELETE FROM players").execute(&mut *tx).await;
+
+                    let _ = tx.commit().await;
+                    last_processed_date = Some(current_date);
                 }
             }
         }

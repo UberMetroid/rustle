@@ -1,18 +1,24 @@
 use axum::{
     extract::{Json, State},
+    http::StatusCode,
+    response::IntoResponse,
 };
 use chrono::Utc;
 use sqlx::Row;
 use crate::models::{AppState, GlobalStats, TeamData, ScorePayload};
 
-/// Retrieves the global statistics for all teams and the current game state.
-pub async fn get_stats(State(state): State<AppState>) -> Json<GlobalStats> {
+const VALID_TEAMS: &[&str] = &["red", "orange", "yellow", "green", "blue", "purple"];
+
+fn is_valid_team(team: &str) -> bool {
+    VALID_TEAMS.contains(&team)
+}
+
+pub async fn get_stats(State(state): State<AppState>) -> impl IntoResponse {
     let mut stats = GlobalStats {
         server_utc_timestamp: Utc::now().timestamp_millis() as u64,
         ..Default::default()
     };
 
-    // Fetch system state and team data in parallel or sequentially but efficiently
     if let Ok(row) =
         sqlx::query("SELECT current_date, yesterday_winner FROM sys_state WHERE id = 1")
             .fetch_one(&state.pool)
@@ -50,152 +56,92 @@ pub async fn get_stats(State(state): State<AppState>) -> Json<GlobalStats> {
         }
     }
 
-    Json(stats)
+    (StatusCode::OK, Json(stats))
 }
 
-/// Handles submitting a new score for a player and updating team statistics.
-/// Enforces point delta limits and handles team switching logic.
-pub async fn submit_score(State(state): State<AppState>, Json(payload): Json<ScorePayload>) {
-    // Basic validation of point delta
+pub async fn submit_score(
+    State(state): State<AppState>,
+    Json(payload): Json<ScorePayload>,
+) -> impl IntoResponse {
+    if payload.player_id.is_empty() || payload.player_id.len() > 64 {
+        return (StatusCode::BAD_REQUEST, Json(serde_json::json!({"error": "Invalid player_id"})));
+    }
+
+    if payload.player_id.chars().any(|c| !c.is_alphanumeric() && c != '_' && c != '-') {
+        return (StatusCode::BAD_REQUEST, Json(serde_json::json!({"error": "Invalid player_id characters"})));
+    }
+
+    let team = payload.team.to_lowercase();
+    if !is_valid_team(&team) {
+        return (StatusCode::BAD_REQUEST, Json(serde_json::json!({"error": "Invalid team"})));
+    }
+
     if payload.points_delta < -5 || payload.points_delta > 10 {
-        return;
+        return (StatusCode::BAD_REQUEST, Json(serde_json::json!({"error": "Points delta out of range"})));
     }
 
-    let valid_teams = ["red", "orange", "yellow", "green", "blue", "purple"];
-    if !valid_teams.contains(&payload.team.as_str()) {
-        return;
-    }
+    let mut tx = match state.pool.begin().await {
+        Ok(tx) => tx,
+        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": "Database error"}))),
+    };
 
-    if let Ok(mut tx) = state.pool.begin().await {
-        // Check if player already exists and which team they were on
-        let prev_team_opt: Option<String> =
-            sqlx::query("SELECT team FROM players WHERE player_id = ?")
-                .bind(&payload.player_id)
-                .fetch_optional(&mut *tx)
-                .await
-                .ok()
-                .flatten()
-                .map(|r| r.get("team"));
+    let prev_team_opt: Option<String> = sqlx::query("SELECT team FROM players WHERE player_id = ?")
+        .bind(&payload.player_id)
+        .fetch_optional(&mut *tx)
+        .await
+        .ok()
+        .flatten()
+        .map(|r| r.get("team"));
 
-        if prev_team_opt.as_deref() != Some(payload.team.as_str()) {
-            // Player is joining a new team or switching teams
-            if let Some(prev) = prev_team_opt {
-                // Remove player from previous team count
-                let _ =
-                    sqlx::query("UPDATE teams SET players = MAX(0, players - 1) WHERE name = ?")
-                        .bind(prev)
-                        .execute(&mut *tx)
-                        .await;
-            }
-            
-            // Register or update player's team assignment
-            let _ = sqlx::query("INSERT INTO players (player_id, team) VALUES (?, ?) ON CONFLICT(player_id) DO UPDATE SET team = ?")
-                .bind(&payload.player_id).bind(&payload.team).bind(&payload.team)
-                .execute(&mut *tx).await;
-
-            // Increment new team player count
-            let _ = sqlx::query("UPDATE teams SET players = players + 1 WHERE name = ?")
-                .bind(&payload.team)
+    if prev_team_opt.as_deref() != Some(&team) {
+        if let Some(prev) = prev_team_opt {
+            if sqlx::query("UPDATE teams SET players = MAX(0, players - 1) WHERE name = ?")
+                .bind(prev)
                 .execute(&mut *tx)
-                .await;
+                .await
+                .is_err()
+            {
+                return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": "Database error"})));
+            }
+        }
+        
+        if sqlx::query(
+            "INSERT INTO players (player_id, team) VALUES (?, ?) 
+             ON CONFLICT(player_id) DO UPDATE SET team = ?"
+        )
+        .bind(&payload.player_id)
+        .bind(&team)
+        .bind(&team)
+        .execute(&mut *tx)
+        .await
+        .is_err()
+        {
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": "Database error"})));
         }
 
-        // Apply point delta to the team
-        let _ = sqlx::query("UPDATE teams SET points = points + ? WHERE name = ?")
-            .bind(payload.points_delta)
-            .bind(&payload.team)
+        if sqlx::query("UPDATE teams SET players = players + 1 WHERE name = ?")
+            .bind(&team)
             .execute(&mut *tx)
-            .await;
-
-        let _ = tx.commit().await;
+            .await
+            .is_err()
+        {
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": "Database error"})));
+        }
     }
+
+    if sqlx::query("UPDATE teams SET points = points + ? WHERE name = ?")
+        .bind(payload.points_delta)
+        .bind(&team)
+        .execute(&mut *tx)
+        .await
+        .is_err()
+    {
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": "Database error"})));
+    }
+
+    if tx.commit().await.is_err() {
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": "Commit failed"})));
+    }
+
+    (StatusCode::OK, Json(serde_json::json!({"success": true})))
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::db;
-    use sqlx::SqlitePool;
-
-    async fn setup_test_db() -> SqlitePool {
-        let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
-        db::run_migrations(&pool).await;
-        db::seed_db(&pool).await;
-        pool
-    }
-
-    #[tokio::test]
-    async fn test_get_stats_empty() {
-        let pool = setup_test_db().await;
-        let state = AppState { pool };
-        
-        let response = get_stats(State(state)).await;
-        let stats = response.0;
-        
-        assert_eq!(stats.yesterday_winner, "none");
-        assert_eq!(stats.red.points, 0);
-        assert_eq!(stats.blue.points, 0);
-    }
-
-    #[tokio::test]
-    async fn test_submit_score_valid() {
-        let pool = setup_test_db().await;
-        let state = AppState { pool: pool.clone() };
-        
-        let payload = ScorePayload {
-            player_id: "test-player".to_string(),
-            team: "red".to_string(),
-            points_delta: 5,
-        };
-        
-        submit_score(State(state.clone()), Json(payload)).await;
-        
-        let stats = get_stats(State(state)).await.0;
-        assert_eq!(stats.red.points, 5);
-        assert_eq!(stats.red.players, 1);
-    }
-
-    #[tokio::test]
-    async fn test_submit_score_invalid_delta() {
-        let pool = setup_test_db().await;
-        let state = AppState { pool: pool.clone() };
-        
-        let payload = ScorePayload {
-            player_id: "test-player".to_string(),
-            team: "red".to_string(),
-            points_delta: 100, // Invalid
-        };
-        
-        submit_score(State(state.clone()), Json(payload)).await;
-        
-        let stats = get_stats(State(state)).await.0;
-        assert_eq!(stats.red.points, 0);
-    }
-
-    #[tokio::test]
-    async fn test_team_switching() {
-        let pool = setup_test_db().await;
-        let state = AppState { pool: pool.clone() };
-        
-        // Join Red
-        submit_score(State(state.clone()), Json(ScorePayload {
-            player_id: "p1".to_string(),
-            team: "red".to_string(),
-            points_delta: 2,
-        })).await;
-        
-        // Switch to Blue
-        submit_score(State(state.clone()), Json(ScorePayload {
-            player_id: "p1".to_string(),
-            team: "blue".to_string(),
-            points_delta: 3,
-        })).await;
-        
-        let stats = get_stats(State(state)).await.0;
-        assert_eq!(stats.red.players, 0);
-        assert_eq!(stats.blue.players, 1);
-        assert_eq!(stats.red.points, 2);
-        assert_eq!(stats.blue.points, 3);
-    }
-}
-

@@ -1,6 +1,5 @@
 use leptos::*;
 
-/// A single letter cell in the Wordle grid.
 #[component]
 pub fn Cell(
     value: char,
@@ -13,35 +12,44 @@ pub fn Cell(
     last_typed_index: i32,
     is_hard_mode: bool,
 ) -> impl IntoView {
-    let status_c = status.clone();
+    let status_for_class = status.clone();
+    let status_for_label = status.clone();
+    let status_for_show = status.clone();
     let is_last = last_typed_index == index as i32;
 
-    let class = {
-        let status_c = status_c.clone();
-        move || {
-            let mut base = "cell text-2xl sm:text-3xl font-black flex items-center justify-center rounded-lg sm:rounded-xl border-2 transition-all duration-500 uppercase select-none".to_string();
-            if is_revealing { base.push_str(" revealing"); }
-            if is_completed || is_revealing {
-                if !status_c.is_empty() { base.push_str(&format!(" {}", status_c)); } else { base.push_str(" cell-neutral"); }
-            } else if value != ' ' {
-                base.push_str(" border-theme-primary text-theme-primary");
-                if is_last { base.push_str(" pop-animation"); }
-            } else {
-                base.push_str(" border-gray-700 text-gray-500 opacity-20");
-            }
-            base
+    let class = move || {
+        let mut base = "cell text-2xl sm:text-3xl font-black flex items-center justify-center rounded-lg sm:rounded-xl border-2 transition-all duration-500 uppercase select-none".to_string();
+        if is_revealing {
+            base.push_str(" revealing");
         }
+        if is_completed || is_revealing {
+            if !status_for_class.is_empty() {
+                base.push_str(&format!(" {}", status_for_class));
+            } else {
+                base.push_str(" cell-neutral");
+            }
+        } else if value != ' ' {
+            base.push_str(" border-theme-primary text-theme-primary");
+            if is_last {
+                base.push_str(" pop-animation");
+            }
+        } else {
+            base.push_str(" border-gray-700 text-gray-500 opacity-20");
+        }
+        base
     };
 
     let aria_label = move || {
         if value == ' ' {
             "Empty cell".to_string()
-        } else if !status_c.is_empty() {
-            format!("{} {}", value, status_c)
+        } else if !status_for_label.is_empty() {
+            format!("{} {}", value, status_for_label)
         } else {
             value.to_string()
         }
     };
+
+    let is_correct = move || is_revealing && status_for_show == "correct";
 
     view! {
         <div class=class style=format!("transition-delay: {}ms", reveal_delay) aria-label=aria_label>
@@ -49,14 +57,17 @@ pub fn Cell(
                 <div key=destroy_trigger.get() class="destroy-particle" />
             </Show>
             {if value == ' ' { "".to_string() } else { value.to_string() }}
-            <Show when={let status_c = status_c.clone(); move || is_revealing && status_c == "correct"}>
-                {if is_hard_mode { view! { <div class="power-ring" /> }.into_view() } else { view! { <div class="power-underline" /> }.into_view() }}
+            <Show when=is_correct>
+                {if is_hard_mode {
+                    view! { <div class="power-ring" /> }.into_view()
+                } else {
+                    view! { <div class="power-underline" /> }.into_view()
+                }}
             </Show>
         </div>
     }
 }
 
-/// A row of 5 cells representing a single guess.
 #[component]
 pub fn Row(
     guess: String,
@@ -68,7 +79,11 @@ pub fn Row(
     last_typed_index: i32,
     is_hard_mode: bool,
 ) -> impl IntoView {
-    let chars: Vec<char> = guess.chars().chain(std::iter::repeat(' ')).take(5).collect();
+    let chars: Vec<char> = guess
+        .chars()
+        .chain(std::iter::repeat(' '))
+        .take(5)
+        .collect();
     let row_aria_label = move || {
         if guess.is_empty() {
             "Empty guess row".to_string()
@@ -87,7 +102,6 @@ pub fn Row(
     }
 }
 
-/// A stylized modal popup for stats and help.
 #[component]
 pub fn Modal(
     title: String,
@@ -95,7 +109,7 @@ pub fn Modal(
     set_is_open: WriteSignal<bool>,
     children: Children,
 ) -> impl IntoView {
-    let children = children(); // Call ONCE
+    let children = children();
     view! {
         <Show when=move || is_open.get()>
             <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black bg-opacity-80 backdrop-blur-md animate-fade-in">

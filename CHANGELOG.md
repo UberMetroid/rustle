@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.1.0] - 2026-03-22
+### Added
+- **Progressive Web App (PWA):** Added `manifest.json` and `sw.js` for offline caching and home-screen installation.
+- **Auto-Rollover:** Added live UTC midnight synchronization to automatically shift the daily word without requiring a page refresh.
+
+## [2.0.1] - 2026-03-22
+### Added
+- **Local Dev Support:** Added `dotenvy` to parse local `.env` files for seamless local database connections without conflicting with production Docker paths.
+
+## [2.0.0] - 2026-03-22
+### Changed
+- **Massive Architectural Shift:** Completely abandoned the old React/TypeScript implementation. The entire project is now a 100% Type-Safe Rust workspace.
+- **Frontend:** Rebuilt from scratch using Leptos (Wasm).
+- **Backend:** Replaced Nginx static hosting with a dynamic Axum asynchronous server.
+### Added
+- **Global Leaderboards:** Added live `sqlx` SQLite persistence for tracking global scores across all factions.
+- **Generational Teams:** Implemented faction-based themes (Gen Alpha, Gen Z, Millennials, Gen X, Boomers).
+- **Contextual Snark:** AI dynamically mocks the player with slang matching their selected generation.
+- **Adversarial AI (New Game+):** Built an "Absurdle" style mode that dynamically dodges player guesses.
+- **Security:** Implemented IP-based rate limiting (`tower_governor`) and score delta validation to prevent leaderboard abuse.
+- **Accessibility:** Full ARIA screen-reader support integrated directly into the Wasm UI.
+
+## [1.0.0] - 2026-03-21
+### Changed
+- Initial prototype of the Rust/Wasm port. (Internal release).
+
+---
+
 ## 2022-11-03
 
 ### Fixed

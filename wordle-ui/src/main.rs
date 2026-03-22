@@ -234,9 +234,15 @@ fn App() -> impl IntoView {
         for s_row in guess_statuses.get() { for s in s_row { text.push_str(match s.as_str() { "correct" => correct_e, "present" => present_e, _ => absent_e }); } text.push('\n'); }
         text.push_str(&format!("\nTEAM {}: {} pts", t_val.to_uppercase(), if pts >= 0 { format!("+{}", pts) } else { pts.to_string() }));
         let _ = window().navigator().clipboard().write_text(&text);
-        set_snarky_comment.set("RESULTS COPIED.".to_string());
+        
+        set_show_stats.set(false);
+        if !is_ng_plus.get() && daily_game_done.get() {
+            start_ng_plus();
+            set_snarky_comment.set("RESULTS COPIED. NOW BEAT THE SYSTEM.".to_string());
+        } else {
+            set_snarky_comment.set("RESULTS COPIED.".to_string());
+        }
         set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(4000));
-        if !is_ng_plus.get() { start_ng_plus(); }
     };
 
     let on_key = move |key: String| {
@@ -307,9 +313,10 @@ fn App() -> impl IntoView {
                 set_session_points.update(|p| *p -= 1);
                 set_win_pulse_trigger.set("-1".to_string());
                 set_timeout(move || set_win_pulse_trigger.set("".to_string()), std::time::Duration::from_millis(1500));
-                snark = format!("{} (-1 PTS)", snark);
+                let final_word = if is_ng_plus.get() { ai_pool.get().first().cloned().unwrap_or(sol.clone()) } else { sol.clone() };
+                snark = format!("{} THE WORD WAS {}. (-1 PTS)", snark, final_word);
                 set_stats.update(|s| { s.total_games += 1; s.current_streak = 0; });
-                set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3500));
+                set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(4000));
             } else {
                 if turn_pts > 0 { snark = format!("{} (+{} PTS)", snark, turn_pts); }
             }

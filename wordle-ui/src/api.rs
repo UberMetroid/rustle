@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use wasm_bindgen::prelude::*;
 use web_sys::window;
 
@@ -93,7 +93,7 @@ pub async fn fetch_global_stats() -> GlobalStats {
 
 /// Submits a point delta for a specific team to the backend.
 pub fn post_score(team: String, points_delta: i32) {
-    let mut opts = web_sys::RequestInit::new();
+    let opts = web_sys::RequestInit::new();
     opts.set_method("POST");
 
     let payload = ScorePayload {

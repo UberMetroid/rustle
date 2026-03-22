@@ -64,15 +64,3 @@ pub fn get_share_results(state: AppStateContext) -> impl Fn() {
     }
 }
 
-/// Returns the correct emojis for the current theme.
-pub fn get_theme_emojis(theme: &str) -> (&'static str, &'static str, &'static str) {
-    match theme {
-        "red" => ("🟥", "🟧", "⬛"),
-        "orange" => ("🟧", "🟨", "⬛"),
-        "yellow" => ("🟩", "🟨", "⬛"),
-        "green" => ("🟩", "⬜", "⬛"),
-        "blue" => ("🟦", "🟨", "⬛"),
-        "purple" => ("🟪", "🟨", "⬛"),
-        _ => ("🟩", "🟨", "⬛"),
-    }
-}

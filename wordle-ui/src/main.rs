@@ -1,6 +1,5 @@
 use leptos::*;
 use wasm_bindgen::prelude::*;
-use web_sys::window;
 
 pub mod api;
 pub mod comments;

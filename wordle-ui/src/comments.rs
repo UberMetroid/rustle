@@ -1,7 +1,5 @@
-use crate::*;
-
 /// Returns a tuple of (correct, present, absent) emojis for the given theme.
-pub fn get_theme_emojis(theme: &str) -> (&str, &str, &str) {
+pub fn get_theme_emojis(theme: &str) -> (&'static str, &'static str, &'static str) {
     match theme {
         "red" => ("🔴", "🔺", "⬛"),
         "orange" => ("🟠", "🔸", "⬛"),
@@ -15,7 +13,7 @@ pub fn get_theme_emojis(theme: &str) -> (&str, &str, &str) {
 
 /// Returns a randomly selected snarky comment based on the game state and chosen team theme.
 pub fn get_80s_comment(
-    guess_count: usize,
+    _guess_count: usize,
     is_win: bool,
     is_loss: bool,
     is_hard: bool,

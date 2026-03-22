@@ -1,5 +1,4 @@
 use leptos::*;
-use wasm_bindgen::prelude::*;
 use std::collections::HashMap;
 use crate::*;
 use wordle_engine::*;

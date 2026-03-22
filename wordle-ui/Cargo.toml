@@ -20,3 +20,10 @@ web-sys = { version = "0.3", features = ["Storage", "Window", "Document", "Eleme
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 'z'
+panic = "abort"
+
+

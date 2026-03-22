@@ -5,22 +5,31 @@ use wasm_bindgen::prelude::*;
 mod words;
 pub use words::{VALID_GUESSES, WORDS};
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+/// The structured data for the daily solution.
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct SolutionData {
+    /// The uppercase daily solution word.
     pub solution: String,
+    /// The integer day index since the UNIX epoch.
     #[serde(rename = "solutionGameDate")]
     pub solution_game_date: u64,
+    /// The index into the static `WORDS` array.
     #[serde(rename = "solutionIndex")]
     pub solution_index: i64,
+    /// The UNIX timestamp for midnight of the next day.
     pub tomorrow: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+/// The result returned by the adversarial AI engine after making a move.
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct AdversarialResult {
+    /// The pattern of "absent", "present", or "correct" strings for the guess.
     pub pattern: Vec<String>,
+    /// The narrowed down list of possible remaining words.
     pub new_pool: Vec<String>,
 }
 
+/// Calculates the daily solution word based on the current UTC timestamp.
 #[wasm_bindgen]
 pub fn get_solution(timestamp: u64) -> JsValue {
     let day = timestamp / 86400000;
@@ -36,18 +45,21 @@ pub fn get_solution(timestamp: u64) -> JsValue {
     serde_wasm_bindgen::to_value(&sol).unwrap_or(JsValue::NULL)
 }
 
+/// Checks if a guessed string is found within the valid word list.
 #[wasm_bindgen]
 pub fn is_word_in_list(word: &str) -> bool {
     let w = word.to_lowercase();
     WORDS.contains(&w.as_str()) || VALID_GUESSES.contains(&w.as_str())
 }
 
+/// Determines the color statuses (correct/present/absent) for a guess compared to a solution.
 #[wasm_bindgen]
 pub fn get_guess_statuses(solution: &str, guess: &str) -> JsValue {
     let statuses = calculate_statuses(solution, guess);
     serde_wasm_bindgen::to_value(&statuses).unwrap_or(JsValue::NULL)
 }
 
+/// Helper function to calculate the color statuses for a given word and guess.
 pub fn calculate_statuses(solution: &str, guess: &str) -> Vec<String> {
     let sol_chars: Vec<char> = solution.chars().collect();
     let guess_chars: Vec<char> = guess.chars().collect();
@@ -78,12 +90,17 @@ pub fn calculate_statuses(solution: &str, guess: &str) -> Vec<String> {
     statuses
 }
 
+/// Validates that a new guess adheres to Hard Mode rules based on previous hints.
 #[wasm_bindgen]
 pub fn check_hard_mode(guess: &str, prev_guesses: JsValue, prev_statuses: JsValue) -> String {
     let prev_g: Vec<String> = serde_wasm_bindgen::from_value(prev_guesses).unwrap_or_default();
     let prev_s: Vec<Vec<String>> =
         serde_wasm_bindgen::from_value(prev_statuses).unwrap_or_default();
+    
+    check_hard_mode_internal(guess, prev_g, prev_s)
+}
 
+pub fn check_hard_mode_internal(guess: &str, prev_g: Vec<String>, prev_s: Vec<Vec<String>>) -> String {
     let guess_chars: Vec<char> = guess.chars().collect();
 
     for (pg, statuses) in prev_g.iter().zip(prev_s.iter()) {
@@ -126,12 +143,16 @@ pub fn check_hard_mode(guess: &str, prev_guesses: JsValue, prev_statuses: JsValu
     String::new()
 }
 
+
+/// Returns the entire list of primary valid words for the AI pool.
 #[wasm_bindgen]
 pub fn get_ai_word_list() -> JsValue {
-    let list: Vec<String> = WORDS.iter().map(|w| w.to_uppercase()).collect();
+    let list: Vec<String> = WORDS.iter().map(|w: &&str| w.to_uppercase()).collect();
     serde_wasm_bindgen::to_value(&list).unwrap_or(JsValue::NULL)
 }
 
+/// Calculates a binary mask representation of color statuses for optimized lookups.
+/// Mask stores 2 bits per character: 00 = absent, 01 = present, 10 = correct.
 fn calculate_status_mask(solution: &str, guess: &str) -> u16 {
     let sol_chars: Vec<char> = solution.chars().collect();
     let guess_chars: Vec<char> = guess.chars().collect();
@@ -162,6 +183,9 @@ fn calculate_status_mask(solution: &str, guess: &str) -> u16 {
     mask
 }
 
+/// Executes the Adversarial Wordle logic (New Game+).
+/// Groups the remaining words by the status mask they generate for the given guess,
+/// then returns the pattern that leaves the player with the largest possible remaining pool.
 #[wasm_bindgen]
 pub fn get_adversarial_step(guess: &str, current_pool: JsValue) -> JsValue {
     let pool: Vec<String> = serde_wasm_bindgen::from_value(current_pool).unwrap_or_default();
@@ -201,32 +225,4 @@ pub fn get_adversarial_step(guess: &str, current_pool: JsValue) -> JsValue {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_calculate_status_mask() {
-        let mask = calculate_status_mask("apple", "maple");
-
-        let mut expected_mask: u16 = 0;
-        // m -> absent -> 0
-        // a -> present -> 1
-        expected_mask |= 1 << 2;
-        // p -> correct -> 2
-        expected_mask |= 2 << (2 * 2);
-        // l -> correct -> 2
-        expected_mask |= 2 << (3 * 2);
-        // e -> correct -> 2
-        expected_mask |= 2 << (4 * 2);
-
-        assert_eq!(mask, expected_mask);
-
-        // Ensure no overflow!
-        let mask_all_correct = calculate_status_mask("words", "words");
-        let mut all_correct_mask: u16 = 0;
-        for i in 0..5 {
-            all_correct_mask |= 2 << (i * 2);
-        }
-        assert_eq!(mask_all_correct, all_correct_mask);
-    }
-}
+mod tests;

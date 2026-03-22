@@ -60,11 +60,14 @@ async fn fetch_global_stats() -> GlobalStats {
     opts.set_method("GET");
     if let Ok(request) = web_sys::Request::new_with_str_and_init(url, &opts) {
         if let Ok(resp_value) = wasm_bindgen_futures::JsFuture::from(window.fetch_with_request(&request)).await {
-            let resp: web_sys::Response = resp_value.dyn_into().unwrap();
-            if resp.status() == 200 {
-                if let Ok(json_value) = wasm_bindgen_futures::JsFuture::from(resp.json().unwrap()).await {
-                    if let Ok(stats) = serde_wasm_bindgen::from_value::<GlobalStats>(json_value) {
-                        return stats;
+            if let Ok(resp) = resp_value.dyn_into::<web_sys::Response>() {
+                if resp.status() == 200 {
+                    if let Ok(json_promise) = resp.json() {
+                        if let Ok(json_value) = wasm_bindgen_futures::JsFuture::from(json_promise).await {
+                            if let Ok(stats) = serde_wasm_bindgen::from_value::<GlobalStats>(json_value) {
+                                return stats;
+                            }
+                        }
                     }
                 }
             }

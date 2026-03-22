@@ -33,7 +33,7 @@ pub fn get_solution(timestamp: u64) -> JsValue {
         solution_index: index as i64,
         tomorrow: tomorrow
     };
-    serde_wasm_bindgen::to_value(&sol).unwrap()
+    serde_wasm_bindgen::to_value(&sol).unwrap_or(JsValue::NULL)
 }
 
 #[wasm_bindgen]
@@ -45,7 +45,7 @@ pub fn is_word_in_list(word: &str) -> bool {
 #[wasm_bindgen]
 pub fn get_guess_statuses(solution: &str, guess: &str) -> JsValue {
     let statuses = calculate_statuses(solution, guess);
-    serde_wasm_bindgen::to_value(&statuses).unwrap()
+    serde_wasm_bindgen::to_value(&statuses).unwrap_or(JsValue::NULL)
 }
 
 pub fn calculate_statuses(solution: &str, guess: &str) -> Vec<String> {
@@ -117,7 +117,7 @@ pub fn check_hard_mode(guess: &str, prev_guesses: JsValue, prev_statuses: JsValu
 #[wasm_bindgen]
 pub fn get_ai_word_list() -> JsValue {
     let list: Vec<String> = WORDS.iter().map(|w| w.to_uppercase()).collect();
-    serde_wasm_bindgen::to_value(&list).unwrap()
+    serde_wasm_bindgen::to_value(&list).unwrap_or(JsValue::NULL)
 }
 
 #[wasm_bindgen]
@@ -147,5 +147,5 @@ pub fn get_adversarial_step(guess: &str, current_pool: JsValue) -> JsValue {
         pattern: best_pattern.split(',').map(|s| s.to_string()).collect(),
         new_pool: best_bucket
     };
-    serde_wasm_bindgen::to_value(&result).unwrap()
+    serde_wasm_bindgen::to_value(&result).unwrap_or(JsValue::NULL)
 }

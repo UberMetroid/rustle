@@ -306,8 +306,7 @@ fn App() -> impl IntoView {
                 set_timeout(move || set_show_stats.set(true), std::time::Duration::from_millis(3500));
             }
             if let Some(storage) = get_storage() {
-                let pool_subset: Vec<String> = ai_pool.get().iter().take(10).cloned().collect();
-                let state = StoredState { guesses: new_guesses, statuses: new_ss_vec, solution: sol, is_ng_plus: is_ng_plus.get(), ai_pool_subset: pool_subset, daily_done: daily_game_done.get(), locked_team: point_locked_team.get() };
+                let state = StoredState { guesses: new_guesses, statuses: new_ss_vec, solution: sol, is_ng_plus: is_ng_plus.get(), ai_pool_subset: ai_pool.get().clone(), daily_done: daily_game_done.get(), locked_team: point_locked_team.get() };
                 let _ = storage.set_item("game-state", &serde_json::to_string(&state).unwrap());
                 let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap());
             }

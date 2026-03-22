@@ -275,7 +275,10 @@ fn App() -> impl IntoView {
 
     create_effect(move |_| {
         if let Some(storage) = get_storage() {
-            if let Ok(Some(t)) = storage.get_item("color-theme") { set_theme.set(t); }
+            if let Ok(Some(t)) = storage.get_item("color-theme") { 
+                set_theme.set(t.clone()); 
+                post_score(t, 0); 
+            }
             if let Ok(Some(h)) = storage.get_item("hard-mode") { set_hard_mode.set(h == "true"); }
             if let Ok(Some(s)) = storage.get_item("game-stats") { if let Ok(parsed) = serde_json::from_str::<GameStats>(&s) { set_stats.set(parsed); } }
             let sol = solution_data.get().solution;

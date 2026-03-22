@@ -104,18 +104,20 @@ struct ScorePayload {
 
 fn post_score(team: String, points_delta: i32) {
     let payload = ScorePayload { player_id: get_player_id(), team, points_delta };
-    let json = serde_json::to_string(&payload).unwrap();
-    let opts = web_sys::RequestInit::new();
-    opts.set_method("POST");
-    opts.set_body(&JsValue::from_str(&json));
-    
-    let headers = web_sys::Headers::new().unwrap();
-    let _ = headers.set("Content-Type", "application/json");
-    opts.set_headers(&headers);
-    
-    let window = window();
-    if let Ok(request) = web_sys::Request::new_with_str_and_init("/api/score", &opts) {
-        let _ = window.fetch_with_request(&request);
+    if let Ok(json) = serde_json::to_string(&payload) {
+        let opts = web_sys::RequestInit::new();
+        opts.set_method("POST");
+        opts.set_body(&JsValue::from_str(&json));
+
+        if let Ok(headers) = web_sys::Headers::new() {
+            let _ = headers.set("Content-Type", "application/json");
+            opts.set_headers(&headers);
+        }
+
+        let window = window();
+        if let Ok(request) = web_sys::Request::new_with_str_and_init("/api/score", &opts) {
+            let _ = window.fetch_with_request(&request);
+        }
     }
 }
 
@@ -435,8 +437,12 @@ fn App() -> impl IntoView {
             set_snarky_comment.set(snark);
             if let Some(storage) = get_storage() {
                 let state = StoredState { guesses: new_guesses, statuses: new_ss_vec, solution: sol, is_ng_plus: is_ng_plus.get(), ai_pool_subset: ai_pool.get().clone(), daily_done: daily_game_done.get(), locked_team: point_locked_team.get() };
-                let _ = storage.set_item("game-state", &serde_json::to_string(&state).unwrap());
-                let _ = storage.set_item("game-stats", &serde_json::to_string(&stats.get()).unwrap());
+                if let Ok(state_str) = serde_json::to_string(&state) {
+                    let _ = storage.set_item("game-state", &state_str);
+                }
+                if let Ok(stats_str) = serde_json::to_string(&stats.get()) {
+                    let _ = storage.set_item("game-stats", &stats_str);
+                }
             }
         } else if key == "DELETE" {
             let len = current_input.get().len(); if len > 0 { set_last_typed_index.set(len as i32 - 1); set_destroy_trigger.set(js_sys::Date::now().to_string()); set_timeout(move || { set_current_input.update(|s| { s.pop(); }); set_last_typed_index.set(-1); set_destroy_trigger.set("".to_string()); }, std::time::Duration::from_millis(150)); }

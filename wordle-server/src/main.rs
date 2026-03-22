@@ -12,17 +12,13 @@ use tower_http::cors::CorsLayer;
 use chrono::Utc;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Default)]
 struct TeamData {
     pub points: i32,
     pub players: u32,
     pub yesterday_total: i32,
 }
 
-impl Default for TeamData {
-    fn default() -> Self {
-        Self { points: 0, players: 0, yesterday_total: 0 }
-    }
-}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct GlobalStats {

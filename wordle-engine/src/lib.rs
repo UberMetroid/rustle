@@ -31,7 +31,7 @@ pub fn get_solution(timestamp: u64) -> JsValue {
         solution: WORDS[index].to_uppercase(),
         solution_game_date: day,
         solution_index: index as i64,
-        tomorrow: tomorrow
+        tomorrow
     };
     serde_wasm_bindgen::to_value(&sol).unwrap_or(JsValue::NULL)
 }
@@ -52,8 +52,8 @@ pub fn calculate_statuses(solution: &str, guess: &str) -> Vec<String> {
     let sol_chars: Vec<char> = solution.chars().collect();
     let guess_chars: Vec<char> = guess.chars().collect();
     let mut statuses = vec!["absent".to_string(); 5];
-    let mut sol_used = vec![false; 5];
-    let mut guess_used = vec![false; 5];
+    let mut sol_used = [false; 5];
+    let mut guess_used = [false; 5];
 
     for i in 0..5 {
         if i < guess_chars.len() && i < sol_chars.len() && guess_chars[i] == sol_chars[i] {
@@ -89,12 +89,11 @@ pub fn check_hard_mode(guess: &str, prev_guesses: JsValue, prev_statuses: JsValu
         let prev_chars: Vec<char> = pg.chars().collect();
         
         for i in 0..5 {
-            if i < prev_chars.len() && i < statuses.len() && statuses[i] == "correct" {
-                if i >= guess_chars.len() || guess_chars[i] != prev_chars[i] {
+            if i < prev_chars.len() && i < statuses.len() && statuses[i] == "correct"
+                && (i >= guess_chars.len() || guess_chars[i] != prev_chars[i]) {
                     let nth = match i { 0 => "1ST", 1 => "2ND", 2 => "3RD", 3 => "4TH", _ => "5TH" };
                     return format!("{} LETTER MUST BE {}.", nth, prev_chars[i]);
                 }
-            }
         }
 
         let mut required_counts = HashMap::new();
@@ -130,7 +129,7 @@ pub fn get_adversarial_step(guess: &str, current_pool: JsValue) -> JsValue {
     for sol in &pool {
         let statuses = calculate_statuses(sol, guess);
         let pattern_key = statuses.join(",");
-        buckets.entry(pattern_key).or_insert_with(Vec::new).push(sol.clone());
+        buckets.entry(pattern_key).or_default().push(sol.clone());
     }
 
     let mut best_pattern = String::new();

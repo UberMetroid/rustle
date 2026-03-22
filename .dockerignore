@@ -8,3 +8,7 @@ README.md
 build/
 docker/Dockerfile
 node_modules/
+target/
+dist/
+data/
+*.db

@@ -10,6 +10,18 @@
 
 # production
 /build
+dist/
+
+# Rust/Cargo
+target/
+Cargo.lock
+
+# Database
+data/
+*.db
+*.db-shm
+*.db-wal
+*.tmp
 
 # misc
 .DS_Store

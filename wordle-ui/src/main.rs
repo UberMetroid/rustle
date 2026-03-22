@@ -284,20 +284,31 @@ fn App() -> impl IntoView {
 
     let start_ng_plus = move || {
         if !daily_game_done.get() {
-            let msgs = ["FINISH THE DAILY GAME FIRST, GENIUS.",
-                "ONE THING AT A TIME.",
-                "EAGER, ARE WE? DO THE DAILY FIRST.",
-                "ACCESS DENIED. DAILY GAME INCOMPLETE.",
-                "BEAT THE DAILY TO UNLOCK.",
-                "NOT YET, CHAMP.",
-                "WALK BEFORE YOU RUN."];
+            let msgs = match theme.get().as_str() {
+                "red" => vec!["FINISH THE DAILY FIRST BLUD.", "LITERALLY NOT UNLOCKED.", "ONE THING AT A TIME.", "NO CAP BEAT THE DAILY.", "SKIBIDI IMPATIENCE."],
+                "orange" => vec!["ACCESS DENIED BESTIE.", "NOT YET CHAMP.", "WE LOVE AN EAGER QUEEN.", "BEAT THE DAILY TO UNLOCK.", "WALK BEFORE YOU RUN."],
+                "yellow" => vec!["FINISH THE DAILY GAME FIRST, GENIUS.", "ADULTING MEANS FINISHING TASKS.", "ONE THING AT A TIME.", "EAGER, ARE WE?", "DO THE DAILY FIRST."],
+                "green" => vec!["CHILL OUT.", "TAKE A BREATH.", "BEAT THE DAILY FIRST, DUDE.", "NOT YET.", "PATIENCE."],
+                "blue" => vec!["IN MY DAY WE FINISHED CHORES.", "HOLD YOUR HORSES.", "ONE STEP AT A TIME.", "BEAT THE DAILY TO UNLOCK.", "NOT YET."],
+                _ => vec!["FINISH THE DAILY GAME FIRST, GENIUS."]
+            };
             set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
             set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(4000));
             return;
         }
         let was_active = is_ng_plus.get();
         set_is_ng_plus.set(true); set_hard_mode.set(true); set_guesses.set(vec![]); set_guess_statuses_vec.set(vec![]); set_game_won.set(false); set_game_lost.set(false); set_current_input.set(String::new()); set_session_points.set(0);
-        if !was_active { let msgs = ["NEW GAME+ ENABLED.", "PROTOCOL INITIALIZED."]; set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string()); }
+        if !was_active { 
+            let msgs = match theme.get().as_str() {
+                "red" => vec!["SYSTEM BREACHED.", "NO ESCAPE.", "IT'S OVER FOR YOU."],
+                "orange" => vec!["NEW GAME+ ENABLED.", "GIVING HARD MODE.", "PROTOCOL INITIALIZED."],
+                "yellow" => vec!["NEW GAME+ ENABLED.", "PROTOCOL INITIALIZED.", "GOOD LUCK."],
+                "green" => vec!["NEW GAME+.", "PREPARE YOURSELF.", "MAXIMUM EFFORT."],
+                "blue" => vec!["NEW GAME+ ENABLED.", "PROTOCOL INITIALIZED.", "BACK TO WORK."],
+                _ => vec!["NEW GAME+ ENABLED.", "PROTOCOL INITIALIZED."]
+            };
+            set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string()); 
+        }
         let full_list: Vec<String> = serde_wasm_bindgen::from_value(get_ai_word_list()).unwrap_or_default();
         set_ai_pool.set(full_list); if let Some(storage) = get_storage() { let _ = storage.remove_item("game-state"); }
     };
@@ -335,13 +346,35 @@ fn App() -> impl IntoView {
             let input = current_input.get().to_uppercase();
             let sol = solution_data.get().solution.to_uppercase();
             if input.len() < 5 { set_jiggle_row.set(true); set_timeout(move || set_jiggle_row.set(false), std::time::Duration::from_millis(500)); return; }
-            if !is_word_in_list(&input) { set_snarky_comment.set("NOT A WORD.".to_string()); set_jiggle_row.set(true); set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(4000)); return; }
+            if !is_word_in_list(&input) { 
+                let msgs = match theme.get().as_str() {
+                    "red" => vec!["NOT A WORD BLUD.", "SKIBIDI SPELLING.", "LITERALLY NOT A WORD."],
+                    "orange" => vec!["NOT A WORD, BESTIE.", "YIKES SPELLING.", "WE LOVE A MADE UP WORD."],
+                    "yellow" => vec!["DICTIONARY SAYS NO.", "I CAN'T EVEN READ THAT.", "SIRI WHAT IS THAT WORD?"],
+                    "green" => vec!["BOGUS WORD.", "AS IF.", "FAKE NEWS."],
+                    "blue" => vec!["NOT IN WEBSTER'S.", "LEARN TO SPELL.", "BACK TO SCHOOL."],
+                    _ => vec!["NOT A WORD."]
+                };
+                set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
+                set_jiggle_row.set(true); 
+                set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(4000)); 
+                return; 
+            }
 
             let mut new_guesses = guesses.get(); let mut new_ss_vec = guess_statuses.get();
             if hard_mode.get() || is_ng_plus.get() {
                 let err = check_hard_mode(&input, serde_wasm_bindgen::to_value(&new_guesses).unwrap(), serde_wasm_bindgen::to_value(&new_ss_vec).unwrap());
                 if !err.is_empty() {
-                    set_snarky_comment.set(err); set_jiggle_row.set(true); set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(4000));
+                    let msgs = match theme.get().as_str() {
+                        "red" => vec!["SKIBIDI ERROR.", "THAT AINT IT.", "AI DETECTS CAP."],
+                        "orange" => vec!["NOT VERY MINDFUL.", "YIKES.", "WE LOVE A RULE FOLLOWER."],
+                        "yellow" => vec!["READ THE RULES DUMMY.", "THAT'S A NO FROM ME.", "SIRI HOW DO I PLAY?"],
+                        "green" => vec!["BOGUS GUESS.", "AS IF.", "READ THE MANUAL."],
+                        "blue" => vec!["FOLLOW THE RULES SONNY.", "IN MY DAY WE READ.", "RESPECT THE HARD MODE."],
+                        _ => vec!["INVALID GUESS."]
+                    };
+                    let prefix_str = msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string();
+                    set_snarky_comment.set(format!("{} {}", prefix_str, err)); set_jiggle_row.set(true); set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(4000));
                     return;
                 }
             }
@@ -480,7 +513,14 @@ fn App() -> impl IntoView {
                                 set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
                                 set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(4000));
                             } else {
-                                let msgs = ["WE GET IT.", "YOU ARE ALREADY HERE.", "STOP CLICKING THAT.", "NOTHING ELSE TO SEE.", "FOCUS ON THE GAME.", "NARCISSIST MUCH?", "ARE YOU LOST?"];
+                                let msgs = match t_str.as_str() {
+                                    "red" => vec!["BRO STOP CAPPING.", "SKIBIDI SPAM.", "LITERALLY RENT FREE.", "AI IS CRINGING.", "TOUCH GRASS ALREADY."],
+                                    "orange" => vec!["WE GET IT, BESTIE.", "NOT VERY MINDFUL CLICKING.", "IT'S THE SPAM FOR ME.", "STOP, I'M LITERALLY SHAKING.", "BIG YIKES."],
+                                    "yellow" => vec!["STOP POKING ME.", "I CAN'T EVEN WITH THIS.", "SIRI, HOW TO STOP SPAM?", "DOING THE MOST.", "NARCISSIST MUCH?"],
+                                    "green" => vec!["TAKE A CHILL PILL.", "GAG ME WITH A SPOON.", "STOP HARSHING MY MELLOW.", "YOU'RE TRIPPING.", "BOGUS SPAM."],
+                                    "blue" => vec!["STOP THAT RACKET.", "PATIENCE IS A VIRTUE.", "KIDS AND THEIR BUTTONS.", "IN MY DAY WE CLICKED ONCE.", "HOLD YOUR HORSES."],
+                                    _ => vec!["WE GET IT.", "YOU ARE ALREADY HERE.", "STOP CLICKING THAT."]
+                                };
                                 set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
                                 set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(4000));
                             }

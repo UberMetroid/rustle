@@ -9,9 +9,11 @@ use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::Row;
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use tower_governor::{governor::GovernorConfigBuilder, key_extractor::SmartIpKeyExtractor, GovernorLayer};
-use tower_http::cors::CorsLayer;
+use tower_governor::{
+    governor::GovernorConfigBuilder, key_extractor::SmartIpKeyExtractor, GovernorLayer,
+};
 use tower_http::compression::CompressionLayer;
+use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]

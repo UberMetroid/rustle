@@ -288,7 +288,17 @@ fn get_80s_comment(
         ],
         "green" => vec!["GNARLY.", "WICKED.", "RIGHTEOUS.", "GROOVY.", "CHILL PILL."],
         "blue" => vec!["NEAT.", "SWELL.", "DANDY.", "PEACHY.", "HOKEY."],
-        "purple" => vec!["NONSENSE AND TOMFOOLERY 🗞️", "GREAT DEPRESSION SURVIVOR 📻", "RESPECT YOUR ELDERS 🧐", "BACK IN MY DAY... 👴", "SILENT GENERATION 🤫", "WHERE ARE MY DENTURES? 🦷", "GET THE TELEGRAPH 📞", "WHAT IS A MOUSE? 🖱️", "RADIO CHAMPION 📻"],
+        "purple" => vec![
+            "NONSENSE AND TOMFOOLERY 🗞️",
+            "GREAT DEPRESSION SURVIVOR 📻",
+            "RESPECT YOUR ELDERS 🧐",
+            "BACK IN MY DAY... 👴",
+            "SILENT GENERATION 🤫",
+            "WHERE ARE MY DENTURES? 🦷",
+            "GET THE TELEGRAPH 📞",
+            "WHAT IS A MOUSE? 🖱️",
+            "RADIO CHAMPION 📻",
+        ],
         _ => vec!["GNARLY.", "WICKED.", "RIGHTEOUS.", "GROOVY."],
     };
     msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string()

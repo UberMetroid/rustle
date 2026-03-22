@@ -207,7 +207,7 @@ mod tests {
     #[test]
     fn test_calculate_status_mask() {
         let mask = calculate_status_mask("apple", "maple");
-        
+
         let mut expected_mask: u16 = 0;
         // m -> absent -> 0
         // a -> present -> 1
@@ -220,7 +220,7 @@ mod tests {
         expected_mask |= 2 << (4 * 2);
 
         assert_eq!(mask, expected_mask);
-        
+
         // Ensure no overflow!
         let mask_all_correct = calculate_status_mask("words", "words");
         let mut all_correct_mask: u16 = 0;

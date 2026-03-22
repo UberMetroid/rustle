@@ -10,6 +10,8 @@ use tokio::sync::RwLock;
 use tower_http::services::ServeDir;
 use tower_http::cors::CorsLayer;
 use chrono::Utc;
+use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
+use std::net::SocketAddr;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[derive(Default)]
@@ -18,7 +20,6 @@ struct TeamData {
     pub players: u32,
     pub yesterday_total: i32,
 }
-
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct GlobalStats {
@@ -103,21 +104,32 @@ async fn main() {
             }
             
             if let Ok(data) = serde_json::to_string(&*w) {
-                let _ = std::fs::write("global-stats.json", data);
+                let temp_path = "global-stats.json.tmp";
+                if std::fs::write(temp_path, data).is_ok() {
+                    let _ = std::fs::rename(temp_path, state_file);
+                }
             }
         }
     });
 
+    let governor_conf = Box::new(
+        GovernorConfigBuilder::default()
+            .per_millisecond(500)
+            .burst_size(10)
+            .finish()
+            .unwrap()
+    );
+
     let app = Router::new()
         .route("/global-stats.json", get(get_stats))
-        .route("/api/score", post(submit_score))
+        .route("/api/score", post(submit_score).layer(GovernorLayer { config: Box::leak(governor_conf) }))
         .fallback_service(ServeDir::new("dist"))
         .layer(CorsLayer::permissive())
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:7583").await.unwrap();
     println!("Listening on port 7583");
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await.unwrap();
 }
 
 async fn get_stats(State(state): State<AppState>) -> Json<GlobalStats> {
@@ -127,6 +139,10 @@ async fn get_stats(State(state): State<AppState>) -> Json<GlobalStats> {
 }
 
 async fn submit_score(State(state): State<AppState>, Json(payload): Json<ScorePayload>) {
+    if payload.points_delta < -5 || payload.points_delta > 10 {
+        return;
+    }
+
     let mut w = state.write().await;
     
     let previous_team = w.active_players.insert(payload.player_id.clone(), payload.team.clone());

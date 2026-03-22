@@ -111,7 +111,10 @@ pub fn post_score(team: String, points_delta: i32) {
 
         let window = window();
         if let Ok(request) = web_sys::Request::new_with_str_and_init("/api/score", &opts) {
-            let _ = window.unwrap().fetch_with_request(&request);
+            // Use spawn_local to handle the fetch promise without blocking.
+            wasm_bindgen_futures::spawn_local(async move {
+                let _ = wasm_bindgen_futures::JsFuture::from(window.unwrap().fetch_with_request(&request)).await;
+            });
         }
     }
 }

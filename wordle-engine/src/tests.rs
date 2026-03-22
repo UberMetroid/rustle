@@ -104,3 +104,18 @@ fn test_check_hard_mode_must_contain_present() {
     let err_invalid = check_hard_mode_internal("GHOST", prev_g.clone(), prev_s.clone());
     assert_eq!(err_invalid, "GUESS MUST CONTAIN A.");
 }
+
+#[test]
+fn test_get_solution_consistency() {
+    let ts = 1711065600000; // A fixed timestamp
+    let val1 = get_solution(ts);
+    let val2 = get_solution(ts);
+    
+    let sol1: SolutionData = serde_wasm_bindgen::from_value(val1).unwrap();
+    let sol2: SolutionData = serde_wasm_bindgen::from_value(val2).unwrap();
+    
+    assert_eq!(sol1.solution, sol2.solution);
+    assert_eq!(sol1.solution_game_date, sol2.solution_game_date);
+    assert_eq!(sol1.solution_index, sol2.solution_index);
+}
+

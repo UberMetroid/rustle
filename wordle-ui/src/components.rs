@@ -33,8 +33,18 @@ pub fn Cell(
         }
     };
 
+    let aria_label = move || {
+        if value == ' ' {
+            "Empty cell".to_string()
+        } else if !status_c.is_empty() {
+            format!("{} {}", value, status_c)
+        } else {
+            value.to_string()
+        }
+    };
+
     view! {
-        <div class=class style=format!("transition-delay: {}ms", reveal_delay)>
+        <div class=class style=format!("transition-delay: {}ms", reveal_delay) aria-label=aria_label>
             <Show when=move || !destroy_trigger.get().is_empty() && is_last>
                 <div key=destroy_trigger.get() class="destroy-particle" />
             </Show>
@@ -59,8 +69,16 @@ pub fn Row(
     is_hard_mode: bool,
 ) -> impl IntoView {
     let chars: Vec<char> = guess.chars().chain(std::iter::repeat(' ')).take(5).collect();
+    let row_aria_label = move || {
+        if guess.is_empty() {
+            "Empty guess row".to_string()
+        } else {
+            format!("Guess: {}", guess)
+        }
+    };
+
     view! {
-        <div class=move || format!("grid grid-cols-5 gap-1 sm:gap-2 w-full h-full {}", if is_jiggling.get() { "jiggle" } else { "" })>
+        <div class=move || format!("grid grid-cols-5 gap-1 sm:gap-2 w-full h-full {}", if is_jiggling.get() { "jiggle" } else { "" }) role="row" aria-label=row_aria_label>
             {chars.into_iter().enumerate().map(|(i, c)| {
                 let status = statuses.get(i).cloned().unwrap_or_default();
                 view! { <Cell value=c status=status is_revealing reveal_delay=i * 300 is_completed destroy_trigger index=i last_typed_index is_hard_mode /> }

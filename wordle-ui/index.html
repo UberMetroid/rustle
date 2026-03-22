@@ -13,7 +13,7 @@
             if (savedTheme) {
                 document.documentElement.className = 'theme-' + savedTheme;
             } else {
-                const themes = ['dark', 'red', 'green', 'blue', 'white'];
+                const themes = ['dark', 'red', 'green', 'blue', 'orange'];
                 const randomTheme = themes[Math.floor(Math.random() * themes.length)];
                 document.documentElement.className = 'theme-' + randomTheme;
                 localStorage.setItem('color-theme', randomTheme);
@@ -43,7 +43,7 @@
                 red: ['#ff0000', '#ff4444', '#880000', '#ff8888'],
                 green: ['#00ff00', '#44ff44', '#008800', '#88ff88'],
                 blue: ['#0000ff', '#4444ff', '#000088', '#8888ff'],
-                white: ['#10b981', '#059669', '#34d399', '#000000']
+                orange: ['#f97316', '#fb923c', '#c2410c', '#fdba74']
             }[theme] || ['#00ff00'];
 
             for (let i = 0; i < particleCount; i++) {
@@ -62,7 +62,7 @@
             }
 
             function animate() {
-                ctx.fillStyle = theme === 'white' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+                ctx.fillStyle = 'rgba(0,0,0,0.1)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 particles.forEach((p, i) => {
@@ -70,7 +70,7 @@
                     p.y += p.vy;
                     p.life -= p.decay;
 
-                    if (theme === 'green' || (p.isGlitch && theme !== 'white')) {
+                    if (theme === 'green' || p.isGlitch) {
                         ctx.font = `${p.size * 4}px monospace`;
                         ctx.fillStyle = p.color;
                         ctx.fillText(p.char, p.x, p.y);

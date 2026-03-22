@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 
 mod words;
-pub use words::WORDS;
+pub use words::{WORDS, VALID_GUESSES};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct SolutionData {
@@ -39,7 +39,7 @@ pub fn get_solution(timestamp: u64) -> JsValue {
 #[wasm_bindgen]
 pub fn is_word_in_list(word: &str) -> bool {
     let w = word.to_lowercase();
-    WORDS.contains(&w.as_str())
+    WORDS.contains(&w.as_str()) || VALID_GUESSES.contains(&w.as_str())
 }
 
 #[wasm_bindgen]
@@ -76,6 +76,42 @@ pub fn calculate_statuses(solution: &str, guess: &str) -> Vec<String> {
     }
 
     statuses
+}
+
+#[wasm_bindgen]
+pub fn check_hard_mode(guess: &str, prev_guesses: JsValue, prev_statuses: JsValue) -> String {
+    let prev_g: Vec<String> = serde_wasm_bindgen::from_value(prev_guesses).unwrap_or_default();
+    let prev_s: Vec<Vec<String>> = serde_wasm_bindgen::from_value(prev_statuses).unwrap_or_default();
+
+    let guess_chars: Vec<char> = guess.chars().collect();
+
+    for (pg, statuses) in prev_g.iter().zip(prev_s.iter()) {
+        let prev_chars: Vec<char> = pg.chars().collect();
+        
+        for i in 0..5 {
+            if i < prev_chars.len() && i < statuses.len() && statuses[i] == "correct" {
+                if i >= guess_chars.len() || guess_chars[i] != prev_chars[i] {
+                    let nth = match i { 0 => "1ST", 1 => "2ND", 2 => "3RD", 3 => "4TH", _ => "5TH" };
+                    return format!("{} LETTER MUST BE {}.", nth, prev_chars[i]);
+                }
+            }
+        }
+
+        let mut required_counts = HashMap::new();
+        for i in 0..5 {
+            if i < prev_chars.len() && i < statuses.len() && (statuses[i] == "correct" || statuses[i] == "present") {
+                *required_counts.entry(prev_chars[i]).or_insert(0) += 1;
+            }
+        }
+
+        for (c, count) in required_counts {
+            let actual = guess_chars.iter().filter(|&&x| x == c).count();
+            if actual < count {
+                return format!("GUESS MUST CONTAIN {}.", c);
+            }
+        }
+    }
+    String::new()
 }
 
 #[wasm_bindgen]

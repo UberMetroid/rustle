@@ -1,5 +1,5 @@
 use leptos::*;
-use wordle_engine::{get_solution, is_word_in_list, get_guess_statuses, get_ai_word_list, get_adversarial_step, SolutionData, AdversarialResult};
+use wordle_engine::{get_solution, is_word_in_list, check_hard_mode, get_guess_statuses, get_ai_word_list, get_adversarial_step, SolutionData, AdversarialResult};
 use serde::{Serialize, Deserialize};
 use wasm_bindgen::prelude::*;
 use std::collections::{HashMap, HashSet};
@@ -250,10 +250,18 @@ fn App() -> impl IntoView {
             let sol = solution_data.get().solution.to_uppercase();
             if input.len() < 5 { set_jiggle_row.set(true); set_timeout(move || set_jiggle_row.set(false), std::time::Duration::from_millis(500)); return; }
             if !is_word_in_list(&input) { set_snarky_comment.set("NOT A WORD.".to_string()); set_jiggle_row.set(true); set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000)); return; }
-            
-            if point_locked_team.get().is_none() { set_point_locked_team.set(Some(theme.get())); }
 
             let mut new_guesses = guesses.get(); let mut new_ss_vec = guess_statuses.get();
+            if hard_mode.get() || is_ng_plus.get() {
+                let err = check_hard_mode(&input, serde_wasm_bindgen::to_value(&new_guesses).unwrap(), serde_wasm_bindgen::to_value(&new_ss_vec).unwrap());
+                if !err.is_empty() {
+                    set_snarky_comment.set(err); set_jiggle_row.set(true); set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
+                    return;
+                }
+            }
+
+            if point_locked_team.get().is_none() { set_point_locked_team.set(Some(theme.get())); }
+
             let mut current_pattern = vec![];
             if is_ng_plus.get() { let pool_val = serde_wasm_bindgen::to_value(&ai_pool.get()).unwrap(); let val = get_adversarial_step(&input, pool_val); if let Ok(res) = serde_wasm_bindgen::from_value::<AdversarialResult>(val) { current_pattern = res.pattern; set_ai_pool.set(res.new_pool.clone()); } }
             else { current_pattern = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &input)).unwrap_or_default(); }

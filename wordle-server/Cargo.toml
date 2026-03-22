@@ -1,7 +1,7 @@
 [package]
 name = "wordle-server"
-version = "2.0.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
 axum = "0.7.4"
@@ -12,3 +12,4 @@ serde_json = "1.0"
 chrono = "0.4"
 tower_governor = "0.3.2"
 sqlx = { version = "0.8.6", features = ["sqlite", "runtime-tokio-rustls"] }
+dotenvy = "0.15"

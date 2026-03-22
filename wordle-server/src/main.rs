@@ -63,6 +63,8 @@ struct AppState {
 
 #[tokio::main]
 async fn main() {
+    let _ = dotenvy::dotenv().ok();
+    
     let db_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:data/wordle.db?mode=rwc".to_string());
     
     // Ensure data directory exists if using the default path

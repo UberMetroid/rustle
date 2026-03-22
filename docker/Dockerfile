@@ -25,17 +25,17 @@ RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/
 
 WORKDIR /app
 
-RUN groupadd -g 1001 reactle && \
-    useradd -r -u 1001 -g reactle reactle && \
+RUN groupadd -g 1001 rustle && \
+    useradd -r -u 1001 -g rustle rustle && \
     mkdir -p /app/dist /app/data && \
-    chown -R reactle:reactle /app
+    chown -R rustle:rustle /app
 
 VOLUME /app/data
 
-COPY --from=builder --chown=reactle:reactle /app/wordle-ui/dist /app/dist
-COPY --from=builder --chown=reactle:reactle /app/target/release/wordle-server /app/wordle-server-bin
+COPY --from=builder --chown=rustle:rustle /app/wordle-ui/dist /app/dist
+COPY --from=builder --chown=rustle:rustle /app/target/release/wordle-server /app/wordle-server-bin
 
-USER reactle
+USER rustle
 EXPOSE 7583
 
 CMD ["/app/wordle-server-bin"]

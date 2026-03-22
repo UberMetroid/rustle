@@ -1,8 +1,0 @@
-{
-  "red": { "points": 0, "players": 0, "yesterday_total": 0 },
-  "orange": { "points": 0, "players": 0, "yesterday_total": 0 },
-  "yellow": { "points": 0, "players": 0, "yesterday_total": 0 },
-  "green": { "points": 0, "players": 0, "yesterday_total": 0 },
-  "blue": { "points": 0, "players": 0, "yesterday_total": 0 },
-  "yesterday_winner": "none"
-}

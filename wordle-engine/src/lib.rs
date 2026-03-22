@@ -119,31 +119,69 @@ pub fn get_ai_word_list() -> JsValue {
     serde_wasm_bindgen::to_value(&list).unwrap_or(JsValue::NULL)
 }
 
+fn calculate_status_mask(solution: &str, guess: &str) -> u8 {
+    let sol_chars: Vec<char> = solution.chars().collect();
+    let guess_chars: Vec<char> = guess.chars().collect();
+    let mut mask: u8 = 0;
+    let mut sol_used = [false; 5];
+    let mut guess_used = [false; 5];
+
+    for i in 0..5 {
+        if i < guess_chars.len() && i < sol_chars.len() && guess_chars[i] == sol_chars[i] {
+            mask |= 2 << (i * 2);
+            sol_used[i] = true;
+            guess_used[i] = true;
+        }
+    }
+
+    for i in 0..5 {
+        if i < guess_chars.len() && !guess_used[i] {
+            for j in 0..5 {
+                if !sol_used[j] && guess_chars[i] == sol_chars[j] {
+                    mask |= 1 << (i * 2);
+                    sol_used[j] = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    mask
+}
+
 #[wasm_bindgen]
 pub fn get_adversarial_step(guess: &str, current_pool: JsValue) -> JsValue {
     let pool: Vec<String> = serde_wasm_bindgen::from_value(current_pool).unwrap_or_default();
-    if pool.is_empty() { return JsValue::NULL; }
 
-    let mut buckets: HashMap<String, Vec<String>> = HashMap::new();
+    let mut buckets: HashMap<u8, Vec<String>> = HashMap::new();
 
     for sol in &pool {
-        let statuses = calculate_statuses(sol, guess);
-        let pattern_key = statuses.join(",");
-        buckets.entry(pattern_key).or_default().push(sol.clone());
+        let mask = calculate_status_mask(sol, guess);
+        buckets.entry(mask).or_default().push(sol.clone());
     }
 
-    let mut best_pattern = String::new();
+    let mut best_mask = 0;
     let mut best_bucket: Vec<String> = Vec::new();
 
-    for (pattern, words) in buckets {
+    for (mask, words) in buckets {
         if words.len() > best_bucket.len() {
-            best_pattern = pattern;
+            best_mask = mask;
             best_bucket = words;
         }
     }
 
+    let mut pattern = Vec::new();
+    for i in 0..5 {
+        let status_val = (best_mask >> (i * 2)) & 3;
+        match status_val {
+            2 => pattern.push("correct".to_string()),
+            1 => pattern.push("present".to_string()),
+            _ => pattern.push("absent".to_string()),
+        }
+    }
+
     let result = AdversarialResult {
-        pattern: best_pattern.split(',').map(|s| s.to_string()).collect(),
+        pattern,
         new_pool: best_bucket
     };
     serde_wasm_bindgen::to_value(&result).unwrap_or(JsValue::NULL)

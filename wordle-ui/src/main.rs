@@ -323,12 +323,12 @@ fn App() -> impl IntoView {
     let start_ng_plus = move || {
         if !daily_game_done.get() {
             let msgs = match theme.get().as_str() {
-                "red" => vec!["FINISH THE DAILY FIRST BLUD.", "LITERALLY NOT UNLOCKED.", "ONE THING AT A TIME.", "NO CAP BEAT THE DAILY.", "SKIBIDI IMPATIENCE."],
-                "orange" => vec!["ACCESS DENIED BESTIE.", "NOT YET CHAMP.", "WE LOVE AN EAGER QUEEN.", "BEAT THE DAILY TO UNLOCK.", "WALK BEFORE YOU RUN."],
-                "yellow" => vec!["FINISH THE DAILY GAME FIRST, GENIUS.", "ADULTING MEANS FINISHING TASKS.", "ONE THING AT A TIME.", "EAGER, ARE WE?", "DO THE DAILY FIRST."],
-                "green" => vec!["CHILL OUT.", "TAKE A BREATH.", "BEAT THE DAILY FIRST, DUDE.", "NOT YET.", "PATIENCE."],
-                "blue" => vec!["IN MY DAY WE FINISHED CHORES.", "HOLD YOUR HORSES.", "ONE STEP AT A TIME.", "BEAT THE DAILY TO UNLOCK.", "NOT YET."],
-                _ => vec!["FINISH THE DAILY GAME FIRST, GENIUS."]
+                "red" => vec!["FINISH THE DAILY FIRST BLUD 🛑", "LITERALLY NOT UNLOCKED 🔒", "ONE THING AT A TIME ⏳", "NO CAP BEAT THE DAILY 🧢", "SKIBIDI IMPATIENCE 🚽"],
+                "orange" => vec!["ACCESS DENIED BESTIE 🙅", "NOT YET CHAMP 🏆", "WE LOVE AN EAGER QUEEN 👑", "BEAT THE DAILY TO UNLOCK 🔓", "WALK BEFORE YOU RUN 🚶"],
+                "yellow" => vec!["FINISH THE DAILY GAME FIRST, GENIUS 🧠", "ADULTING MEANS FINISHING TASKS 📋", "ONE THING AT A TIME ☝️", "EAGER, ARE WE? 👀", "DO THE DAILY FIRST 📅"],
+                "green" => vec!["CHILL OUT 🧊", "TAKE A BREATH 🧘", "BEAT THE DAILY FIRST, DUDE ✌️", "NOT YET 🛑", "PATIENCE ⏳"],
+                "blue" => vec!["IN MY DAY WE FINISHED CHORES 🧹", "HOLD YOUR HORSES 🐎", "ONE STEP AT A TIME 👣", "BEAT THE DAILY TO UNLOCK 🗝️", "NOT YET ✋"],
+                _ => vec!["FINISH THE DAILY GAME FIRST, GENIUS 🧠"]
             };
             set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
             set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(6000));
@@ -338,12 +338,12 @@ fn App() -> impl IntoView {
         set_is_ng_plus.set(true); set_hard_mode.set(true); set_guesses.set(vec![]); set_guess_statuses_vec.set(vec![]); set_game_won.set(false); set_game_lost.set(false); set_current_input.set(String::new()); set_session_points.set(0);
         if !was_active { 
             let msgs = match theme.get().as_str() {
-                "red" => vec!["SYSTEM BREACHED.", "NO ESCAPE.", "IT'S OVER FOR YOU."],
-                "orange" => vec!["NEW GAME+ ENABLED.", "GIVING HARD MODE.", "PROTOCOL INITIALIZED."],
-                "yellow" => vec!["NEW GAME+ ENABLED.", "PROTOCOL INITIALIZED.", "GOOD LUCK."],
-                "green" => vec!["NEW GAME+.", "PREPARE YOURSELF.", "MAXIMUM EFFORT."],
-                "blue" => vec!["NEW GAME+ ENABLED.", "PROTOCOL INITIALIZED.", "BACK TO WORK."],
-                _ => vec!["NEW GAME+ ENABLED.", "PROTOCOL INITIALIZED."]
+                "red" => vec!["SYSTEM BREACHED 🔓", "NO ESCAPE 🚫", "IT'S OVER FOR YOU 💀"],
+                "orange" => vec!["NEW GAME+ ENABLED 💅", "GIVING HARD MODE 😬", "PROTOCOL INITIALIZED 🤖"],
+                "yellow" => vec!["NEW GAME+ ENABLED 🎮", "PROTOCOL INITIALIZED ⚙️", "GOOD LUCK 🍀"],
+                "green" => vec!["NEW GAME+ 🕹️", "PREPARE YOURSELF 😤", "MAXIMUM EFFORT 💪"],
+                "blue" => vec!["NEW GAME+ ENABLED 📺", "PROTOCOL INITIALIZED 📠", "BACK TO WORK 💼"],
+                _ => vec!["NEW GAME+ ENABLED 🕹️", "PROTOCOL INITIALIZED ⚙️"]
             };
             set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string()); 
             set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(6000));
@@ -387,11 +387,11 @@ fn App() -> impl IntoView {
             if input.len() < 5 { set_jiggle_row.set(true); set_timeout(move || set_jiggle_row.set(false), std::time::Duration::from_millis(500)); return; }
             if !is_word_in_list(&input) { 
                 let msgs = match theme.get().as_str() {
-                    "red" => vec!["NOT A WORD BLUD.", "SKIBIDI SPELLING.", "LITERALLY NOT A WORD."],
-                    "orange" => vec!["NOT A WORD, BESTIE.", "YIKES SPELLING.", "WE LOVE A MADE UP WORD."],
-                    "yellow" => vec!["DICTIONARY SAYS NO.", "I CAN'T EVEN READ THAT.", "SIRI WHAT IS THAT WORD?"],
-                    "green" => vec!["BOGUS WORD.", "AS IF.", "FAKE NEWS."],
-                    "blue" => vec!["NOT IN WEBSTER'S.", "LEARN TO SPELL.", "BACK TO SCHOOL."],
+                    "red" => vec!["NOT A WORD BLUD 💀", "SKIBIDI SPELLING 🚽", "LITERALLY NOT A WORD 🚫"],
+                    "orange" => vec!["NOT A WORD, BESTIE 💅", "YIKES SPELLING 😬", "WE LOVE A MADE UP WORD 🤡"],
+                    "yellow" => vec!["DICTIONARY SAYS NO 📚", "I CAN'T EVEN READ THAT 🤦", "SIRI WHAT IS THAT WORD? 📱"],
+                    "green" => vec!["BOGUS WORD 🚫", "AS IF ✋", "FAKE NEWS 🗞️"],
+                    "blue" => vec!["NOT IN WEBSTER'S 📖", "LEARN TO SPELL 🏫", "BACK TO SCHOOL 🎒"],
                     _ => vec!["NOT A WORD."]
                 };
                 set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
@@ -406,11 +406,11 @@ fn App() -> impl IntoView {
                     let err = check_hard_mode(&input, val_g, val_s);
                     if !err.is_empty() {
                         let msgs = match theme.get().as_str() {
-                            "red" => vec!["SKIBIDI ERROR.", "THAT AINT IT.", "AI DETECTS CAP."],
-                            "orange" => vec!["NOT VERY MINDFUL.", "YIKES.", "WE LOVE A RULE FOLLOWER."],
-                            "yellow" => vec!["READ THE RULES DUMMY.", "THAT'S A NO FROM ME.", "SIRI HOW DO I PLAY?"],
-                            "green" => vec!["BOGUS GUESS.", "AS IF.", "READ THE MANUAL."],
-                            "blue" => vec!["FOLLOW THE RULES SONNY.", "IN MY DAY WE READ.", "RESPECT THE HARD MODE."],
+                            "red" => vec!["SKIBIDI ERROR 🚨", "THAT AINT IT 🙅", "AI DETECTS CAP 🧢"],
+                            "orange" => vec!["NOT VERY MINDFUL 🛑", "YIKES 😬", "WE LOVE A RULE FOLLOWER 📜"],
+                            "yellow" => vec!["READ THE RULES DUMMY 📖", "THAT'S A NO FROM ME 🚫", "SIRI HOW DO I PLAY? 📱"],
+                            "green" => vec!["BOGUS GUESS 🚫", "AS IF ✋", "READ THE MANUAL 📖"],
+                            "blue" => vec!["FOLLOW THE RULES SONNY 👴", "IN MY DAY WE READ 📰", "RESPECT THE HARD MODE ⚡"],
                             _ => vec!["INVALID GUESS."]
                         };
                         let prefix_str = msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string();
@@ -508,7 +508,7 @@ fn App() -> impl IntoView {
 
     view! {
         <div class="flex flex-col h-full bg-app-bg text-app-text overflow-hidden transition-all duration-500 relative">
-            <div class="absolute top-2 right-2 text-[8px] font-mono opacity-30 pointer-events-none z-50">"v2.1.0"</div>
+            <div class="absolute top-2 right-2 text-[8px] font-mono opacity-30 pointer-events-none z-50">"v2.2.0"</div>
             <header class="w-full flex flex-col items-center pt-2 sm:pt-4 shrink-0 relative z-50">
                 <div class="flex items-center gap-3">
                     <h1 class="text-3xl sm:text-5xl font-black tracking-tighter italic text-center title-text uppercase">"RUSTLE"</h1>
@@ -554,23 +554,23 @@ fn App() -> impl IntoView {
                                 post_score(t_str.clone(), 0);
                                 let l = label.to_uppercase();
                                 let msgs = match t_str.as_str() {
-                                    "red" => vec!["SKIBIDI.".to_string(), "NO CAP.".to_string(), "GOAT STATUS.".to_string(), "RIZZ.".to_string(), "SIGMA GRINDSET.".to_string()],
-                                    "orange" => vec!["VIBE CHECK.".to_string(), "MAIN CHARACTER ENERGY.".to_string(), "TOUCH GRASS.".to_string(), "LITERAL CHILLS.".to_string(), "IT'S GIVING WINNER.".to_string()],
-                                    "yellow" => vec!["ADULTING IS HARD.".to_string(), "PUPPERCINO VIBES.".to_string(), "DOING THE BARE MINIMUM.".to_string(), "SLAY YAAAAS.".to_string(), "AVOCADO TOAST SECURED.".to_string()],
-                                    "green" => vec!["WHATEVER.".to_string(), "AS IF.".to_string(), "RADICAL DEPARTURE.".to_string(), "STAY GOLDEN.".to_string(), "NOT IMPRESSED.".to_string()],
-                                    "blue" => vec!["BACK IN MY DAY...".to_string(), "RESPECT YOUR ELDERS.".to_string(), "KIDS THESE DAYS.".to_string(), "GET OFF MY LAWN.".to_string(), "PULL YOURSELF BY THE BOOTSTRAPS.".to_string()],
+                                    "red" => vec!["SKIBIDI 🚽".to_string(), "NO CAP 🧢".to_string(), "GOAT STATUS 🐐".to_string(), "W RIZZ 🥶".to_string(), "SIGMA GRINDSET 🗿".to_string()],
+                                    "orange" => vec!["VIBE CHECK 💅".to_string(), "MAIN CHARACTER ENERGY ✨".to_string(), "TOUCH GRASS 🌿".to_string(), "LITERAL CHILLS 🥶".to_string(), "IT'S GIVING WINNER 🏆".to_string()],
+                                    "yellow" => vec!["ADULTING IS HARD ☕".to_string(), "PUPPERCINO VIBES 🐶".to_string(), "DOING THE BARE MINIMUM 🙃".to_string(), "SLAY YAAAAS 💅".to_string(), "AVOCADO TOAST SECURED 🥑".to_string()],
+                                    "green" => vec!["WHATEVER 🙄".to_string(), "AS IF ✋".to_string(), "RADICAL DEPARTURE 🛹".to_string(), "STAY GOLDEN ✨".to_string(), "NOT IMPRESSED 😒".to_string()],
+                                    "blue" => vec!["BACK IN MY DAY... 👴".to_string(), "RESPECT YOUR ELDERS 🧐".to_string(), "KIDS THESE DAYS 🗞️".to_string(), "GET OFF MY LAWN 🏡".to_string(), "PULL YOURSELF BY THE BOOTSTRAPS 👢".to_string()],
                                     _ => vec![format!("JOINING TEAM {}.", l)]
                                 };
                                 set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
                                 set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(6000));
                             } else {
                                 let msgs = match t_str.as_str() {
-                                    "red" => vec!["BRO STOP CAPPING.", "SKIBIDI SPAM.", "LITERALLY RENT FREE.", "AI IS CRINGING.", "TOUCH GRASS ALREADY."],
-                                    "orange" => vec!["WE GET IT, BESTIE.", "NOT VERY MINDFUL CLICKING.", "IT'S THE SPAM FOR ME.", "STOP, I'M LITERALLY SHAKING.", "BIG YIKES."],
-                                    "yellow" => vec!["STOP POKING ME.", "I CAN'T EVEN WITH THIS.", "SIRI, HOW TO STOP SPAM?", "DOING THE MOST.", "NARCISSIST MUCH?"],
-                                    "green" => vec!["TAKE A CHILL PILL.", "GAG ME WITH A SPOON.", "STOP HARSHING MY MELLOW.", "YOU'RE TRIPPING.", "BOGUS SPAM."],
-                                    "blue" => vec!["STOP THAT RACKET.", "PATIENCE IS A VIRTUE.", "KIDS AND THEIR BUTTONS.", "IN MY DAY WE CLICKED ONCE.", "HOLD YOUR HORSES."],
-                                    _ => vec!["WE GET IT.", "YOU ARE ALREADY HERE.", "STOP CLICKING THAT."]
+                                    "red" => vec!["BRO STOP CAPPING 💀".to_string(), "SKIBIDI SPAM 🚽".to_string(), "LITERALLY RENT FREE 🏠".to_string(), "AI IS CRINGING 😬".to_string(), "TOUCH GRASS ALREADY 🌿".to_string()],
+                                    "orange" => vec!["WE GET IT, BESTIE 💅".to_string(), "NOT VERY MINDFUL CLICKING 🛑".to_string(), "IT'S THE SPAM FOR ME 💀".to_string(), "STOP, I'M LITERALLY SHAKING 😭".to_string(), "BIG YIKES 😬".to_string()],
+                                    "yellow" => vec!["STOP POKING ME 👉".to_string(), "I CAN'T EVEN WITH THIS 🤦".to_string(), "SIRI, HOW TO STOP SPAM? 📱".to_string(), "DOING THE MOST 🛑".to_string(), "NARCISSIST MUCH? 🪞".to_string()],
+                                    "green" => vec!["TAKE A CHILL PILL 💊".to_string(), "GAG ME WITH A SPOON 🥄".to_string(), "STOP HARSHING MY MELLOW ✌️".to_string(), "YOU'RE TRIPPING 🍄".to_string(), "BOGUS SPAM 🚫".to_string()],
+                                    "blue" => vec!["STOP THAT RACKET 🙉".to_string(), "PATIENCE IS A VIRTUE ⏳".to_string(), "KIDS AND THEIR BUTTONS 🖱️".to_string(), "IN MY DAY WE CLICKED ONCE ☝️".to_string(), "HOLD YOUR HORSES 🐎".to_string()],
+                                    _ => vec!["WE GET IT.".to_string(), "YOU ARE ALREADY HERE.".to_string(), "STOP CLICKING THAT.".to_string()]
                                 };
                                 set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
                                 set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(6000));

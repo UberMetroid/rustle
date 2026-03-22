@@ -3480,7 +3480,7 @@ dependencies = [
 
 [[package]]
 name = "wordle-engine"
-version = "2.1.0"
+version = "2.2.0"
 dependencies = [
  "chrono",
  "serde",
@@ -3492,7 +3492,7 @@ dependencies = [
 
 [[package]]
 name = "wordle-server"
-version = "2.1.0"
+version = "2.2.0"
 dependencies = [
  "axum",
  "chrono",
@@ -3507,7 +3507,7 @@ dependencies = [
 
 [[package]]
 name = "wordle-ui"
-version = "2.1.0"
+version = "2.2.0"
 dependencies = [
  "chrono",
  "console_error_panic_hook",

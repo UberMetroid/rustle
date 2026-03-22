@@ -318,6 +318,7 @@ fn App() -> impl IntoView {
                 _ => vec!["NEW GAME+ ENABLED.", "PROTOCOL INITIALIZED."]
             };
             set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string()); 
+            set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(6000));
         }
         let full_list: Vec<String> = serde_wasm_bindgen::from_value(get_ai_word_list()).unwrap_or_default();
         set_ai_pool.set(full_list); if let Some(storage) = get_storage() { let _ = storage.remove_item("game-state"); }
@@ -443,6 +444,7 @@ fn App() -> impl IntoView {
                 if turn_pts > 0 { snark = format!("{} (+{} PTS)", snark, turn_pts); }
             }
             set_snarky_comment.set(snark);
+            set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(6000));
             if let Some(storage) = get_storage() {
                 let state = StoredState { guesses: new_guesses, statuses: new_ss_vec, solution: sol, is_ng_plus: is_ng_plus.get(), ai_pool_subset: ai_pool.get().clone(), daily_done: daily_game_done.get(), locked_team: point_locked_team.get() };
                 if let Ok(state_str) = serde_json::to_string(&state) {
@@ -471,7 +473,7 @@ fn App() -> impl IntoView {
 
     view! {
         <div class="flex flex-col h-full bg-app-bg text-app-text overflow-hidden transition-all duration-500 relative">
-            <div class="absolute top-2 right-2 text-[8px] font-mono opacity-30 pointer-events-none z-50">"v1.4.0"</div>
+            <div class="absolute top-2 right-2 text-[8px] font-mono opacity-30 pointer-events-none z-50">"v1.5.0"</div>
             <header class="w-full flex flex-col items-center pt-2 sm:pt-4 shrink-0 relative z-50">
                 <div class="flex items-center gap-3">
                     <h1 class="text-3xl sm:text-5xl font-black tracking-tighter italic text-center title-text uppercase">"RUSTLE"</h1>

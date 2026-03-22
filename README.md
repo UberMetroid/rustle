@@ -13,7 +13,7 @@ No JavaScript. No TypeScript. Just 100% Type-Safe Rust.
 - **Daily Protocol**: One global word per day, synchronized for all users via UTC timestamp.
 - **New Game+ (Adversarial/Absurdle Mode)**: Unlocked after the daily game. Challenge "The System"—an AI that dynamically shifts the solution after every guess to maximize digital entropy. Hard mode is strictly enforced.
 - **Strict Hard Mode**: Forces you to use revealed hints in subsequent guesses. Try to cheat the system, and you'll be mocked.
-- **Team Leaderboards**: Choose your faction (Dark, Red, Green, Blue, White) and compete globally for the highest average score. Points are awarded based on how few guesses you use.
+- **Team Leaderboards**: Choose your faction (Red, Orange, Yellow, Green, Blue) and compete globally for the highest average score. Points are awarded based on how few guesses you use.
 - **Expanded Dictionary**: Over 10,000 valid English words accepted as guesses, with a curated list of ~2,300 possible daily solutions.
 - **80s Radical Snark**: Contextual mocking, error messages, and victory comments based on your performance and UI interactions.
 - **Neon Interaction**: Glowing UI elements, power rings (Hard Mode), and neon wipes (Normal Mode) on every interaction.

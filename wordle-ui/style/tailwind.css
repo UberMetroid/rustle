@@ -35,13 +35,13 @@ body {
 }
 
 /* TEAMS */
-.theme-dark { --app-bg: #000000; --app-text: #ffffff; --theme-primary: #e2e8f0; --absent-cell-bg-color: #111111; --correct-cell-bg-color: #f8fafc; --present-cell-bg-color: #fbbf24; }
+.theme-yellow { --app-bg: #1a1a00; --app-text: #ffffff; --theme-primary: #eab308; --absent-cell-bg-color: #333300; --correct-cell-bg-color: #eab308; --present-cell-bg-color: #f97316; }
 .theme-red { --app-bg: #180000; --app-text: #ffffff; --theme-primary: #ff4444; --absent-cell-bg-color: #2d0000; --correct-cell-bg-color: #ff4444; --present-cell-bg-color: #facc15; }
 .theme-green { --app-bg: #001a0a; --app-text: #ffffff; --theme-primary: #4ade80; --absent-cell-bg-color: #002d11; --correct-cell-bg-color: #4ade80; --present-cell-bg-color: #facc15; }
 .theme-blue { --app-bg: #000a1a; --app-text: #ffffff; --theme-primary: #2563eb; --absent-cell-bg-color: #001a3d; --correct-cell-bg-color: #3b82f6; --present-cell-bg-color: #facc15; }
 .theme-orange { --app-bg: #1a0800; --app-text: #ffffff; --theme-primary: #f97316; --absent-cell-bg-color: #331000; --correct-cell-bg-color: #f97316; --present-cell-bg-color: #facc15; }
 
-.theme-dark .correct, .theme-dark .correct-pad { color: #000 !important; }
+.theme-yellow .correct, .theme-yellow .correct-pad { color: #000 !important; }
 
 .glass-pad {
   background: rgba(0, 0, 0, 0.4);

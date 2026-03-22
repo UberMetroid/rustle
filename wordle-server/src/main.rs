@@ -22,7 +22,7 @@ struct TeamData {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct GlobalStats {
-    pub dark: TeamData,
+    pub yellow: TeamData,
     pub red: TeamData,
     pub green: TeamData,
     pub blue: TeamData,
@@ -35,7 +35,7 @@ struct GlobalStats {
 impl Default for GlobalStats {
     fn default() -> Self {
         Self {
-            dark: TeamData::default(),
+            yellow: TeamData::default(),
             red: TeamData::default(),
             green: TeamData::default(),
             blue: TeamData::default(),
@@ -76,8 +76,8 @@ async fn main() {
             let mut w = state_clone.write().await;
             
             if w.current_date != current_date {
-                let mut max_pts = w.dark.points;
-                let mut winner = "dark".to_string();
+                let mut max_pts = w.yellow.points;
+                let mut winner = "yellow".to_string();
                 
                 let teams = vec![
                     ("red", w.red.points),
@@ -90,7 +90,7 @@ async fn main() {
                 }
                 
                 w.yesterday_winner = winner;
-                w.dark.yesterday_total = w.dark.points; w.dark.points = 0; w.dark.players = 0;
+                w.yellow.yesterday_total = w.yellow.points; w.yellow.points = 0; w.yellow.players = 0;
                 w.red.yesterday_total = w.red.points; w.red.points = 0; w.red.players = 0;
                 w.green.yesterday_total = w.green.points; w.green.points = 0; w.green.players = 0;
                 w.blue.yesterday_total = w.blue.points; w.blue.points = 0; w.blue.players = 0;
@@ -131,7 +131,7 @@ async fn submit_score(State(state): State<AppState>, Json(payload): Json<ScorePa
     if previous_team.as_deref() != Some(payload.team.as_str()) {
         if let Some(prev) = previous_team {
             match prev.as_str() {
-                "dark" => { w.dark.players = w.dark.players.saturating_sub(1); }
+                "yellow" => { w.yellow.players = w.yellow.players.saturating_sub(1); }
                 "red" => { w.red.players = w.red.players.saturating_sub(1); }
                 "green" => { w.green.players = w.green.players.saturating_sub(1); }
                 "blue" => { w.blue.players = w.blue.players.saturating_sub(1); }
@@ -140,7 +140,7 @@ async fn submit_score(State(state): State<AppState>, Json(payload): Json<ScorePa
             }
         }
         match payload.team.as_str() {
-            "dark" => { w.dark.players += 1; }
+            "yellow" => { w.yellow.players += 1; }
             "red" => { w.red.players += 1; }
             "green" => { w.green.players += 1; }
             "blue" => { w.blue.players += 1; }
@@ -150,7 +150,7 @@ async fn submit_score(State(state): State<AppState>, Json(payload): Json<ScorePa
     }
 
     match payload.team.as_str() {
-        "dark" => { w.dark.points += payload.points_delta; }
+        "yellow" => { w.yellow.points += payload.points_delta; }
         "red" => { w.red.points += payload.points_delta; }
         "green" => { w.green.points += payload.points_delta; }
         "blue" => { w.blue.points += payload.points_delta; }

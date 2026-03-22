@@ -13,7 +13,7 @@
             if (savedTheme) {
                 document.documentElement.className = 'theme-' + savedTheme;
             } else {
-                const themes = ['dark', 'red', 'green', 'blue', 'orange'];
+                const themes = ['red', 'orange', 'yellow', 'green', 'blue'];
                 const randomTheme = themes[Math.floor(Math.random() * themes.length)];
                 document.documentElement.className = 'theme-' + randomTheme;
                 localStorage.setItem('color-theme', randomTheme);
@@ -39,11 +39,11 @@
             const particleCount = 150 * powerMult;
 
             const colors = {
-                dark: ['#ffffff', '#333333', '#000000', '#666666'],
                 red: ['#ff0000', '#ff4444', '#880000', '#ff8888'],
+                orange: ['#f97316', '#fb923c', '#c2410c', '#fdba74'],
+                yellow: ['#eab308', '#facc15', '#a16207', '#fef08a'],
                 green: ['#00ff00', '#44ff44', '#008800', '#88ff88'],
-                blue: ['#0000ff', '#4444ff', '#000088', '#8888ff'],
-                orange: ['#f97316', '#fb923c', '#c2410c', '#fdba74']
+                blue: ['#0000ff', '#4444ff', '#000088', '#8888ff']
             }[theme] || ['#00ff00'];
 
             for (let i = 0; i < particleCount; i++) {

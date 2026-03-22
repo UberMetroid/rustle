@@ -17,7 +17,7 @@ No JavaScript. No TypeScript. Just 100% Type-Safe Rust from the Wasm frontend to
 - **Progressive Web App (PWA)**: Fully installable to your mobile or desktop home screen with a built-in Service Worker for blazing-fast offline caching.
 - **Full ARIA Accessibility**: Native screen-reader support ensures that visually impaired players can engage with the terminal and grid mechanics seamlessly.
 - **SQLite Data Persistence**: The backend uses an embedded, transactional `sqlx` SQLite database to guarantee total data integrity and zero lock-contention under heavy loads.
-- **Contextual Generational Snark**: The game aggressively mocks your performance, errors, and UI spam using slang perfectly matched to your currently selected faction.
+- **Contextual Generational Snark**: The game aggressively mocks your performance, errors, and UI spam using an expanded dictionary of slang and emojis perfectly matched to your currently selected faction.
 - **Expanded Dictionary**: Over 10,000 valid English words accepted as guesses, with a curated list of ~2,300 possible daily solutions.
 - **Neon Interaction**: Glowing UI elements, power rings (Hard Mode), and neon wipes (Normal Mode) on every interaction.
 - **Cyber Burst Celebration**: High-gravity pixel fireworks for breaching the system.

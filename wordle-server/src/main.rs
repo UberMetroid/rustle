@@ -63,10 +63,17 @@ struct AppState {
 
 #[tokio::main]
 async fn main() {
+    let db_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:data/wordle.db?mode=rwc".to_string());
+    
+    // Ensure data directory exists if using the default path
+    if db_url.starts_with("sqlite:data/") {
+        let _ = std::fs::create_dir_all("data");
+    }
+
     // Initialize SQLite Database
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
-        .connect("sqlite:wordle.db?mode=rwc").await.expect("Failed to connect to SQLite DB");
+        .connect(&db_url).await.expect("Failed to connect to SQLite DB");
 
     // Initialize Schema
     sqlx::query(

@@ -39,6 +39,8 @@ services:
     restart: unless-stopped
     ports:
       - "7583:7583"
+    volumes:
+      - ./data:/app/data
     security_opt:
       - no-new-privileges:true
 ```
@@ -53,6 +55,7 @@ docker-compose up -d
 docker run -d \
   --name rustle \
   -p 7583:7583 \
+  -v ./data:/app/data \
   --restart unless-stopped \
   ghcr.io/ubermetroid/rustle:latest
 ```

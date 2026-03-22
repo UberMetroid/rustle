@@ -27,8 +27,10 @@ WORKDIR /app
 
 RUN groupadd -g 1001 reactle && \
     useradd -r -u 1001 -g reactle reactle && \
-    mkdir -p /app/dist && \
+    mkdir -p /app/dist /app/data && \
     chown -R reactle:reactle /app
+
+VOLUME /app/data
 
 COPY --from=builder --chown=reactle:reactle /app/wordle-ui/dist /app/dist
 COPY --from=builder --chown=reactle:reactle /app/target/release/wordle-server /app/wordle-server-bin

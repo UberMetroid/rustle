@@ -374,26 +374,33 @@ fn App() -> impl IntoView {
 
             let mut new_guesses = guesses.get(); let mut new_ss_vec = guess_statuses.get();
             if hard_mode.get() || is_ng_plus.get() {
-                let err = check_hard_mode(&input, serde_wasm_bindgen::to_value(&new_guesses).unwrap(), serde_wasm_bindgen::to_value(&new_ss_vec).unwrap());
-                if !err.is_empty() {
-                    let msgs = match theme.get().as_str() {
-                        "red" => vec!["SKIBIDI ERROR.", "THAT AINT IT.", "AI DETECTS CAP."],
-                        "orange" => vec!["NOT VERY MINDFUL.", "YIKES.", "WE LOVE A RULE FOLLOWER."],
-                        "yellow" => vec!["READ THE RULES DUMMY.", "THAT'S A NO FROM ME.", "SIRI HOW DO I PLAY?"],
-                        "green" => vec!["BOGUS GUESS.", "AS IF.", "READ THE MANUAL."],
-                        "blue" => vec!["FOLLOW THE RULES SONNY.", "IN MY DAY WE READ.", "RESPECT THE HARD MODE."],
-                        _ => vec!["INVALID GUESS."]
-                    };
-                    let prefix_str = msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string();
-                    set_snarky_comment.set(format!("{} {}", prefix_str, err)); set_jiggle_row.set(true); set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(6000));
-                    return;
+                if let (Ok(val_g), Ok(val_s)) = (serde_wasm_bindgen::to_value(&new_guesses), serde_wasm_bindgen::to_value(&new_ss_vec)) {
+                    let err = check_hard_mode(&input, val_g, val_s);
+                    if !err.is_empty() {
+                        let msgs = match theme.get().as_str() {
+                            "red" => vec!["SKIBIDI ERROR.", "THAT AINT IT.", "AI DETECTS CAP."],
+                            "orange" => vec!["NOT VERY MINDFUL.", "YIKES.", "WE LOVE A RULE FOLLOWER."],
+                            "yellow" => vec!["READ THE RULES DUMMY.", "THAT'S A NO FROM ME.", "SIRI HOW DO I PLAY?"],
+                            "green" => vec!["BOGUS GUESS.", "AS IF.", "READ THE MANUAL."],
+                            "blue" => vec!["FOLLOW THE RULES SONNY.", "IN MY DAY WE READ.", "RESPECT THE HARD MODE."],
+                            _ => vec!["INVALID GUESS."]
+                        };
+                        let prefix_str = msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string();
+                        set_snarky_comment.set(format!("{} {}", prefix_str, err)); set_jiggle_row.set(true); set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(6000));
+                        return;
+                    }
                 }
             }
 
             if point_locked_team.get().is_none() { set_point_locked_team.set(Some(theme.get())); }
 
             let mut current_pattern = vec![];
-            if is_ng_plus.get() { let pool_val = serde_wasm_bindgen::to_value(&ai_pool.get()).unwrap(); let val = get_adversarial_step(&input, pool_val); if let Ok(res) = serde_wasm_bindgen::from_value::<AdversarialResult>(val) { current_pattern = res.pattern; set_ai_pool.set(res.new_pool.clone()); } }
+            if is_ng_plus.get() { 
+                if let Ok(pool_val) = serde_wasm_bindgen::to_value(&ai_pool.get()) {
+                    let val = get_adversarial_step(&input, pool_val); 
+                    if let Ok(res) = serde_wasm_bindgen::from_value::<AdversarialResult>(val) { current_pattern = res.pattern; set_ai_pool.set(res.new_pool.clone()); } 
+                }
+            }
             else { current_pattern = serde_wasm_bindgen::from_value(get_guess_statuses(&sol, &input)).unwrap_or_default(); }
             if current_pattern.is_empty() { return; }
             

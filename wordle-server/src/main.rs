@@ -169,7 +169,10 @@ async fn main() {
             .per_millisecond(500)
             .burst_size(10)
             .finish()
-            .unwrap(),
+            .unwrap_or_else(|| {
+                // Fallback to a safe default if the builder fails
+                GovernorConfigBuilder::default().finish().unwrap()
+            }),
     );
 
     let app = Router::new()
@@ -184,14 +187,16 @@ async fn main() {
         .layer(CorsLayer::permissive())
         .with_state(state);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:7583").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:7583")
+        .await
+        .expect("Failed to bind to port 7583. Is it already in use?");
     println!("Listening on port 7583");
     axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
     )
     .await
-    .unwrap();
+    .expect("Server failed to start");
 }
 
 async fn get_stats(State(state): State<AppState>) -> Json<GlobalStats> {

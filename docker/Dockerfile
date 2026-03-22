@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:1
 
-# Stage 1: Build Rust App
+# Stage 1: Build Wasm UI and Rust Server
 FROM rust:1.94.0-slim-bullseye AS builder
 RUN apt-get update && apt-get install -y curl pkg-config libssl-dev build-essential
 RUN rustup target add wasm32-unknown-unknown
@@ -10,28 +10,30 @@ WORKDIR /app
 COPY Cargo.toml ./
 COPY wordle-engine ./wordle-engine
 COPY wordle-ui ./wordle-ui
+COPY wordle-server ./wordle-server
 
 WORKDIR /app/wordle-ui
 RUN trunk build --release
 
-## Stage 2: Production image
-FROM nginx:1.24.0-alpine AS prod
+WORKDIR /app/wordle-server
+RUN cargo build --release
 
-# Clean defaults
-RUN rm -rf /etc/nginx/conf.d/* /usr/share/nginx/html/*
+# Stage 2: Production Server
+FROM debian:bullseye-slim AS prod
 
-# Use our single hardened config
-COPY docker/etc/nginx/nginx.conf /etc/nginx/nginx.conf
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
-# Copy build output
-COPY --from=builder /app/wordle-ui/dist /usr/share/nginx/html
+WORKDIR /app
 
-# Set up non-root user
-RUN addgroup -g 1001 -S reactle && \
-    adduser -S -D -H -u 1001 -G reactle reactle && \
-    chown -R reactle:reactle /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx /tmp
+RUN groupadd -g 1001 reactle && \
+    useradd -r -u 1001 -g reactle reactle && \
+    mkdir -p /app/dist && \
+    chown -R reactle:reactle /app
+
+COPY --from=builder --chown=reactle:reactle /app/wordle-ui/dist /app/dist
+COPY --from=builder --chown=reactle:reactle /app/target/release/wordle-server /app/wordle-server-bin
 
 USER reactle
 EXPOSE 7583
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/app/wordle-server-bin"]

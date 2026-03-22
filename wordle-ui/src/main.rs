@@ -13,9 +13,9 @@ extern "C" {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
 struct TeamData {
-    pub points: u32,
+    pub points: i32,
     pub players: u32,
-    pub yesterday_total: u32,
+    pub yesterday_total: i32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
@@ -80,6 +80,42 @@ async fn fetch_global_stats() -> GlobalStats {
         blue: TeamData { points: 0, players: 0, yesterday_total: 0 },
         orange: TeamData { points: 0, players: 0, yesterday_total: 0 },
         yesterday_winner: "none".to_string(),
+    }
+}
+
+fn get_player_id() -> String {
+    if let Some(storage) = get_storage() {
+        if let Ok(Some(id)) = storage.get_item("player-id") {
+            return id;
+        }
+        let new_id = js_sys::Math::random().to_string();
+        let _ = storage.set_item("player-id", &new_id);
+        return new_id;
+    }
+    js_sys::Math::random().to_string()
+}
+
+#[derive(Serialize)]
+struct ScorePayload {
+    player_id: String,
+    team: String,
+    points_delta: i32,
+}
+
+fn post_score(team: String, points_delta: i32) {
+    let payload = ScorePayload { player_id: get_player_id(), team, points_delta };
+    let json = serde_json::to_string(&payload).unwrap();
+    let mut opts = web_sys::RequestInit::new();
+    opts.set_method("POST");
+    opts.set_body(&JsValue::from_str(&json));
+    
+    let headers = web_sys::Headers::new().unwrap();
+    let _ = headers.set("Content-Type", "application/json");
+    opts.set_headers(&headers);
+    
+    let window = window();
+    if let Ok(request) = web_sys::Request::new_with_str_and_init("/api/score", &opts) {
+        let _ = window.fetch_with_request(&request);
     }
 }
 
@@ -284,7 +320,7 @@ fn App() -> impl IntoView {
                 if status == "correct" && existing != "correct" { turn_pts += 2; }
                 else if status == "present" && existing != "correct" && existing != "present" { turn_pts += 1; }
             }
-            if turn_pts > 0 { set_session_points.update(|p| *p += turn_pts); set_win_pulse_trigger.set(format!("+{}", turn_pts)); set_timeout(move || set_win_pulse_trigger.set("".to_string()), std::time::Duration::from_millis(1000)); }
+            if turn_pts > 0 { set_session_points.update(|p| *p += turn_pts); set_win_pulse_trigger.set(format!("+{}", turn_pts)); set_timeout(move || set_win_pulse_trigger.set("".to_string()), std::time::Duration::from_millis(1000)); post_score(theme.get(), turn_pts); }
 
             new_guesses.push(input.clone()); new_ss_vec.push(current_pattern.clone());
             set_guesses.set(new_guesses.clone()); set_guess_statuses_vec.set(new_ss_vec.clone()); set_current_input.set(String::new());
@@ -303,6 +339,7 @@ fn App() -> impl IntoView {
                     set_win_pulse_trigger.set(format!("+{}", bonus));
                     set_timeout(move || set_win_pulse_trigger.set("".to_string()), std::time::Duration::from_millis(1500));
                     set_stats.update(|s| { s.scored_words.insert(final_word); });
+                    post_score(theme.get(), bonus);
                 }
                 if turn_pts + bonus > 0 { snark = format!("{} (+{} PTS)", snark, turn_pts + bonus); }
                 set_timeout(move || celebrate(&theme.get(), hard_mode.get(), is_ng_plus.get()), std::time::Duration::from_millis(1800));
@@ -311,6 +348,7 @@ fn App() -> impl IntoView {
             } else if is_loss {
                 set_game_lost.set(true); if !is_ng_plus.get() { set_daily_game_done.set(true); }
                 set_session_points.update(|p| *p -= 1);
+                post_score(theme.get(), -1);
                 set_win_pulse_trigger.set("-1".to_string());
                 set_timeout(move || set_win_pulse_trigger.set("".to_string()), std::time::Duration::from_millis(1500));
                 let final_word = if is_ng_plus.get() { ai_pool.get().first().cloned().unwrap_or(sol.clone()) } else { sol.clone() };
@@ -347,7 +385,11 @@ fn App() -> impl IntoView {
                     <button on:click=move |_| set_show_stats.set(true) title="Team Status" class="btn-large correct-pad shadow-lg border-2 border-transparent transition-all active:scale-90"> <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg> </button>
                     <button on:click=move |_| set_show_help.set(true) title="How to Play" class="btn-large correct-pad shadow-lg border-2 border-transparent transition-all active:scale-90"> <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> </button>
                     <button on:click=move |_| {
-                        if guesses.get().is_empty() {
+                        if is_ng_plus.get() {
+                            let msgs = vec!["NO ESCAPE FROM THE SYSTEM.", "MANDATORY HARD MODE.", "SUCK IT UP, BUTTERCUP.", "YOU ASKED FOR THIS.", "AI DOES NOT ALLOW COWARDICE."];
+                            set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
+                            set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(4000));
+                        } else if guesses.get().is_empty() {
                             set_hard_mode.update(|h| *h = !*h);
                             let msgs = if hard_mode.get() { vec!["A GLUTTON FOR PUNISHMENT.", "OH, YOU THINK YOU'RE SMART?", "BRING THE PAIN.", "HARD MODE ENGAGED.", "NO MERCY.", "PREPARE TO SUFFER.", "FINALLY, A CHALLENGE."] } else { vec!["COWARD.", "TOO HARD FOR YOU?", "BACK TO BABY MODE.", "COPPING OUT ALREADY?", "WEAK AURA.", "I EXPECTED BETTER.", "EASY MODE ENGAGED."] };
                             set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
@@ -370,6 +412,7 @@ fn App() -> impl IntoView {
                         view! { <button on:click=move |_| {
                             if theme.get() != t_str {
                                 set_theme.set(t_str.clone());
+                                post_score(t_str.clone(), 0);
                                 let l = label.to_uppercase();
                                 let msgs = vec![format!("JOINING TEAM {}.", l), format!("{} TEAM? BOLD CHOICE.", l), format!("TRAITOR. GOING TO {}.", l), format!("TEAM {} IT IS.", l)];
                                 set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
@@ -381,7 +424,7 @@ fn App() -> impl IntoView {
             </main>
             <footer class="w-full max-w-2xl mx-auto p-2 pb-6 shrink-0 relative z-50"> {move || { let rows = vec![vec!['Q','W','E','R','T','Y','U','I','O','P'], vec!['A','S','D','F','G','H','J','K','L'], vec!['Z','X','C','V','B','N','M']]; rows.into_iter().enumerate().map(|(i, row)| { view! { <div class="flex justify-center mb-1.5 w-full gap-1 sm:gap-1.5 px-1"> {if i == 2 { let is_full = current_input.get().len() == 5; view! { <button class=format!("key-large px-3 rounded-xl font-black transition-all duration-300 hover:brightness-110 active:scale-90 shadow-lg flex-[1.5] {} flex items-center justify-center", if is_full { "bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.8)] scale-105" } else { "key-neutral" }) on:click=move |_| on_key("ENTER".to_string())> <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg> </button> }.into_view() } else { view! {}.into_view() }} {row.into_iter().map(|c| { let status = move || char_statuses.get().get(&c).cloned().unwrap_or_default(); let pulse = move || if keyboard_pulse.get().0 == c { keyboard_pulse.get().1 } else { "".to_string() }; let hard = hard_mode.get() || is_ng_plus.get(); view! { <button class=move || format!("key-large relative rounded-xl font-black flex-1 min-w-[30px] transition-all duration-300 hover:brightness-110 active:scale-90 shadow-lg border-2 border-transparent {}", match status().as_str() { "correct" => "correct", "present" => "present", "absent" => "absent", _ => "key-neutral" }) on:click=move |_| on_key(c.to_string())> {move || { let id = pulse(); if !id.is_empty() { if hard { view! { <div key=id class="power-ring" /> }.into_view() } else { view! { <div key=id class="power-underline" /> }.into_view() } } else { view! {}.into_view() } }} {c.to_string()} </button> } }).collect_view()} {if i == 2 { view! { <button class="key-large px-3 rounded-xl font-black transition-all duration-300 hover:brightness-110 active:scale-90 shadow-lg flex-[1.5] key-neutral flex items-center justify-center" on:click=move |_| on_key("DELETE".to_string())> <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg> </button> }.into_view() } else { view! {}.into_view() }} </div> } }).collect_view() }} </footer>
             
-            <Modal title="Leaderboard".to_string() is_open=show_stats set_is_open=set_show_stats> <div class="flex flex-col items-center text-center text-white p-2 rounded-xl bg-black bg-opacity-40"> <div class="w-full mb-6 text-center"> <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary">"TEAMS"</h3> <div class="grid grid-cols-5 w-full gap-2 px-2"> {move || { let gs = global_stats_res.get().unwrap_or_default(); vec![("dark", "bg-black text-white", "D"), ("red", "bg-red-600 text-white", "R"), ("green", "bg-green-600 text-white", "G"), ("blue", "bg-blue-600 text-white", "B"), ("orange", "bg-orange-500 text-white", "O")].into_iter().map(move |(t, bg, label)| { let d = match t { "dark" => &gs.dark, "red" => &gs.red, "green" => &gs.green, "blue" => &gs.blue, _ => &gs.orange }; let win_name = gs.yesterday_winner.clone(); view! { <div class="flex flex-col items-center"> <div class=format!("theme-square {} active ring-2 ring-white ring-opacity-20 mb-1", bg)> <Show when=move || win_name == t> <div class="crown-icon">"👑"</div> </Show> <div class="text-[10px] font-black">{d.points}</div> </div> <div class="text-[6px] uppercase opacity-50 font-black mb-1">{label}</div> <div class="text-[8px] font-black text-yellow-400">{d.yesterday_total}</div> <div class="text-[5px] uppercase opacity-30">"Yesterday"</div> </div> } }).collect_view() }} </div> </div> <div class="w-full border-t border-white border-opacity-10 pt-6 mb-6"> <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary text-center">"Individual Ranking"</h3> <div class="grid grid-cols-4 w-full gap-4 mb-8"> <div class="flex flex-col"><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Played"</div></div> <div class="flex flex-col"><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Win %"</div></div> <div class="flex flex-col"><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Streak"</div></div> <div class="flex flex-col"><div class="text-3xl font-black">{move || stats.get().best_streak}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Best"</div></div> </div> <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary text-center">"Guess Distribution"</h3> <div class="w-full space-y-1.5 text-left"> {move || stats.get().distribution.iter().enumerate().map(|(i, count)| { let wins = stats.get().wins; let width = if wins > 0 { (*count as f32 * 100.0 / wins as f32).max(10.0) } else { 10.0 }; view! { <div class="flex items-center gap-2 text-xs text-white"><div class="w-2">{i+1}</div><div class="bg-gray-600 text-white font-black p-0.5 rounded text-right pr-2 transition-all duration-1000" style=format!("width: {}%", width)>{*count}</div></div> } }).collect_view()} </div> </div> <Show when=move || game_won.get() || game_lost.get()> <button on:click=move |_| share_results() class="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest"> "SHARE" </button> </Show> </div> </Modal>
+            <Modal title="Leaderboard".to_string() is_open=show_stats set_is_open=set_show_stats> <div class="flex flex-col items-center text-center text-white p-2 rounded-xl bg-black bg-opacity-40"> <div class="w-full mb-6 text-center"> <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary">"TEAMS"</h3> <div class="grid grid-cols-5 w-full gap-2 px-2"> {move || { let gs = global_stats_res.get().unwrap_or_default(); vec![("dark", "bg-black text-white", "D"), ("red", "bg-red-600 text-white", "R"), ("green", "bg-green-600 text-white", "G"), ("blue", "bg-blue-600 text-white", "B"), ("orange", "bg-orange-500 text-white", "O")].into_iter().map(move |(t, bg, label)| { let d = match t { "dark" => &gs.dark, "red" => &gs.red, "green" => &gs.green, "blue" => &gs.blue, _ => &gs.orange }; let win_name = gs.yesterday_winner.clone(); view! { <div class="flex flex-col items-center"> <div class=format!("theme-square {} active ring-2 ring-white ring-opacity-20 mb-1", bg)> <Show when=move || win_name == t> <div class="crown-icon">"👑"</div> </Show> <div class="text-[10px] font-black">{d.points}</div> </div> <div class="text-[6px] uppercase opacity-50 font-black">{label}</div> <div class="text-[5px] uppercase opacity-30 mb-1">{d.players} "PLYRS"</div> <div class="text-[8px] font-black text-yellow-400">{d.yesterday_total}</div> <div class="text-[5px] uppercase opacity-30">"Yesterday"</div> </div> } }).collect_view() }} </div> </div> <div class="w-full border-t border-white border-opacity-10 pt-6 mb-6"> <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary text-center">"Individual Ranking"</h3> <div class="grid grid-cols-4 w-full gap-4 mb-8"> <div class="flex flex-col"><div class="text-3xl font-black">{move || stats.get().total_games}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Played"</div></div> <div class="flex flex-col"><div class="text-3xl font-black">{move || if stats.get().total_games > 0 { stats.get().wins * 100 / stats.get().total_games } else { 0 }}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Win %"</div></div> <div class="flex flex-col"><div class="text-3xl font-black">{move || stats.get().current_streak}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Streak"</div></div> <div class="flex flex-col"><div class="text-3xl font-black">{move || stats.get().best_streak}</div><div class="text-[8px] uppercase opacity-70 tracking-tighter">"Best"</div></div> </div> <h3 class="text-xs font-bold uppercase mb-4 tracking-widest text-theme-primary text-center">"Guess Distribution"</h3> <div class="w-full space-y-1.5 text-left"> {move || stats.get().distribution.iter().enumerate().map(|(i, count)| { let wins = stats.get().wins; let width = if wins > 0 { (*count as f32 * 100.0 / wins as f32).max(10.0) } else { 10.0 }; view! { <div class="flex items-center gap-2 text-xs text-white"><div class="w-2">{i+1}</div><div class="bg-gray-600 text-white font-black p-0.5 rounded text-right pr-2 transition-all duration-1000" style=format!("width: {}%", width)>{*count}</div></div> } }).collect_view()} </div> </div> <Show when=move || game_won.get() || game_lost.get()> <button on:click=move |_| share_results() class="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest"> "SHARE" </button> </Show> </div> </Modal>
             
             <Modal title="How to Play".to_string() is_open=show_help set_is_open=set_show_help> <div class="flex flex-col gap-6 text-white text-center"> <div class="space-y-4"> <div class="flex flex-col items-center gap-1"> <div class="flex"> <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent correct font-black">"R"</div> <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"U"</div> <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"S"</div> <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"T"</div> <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"S"</div> </div> <div class="text-[10px] opacity-70">"R is in the correct spot."</div> </div> <div class="flex flex-col items-center gap-1"> <div class="flex"> <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral font-bold">"W"</div> <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent present mx-0.5 font-black text-black">"O"</div> <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"R"</div> <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"D"</div> <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"S"</div> </div> <div class="text-[10px] opacity-70">"O is in the word but wrong spot."</div> </div> <div class="flex flex-col items-center gap-1"> <div class="flex"> <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral font-bold">"V"</div> <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"A"</div> <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"G"</div> <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent absent mx-0.5 font-black">"U"</div> <div class="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-transparent cell-neutral mx-0.5 font-bold">"E"</div> </div> <div class="text-[10px] opacity-70">"U is not in the word."</div> </div> </div> <div class="w-full border-t border-white border-opacity-10 pt-4"> <div class="flex items-center justify-center gap-1.5 mb-2"> <h3 class="text-xs font-bold uppercase tracking-widest text-theme-primary m-0">"New Game"</h3> <div class="ai-active-pad w-4 h-4 flex items-center justify-center rounded shadow-lg border border-transparent shadow-[0_0_10px_rgba(255,0,255,0.8)]"><span class="text-[10px] font-black text-white">"+"</span></div> </div> <p class="text-[10px] opacity-80 leading-relaxed">"Beat the daily game to unlock New Game+. In this mode, the game plays actively against you. There is no single pre-picked word. Instead, the AI dynamically dodges your guesses by switching the answer to whatever remaining valid word forces you to take the longest possible path to win. Hard Mode is strictly enforced. Good luck."</p> </div> </div> </Modal>
         </div>

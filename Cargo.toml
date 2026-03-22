@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "wordle-engine",
+    "wordle-engine", "wordle-server",
     "wordle-ui"
 ]
 resolver = "2"

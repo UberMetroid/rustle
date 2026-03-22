@@ -166,8 +166,10 @@ async fn main() {
 }
 
 async fn get_stats(State(state): State<AppState>) -> Json<GlobalStats> {
-    let mut stats = GlobalStats::default();
-    stats.server_utc_timestamp = Utc::now().timestamp_millis() as u64;
+    let mut stats = GlobalStats {
+        server_utc_timestamp: Utc::now().timestamp_millis() as u64,
+        ..Default::default()
+    };
 
     if let Ok(row) = sqlx::query("SELECT current_date, yesterday_winner FROM sys_state WHERE id = 1").fetch_one(&state.pool).await {
         stats.current_date = row.get("current_date");

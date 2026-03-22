@@ -27,6 +27,7 @@ struct GlobalStats {
     pub red: TeamData,
     pub green: TeamData,
     pub blue: TeamData,
+    pub purple: TeamData,
     pub orange: TeamData,
     pub yesterday_winner: String,
     pub active_players: HashMap<String, String>, // player_id -> team
@@ -40,6 +41,7 @@ impl Default for GlobalStats {
             yellow: TeamData::default(),
             red: TeamData::default(),
             green: TeamData::default(),
+            purple: TeamData::default(),
             blue: TeamData::default(),
             orange: TeamData::default(),
             yesterday_winner: "none".to_string(),
@@ -116,7 +118,7 @@ async fn main() {
     .unwrap();
 
     // Ensure all teams exist
-    for team in ["red", "orange", "yellow", "green", "blue"] {
+    for team in ["red", "orange", "yellow", "green", "blue", "purple"] {
         sqlx::query("INSERT OR IGNORE INTO teams (name, points, players, yesterday_total) VALUES (?, 0, 0, 0)")
             .bind(team)
             .execute(&pool).await.unwrap();
@@ -242,6 +244,7 @@ async fn get_stats(State(state): State<AppState>) -> Json<GlobalStats> {
                 "yellow" => stats.yellow = t_data,
                 "green" => stats.green = t_data,
                 "blue" => stats.blue = t_data,
+                "purple" => stats.purple = t_data,
                 _ => {}
             }
         }
@@ -255,7 +258,7 @@ async fn submit_score(State(state): State<AppState>, Json(payload): Json<ScorePa
         return;
     }
 
-    let valid_teams = ["red", "orange", "yellow", "green", "blue"];
+    let valid_teams = ["red", "orange", "yellow", "green", "blue", "purple"];
     if !valid_teams.contains(&payload.team.as_str()) {
         return;
     }

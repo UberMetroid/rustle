@@ -46,6 +46,7 @@ button {
 .theme-red { --app-bg: #180000; --app-text: #ffffff; --theme-primary: #ff4444; --absent-cell-bg-color: #2d0000; --correct-cell-bg-color: #ff4444; --present-cell-bg-color: #facc15; }
 .theme-green { --app-bg: #001a0a; --app-text: #ffffff; --theme-primary: #4ade80; --absent-cell-bg-color: #002d11; --correct-cell-bg-color: #4ade80; --present-cell-bg-color: #facc15; }
 .theme-blue { --app-bg: #000a1a; --app-text: #ffffff; --theme-primary: #2563eb; --absent-cell-bg-color: #001a3d; --correct-cell-bg-color: #3b82f6; --present-cell-bg-color: #facc15; }
+.theme-purple { --app-bg: #1a001a; --app-text: #ffffff; --theme-primary: #9333ea; --absent-cell-bg-color: #3d003d; --correct-cell-bg-color: #a855f7; --present-cell-bg-color: #facc15; }
 .theme-orange { --app-bg: #1a0800; --app-text: #ffffff; --theme-primary: #f97316; --absent-cell-bg-color: #331000; --correct-cell-bg-color: #f97316; --present-cell-bg-color: #facc15; }
 
 .theme-yellow .correct, .theme-yellow .correct-pad { color: #000 !important; }
@@ -181,7 +182,7 @@ button {
 @keyframes snarky-slide { 
   0% { transform: translateY(5px); opacity: 0; } 
   5% { transform: translateY(0); opacity: 1; } 
-  90% { transform: translateY(0); opacity: 1; }
+  95% { transform: translateY(0); opacity: 1; }
   100% { transform: translateY(-5px); opacity: 0; } 
 }
 

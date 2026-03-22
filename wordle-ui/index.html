@@ -31,7 +31,7 @@
             if (savedTheme) {
                 document.documentElement.className = 'theme-' + savedTheme;
             } else {
-                const themes = ['red', 'orange', 'yellow', 'green', 'blue'];
+                const themes = ['red', 'orange', 'yellow', 'green', 'blue', 'purple'];
                 const randomTheme = themes[Math.floor(Math.random() * themes.length)];
                 document.documentElement.className = 'theme-' + randomTheme;
                 localStorage.setItem('color-theme', randomTheme);
@@ -70,7 +70,8 @@
                 orange: ['#f97316', '#fb923c', '#c2410c', '#fdba74'],
                 yellow: ['#eab308', '#facc15', '#a16207', '#fef08a'],
                 green: ['#00ff00', '#44ff44', '#008800', '#88ff88'],
-                blue: ['#0000ff', '#4444ff', '#000088', '#8888ff']
+                blue: ['#0000ff', '#4444ff', '#000088', '#8888ff'],
+                purple: ['#9333ea', '#c084fc', '#581c87', '#e9d5ff']
             }[theme] || ['#00ff00'];
 
             for (let i = 0; i < particleCount; i++) {

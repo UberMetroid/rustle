@@ -6,8 +6,12 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "2.2.0"
+version = "2.3.0"
 edition = "2021"
+
+[workspace.metadata.rustfmt]
+edition = "2021"
+max_width = 100
 
 [profile.release]
 lto = true
@@ -15,3 +19,7 @@ opt-level = 'z'
 codegen-units = 1
 panic = 'abort'
 strip = true
+
+[profile.bench]
+opt-level = 3
+lto = true

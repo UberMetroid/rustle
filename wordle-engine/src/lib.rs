@@ -96,11 +96,15 @@ pub fn check_hard_mode(guess: &str, prev_guesses: JsValue, prev_statuses: JsValu
     let prev_g: Vec<String> = serde_wasm_bindgen::from_value(prev_guesses).unwrap_or_default();
     let prev_s: Vec<Vec<String>> =
         serde_wasm_bindgen::from_value(prev_statuses).unwrap_or_default();
-    
+
     check_hard_mode_internal(guess, prev_g, prev_s)
 }
 
-pub fn check_hard_mode_internal(guess: &str, prev_g: Vec<String>, prev_s: Vec<Vec<String>>) -> String {
+pub fn check_hard_mode_internal(
+    guess: &str,
+    prev_g: Vec<String>,
+    prev_s: Vec<Vec<String>>,
+) -> String {
     let guess_chars: Vec<char> = guess.chars().collect();
 
     for (pg, statuses) in prev_g.iter().zip(prev_s.iter()) {
@@ -142,7 +146,6 @@ pub fn check_hard_mode_internal(guess: &str, prev_g: Vec<String>, prev_s: Vec<Ve
     }
     String::new()
 }
-
 
 /// Returns the entire list of primary valid words for the AI pool.
 #[wasm_bindgen]
@@ -226,3 +229,6 @@ pub fn get_adversarial_step(guess: &str, current_pool: JsValue) -> JsValue {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod prop_tests;

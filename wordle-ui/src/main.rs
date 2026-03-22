@@ -263,7 +263,7 @@ fn App() -> impl IntoView {
                 set_timeout(move || {
                     global_stats_res.refetch();
                     set_guesses.set(vec![]); set_guess_statuses_vec.set(vec![]); set_current_input.set(String::new());
-                    set_game_won.set(false); set_game_lost.set(false); set_is_ng_plus.set(false); set_daily_game_done.set(false);
+                    set_game_won.set(false); set_game_lost.set(false); set_is_ng_plus.set(false); set_daily_game_done.set(false); set_hard_mode.set(false);
                     set_session_points.set(0); set_point_locked_team.set(None);
                     if let Some(storage) = get_storage() { let _ = storage.remove_item("game-state"); }
                     set_snarky_comment.set("NEW DAY INITIALIZED.".to_string());

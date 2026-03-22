@@ -244,6 +244,7 @@ fn App() -> impl IntoView {
     let (point_locked_team, set_point_locked_team) = create_signal(None::<String>);
 
     let global_stats_res = create_local_resource(move || (), |_| fetch_global_stats());
+    
     let solution_data = create_memo(move |_| {
         let ts = match global_stats_res.get() {
             Some(stats) => stats.server_utc_timestamp,
@@ -251,6 +252,25 @@ fn App() -> impl IntoView {
         };
         let val = get_solution(ts);
         serde_wasm_bindgen::from_value::<SolutionData>(val).unwrap_or_else(|_| { SolutionData { solution: "APPLE".to_string(), solution_game_date: 0, solution_index: 0, tomorrow: 0 } }) 
+    });
+
+    // Auto-rollover background timer
+    create_effect(move |_| {
+        let tomorrow = solution_data.get().tomorrow;
+        if tomorrow > 0 {
+            let delay = tomorrow as f64 - js_sys::Date::now();
+            if delay > 0.0 {
+                set_timeout(move || {
+                    global_stats_res.refetch();
+                    set_guesses.set(vec![]); set_guess_statuses_vec.set(vec![]); set_current_input.set(String::new());
+                    set_game_won.set(false); set_game_lost.set(false); set_is_ng_plus.set(false); set_daily_game_done.set(false);
+                    set_session_points.set(0); set_point_locked_team.set(None);
+                    if let Some(storage) = get_storage() { let _ = storage.remove_item("game-state"); }
+                    set_snarky_comment.set("NEW DAY INITIALIZED.".to_string());
+                    set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(6000));
+                }, std::time::Duration::from_millis(delay as u64));
+            }
+        }
     });
 
     create_effect(move |_| {

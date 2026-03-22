@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.2.0] - 2026-03-22
+### Added
+- **Emoji Snark Expansion:** Massively expanded the generational snark dictionaries with highly expressive, faction-specific emojis for all game states (winning, losing, hard-mode violations, and UI spamming).
+- **Player Onboarding:** Implemented a non-intrusive, diegetic tutorial hint (`"PICK A FACTION (RIGHT). TOGGLE HARD MODE (LEFT)."`) that appears via the snark bar for first-time players.
+
+### Fixed
+- **Mobile Layout Polish:** Refactored sidebar positioning to align perfectly flush with the top of the game board and sit exactly halfway between the board and the screen edge on mobile devices.
+- **Mobile Safe Areas:** Added `env(safe-area-inset-bottom)` padding to the virtual keyboard to prevent conflict with iOS/Android home indicator bars.
+- **Touch Optimizations:** Added `touch-action: manipulation` and `user-select: none` to all interactive UI elements to prevent accidental zooming or text highlighting during rapid play.
+- **Midnight Hard Mode Reset:** Fixed an edge case where being in an active New Game+ session during the UTC midnight rollover would accidentally force the next day's daily puzzle into Hard Mode. Hard Mode is now explicitly cleared upon rollover.
+
 ## [2.1.0] - 2026-03-22
 ### Added
 - **Progressive Web App (PWA):** Added `manifest.json` and `sw.js` for offline caching and home-screen installation.

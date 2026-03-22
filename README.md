@@ -3,7 +3,7 @@
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/UberMetroid/rustle/Latest%20Docker%20CI.yml?label=Latest%20Docker%20Build)
 [![GitHub last commit](https://img.shields.io/github/last-commit/UberMetroid/rustle)](https://github.com/UberMetroid/rustle)
 
-**Rustle** is a high-performance, full-stack Rust Wordle clone featuring an adversarial AI Mode (New Game+), global leaderboards, 80s arcade physics, and a responsive "Neon on Onyx" UI. 
+**Rustle** is a high-performance, full-stack Rust Wordle clone featuring an adversarial AI Mode (New Game+), global leaderboards, snappy WebAssembly rendering, and a responsive "Neon on Onyx" UI. 
 
 No JavaScript. No TypeScript. Just 100% Type-Safe Rust from the Wasm frontend to the Axum backend.
 

@@ -14,6 +14,9 @@ No JavaScript. No TypeScript. Just 100% Type-Safe Rust from the Wasm frontend to
 - **New Game+ (Adversarial/Absurdle Mode)**: Unlocked after the daily game. Challenge "The System"—an AI that dynamically shifts the solution after every guess to maximize digital entropy. Hard mode is strictly enforced.
 - **Strict Hard Mode**: Forces you to use revealed hints in subsequent guesses. Try to cheat the system, and you'll be mocked.
 - **Generational Team Leaderboards**: Choose your faction based on your generational vibe (Red/Alpha, Orange/Z, Yellow/Millennial, Green/X, Blue/Boomer) and compete globally. Points are synced to the backend in real-time.
+- **Progressive Web App (PWA)**: Fully installable to your mobile or desktop home screen with a built-in Service Worker for blazing-fast offline caching.
+- **Full ARIA Accessibility**: Native screen-reader support ensures that visually impaired players can engage with the terminal and grid mechanics seamlessly.
+- **SQLite Data Persistence**: The backend uses an embedded, transactional `sqlx` SQLite database to guarantee total data integrity and zero lock-contention under heavy loads.
 - **Contextual Generational Snark**: The game aggressively mocks your performance, errors, and UI spam using slang perfectly matched to your currently selected faction.
 - **Expanded Dictionary**: Over 10,000 valid English words accepted as guesses, with a curated list of ~2,300 possible daily solutions.
 - **Neon Interaction**: Glowing UI elements, power rings (Hard Mode), and neon wipes (Normal Mode) on every interaction.

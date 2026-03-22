@@ -11,11 +11,13 @@ No JavaScript. No TypeScript. Just 100% Type-Safe Rust.
 
 ## 🕹 Features
 - **Daily Protocol**: One global word per day, synchronized for all users via UTC timestamp.
-- **New Game+ (Adversarial)**: Unlocked after the daily game. Challenge "The System"—an AI that dynamically shifts the solution after every guess to maximize digital entropy.
-- **80s Radical Snark**: Contextual mocking and victory comments based on your performance.
-- **Neon Interaction**: Power rings (Hard Mode) and neon wipes (Normal Mode) on every interaction.
+- **New Game+ (Adversarial/Absurdle Mode)**: Unlocked after the daily game. Challenge "The System"—an AI that dynamically shifts the solution after every guess to maximize digital entropy. Hard mode is strictly enforced.
+- **Strict Hard Mode**: Forces you to use revealed hints in subsequent guesses. Try to cheat the system, and you'll be mocked.
+- **Team Leaderboards**: Choose your faction (Dark, Red, Green, Blue, White) and compete globally for the highest average score. Points are awarded based on how few guesses you use.
+- **Expanded Dictionary**: Over 10,000 valid English words accepted as guesses, with a curated list of ~2,300 possible daily solutions.
+- **80s Radical Snark**: Contextual mocking, error messages, and victory comments based on your performance and UI interactions.
+- **Neon Interaction**: Glowing UI elements, power rings (Hard Mode), and neon wipes (Normal Mode) on every interaction.
 - **Cyber Burst Celebration**: High-gravity pixel fireworks for breaching the system.
-- **8-Stop Rainbow Theming**: Persistent theme slider with silver/dark optimized visibility.
 - **Privacy-First Sharing**: Theme-matched emoji blocks with sanitized, spoiler-free comments.
 
 ---
@@ -75,9 +77,9 @@ If you want to build from source or contribute to the engine.
 2. Start the development server:
    ```bash
    cd wordle-ui
-   trunk serve
+   trunk serve --port 7583
    ```
-3. Open `http://localhost:8080` in your browser.
+3. Open `http://localhost:7583` in your browser.
 
 ---
 

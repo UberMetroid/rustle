@@ -7,7 +7,7 @@ RUN rustup target add wasm32-unknown-unknown
 RUN cargo install trunk
 
 WORKDIR /app
-COPY Cargo.toml ./
+COPY Cargo.toml Cargo.lock ./
 COPY wordle-engine ./wordle-engine
 COPY wordle-ui ./wordle-ui
 COPY wordle-server ./wordle-server

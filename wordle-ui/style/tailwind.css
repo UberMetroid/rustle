@@ -34,6 +34,13 @@ body {
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
+button {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* TEAMS */
 .theme-yellow { --app-bg: #1a1a00; --app-text: #ffffff; --theme-primary: #eab308; --absent-cell-bg-color: #333300; --correct-cell-bg-color: #eab308; --present-cell-bg-color: #f97316; }
 .theme-red { --app-bg: #180000; --app-text: #ffffff; --theme-primary: #ff4444; --absent-cell-bg-color: #2d0000; --correct-cell-bg-color: #ff4444; --present-cell-bg-color: #facc15; }
@@ -139,6 +146,11 @@ body {
 /* POP */
 .cell-pop { animation: pop 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.15); filter: brightness(1.5); text-shadow: 0 0 10px currentColor; } 100% { transform: scale(1); } }
+
+/* MOBILE SAFE AREAS */
+.pb-safe {
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
 
 /* STATUS COLORS */
 .absent { background-color: var(--absent-cell-bg-color) !important; border-color: rgba(255, 255, 255, 0.05) !important; color: rgba(255, 255, 255, 0.15) !important; }

@@ -442,6 +442,10 @@ fn App() -> impl IntoView {
                                 };
                                 set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
                                 set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(4000));
+                            } else {
+                                let msgs = ["WE GET IT.", "YOU ARE ALREADY HERE.", "STOP CLICKING THAT.", "NOTHING ELSE TO SEE.", "FOCUS ON THE GAME.", "NARCISSIST MUCH?", "ARE YOU LOST?"];
+                                set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
+                                set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(4000));
                             }
                         } title=format!("{} Team", label) class=format!("theme-square {} active:scale-125 {}", bg, if is_act { "active ring-2 ring-white ring-offset-2" } else { "" })> <Show when=move || winner_val == t> <div class="crown-icon">"👑"</div> </Show> <Show when=move || is_act> <div class="absolute inset-0 flex items-center justify-center font-black drop-shadow-md z-10 text-[10px] sm:text-xs text-white">{session_points.get()}</div> </Show> <Show when=move || !pulse_val.is_empty() && is_act> <div key=pulse_val_2.clone() class="win-pulse">{pulse_val_2.clone()}</div> </Show> </button> }
                     }).collect_view()

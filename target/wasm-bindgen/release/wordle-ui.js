@@ -358,7 +358,7 @@ function __wbg_get_imports() {
             const ret = arg0.createTextNode(v0);
             return ret;
         },
-        __wbg_cyberpunkVictory_cd2743fb92bf2b82: function(arg0, arg1, arg2, arg3) {
+        __wbg_cyberpunkVictory_15856f2fd80ff499: function(arg0, arg1, arg2, arg3) {
             var v0 = getCachedStringFromWasm0(arg0, arg1);
             cyberpunkVictory(v0, arg2 !== 0, arg3 !== 0);
         },
@@ -741,8 +741,8 @@ function __wbg_get_imports() {
             return ret;
         },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { dtor_idx: 235, function: Function { arguments: [NamedExternref("MouseEvent")], shim_idx: 236, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h8b011c0aa6453190, wasm_bindgen__convert__closures_____invoke__h1d9f064e4bde653d);
+            // Cast intrinsic for `Closure(Closure { dtor_idx: 213, function: Function { arguments: [NamedExternref("MouseEvent")], shim_idx: 214, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+            const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h8069dc172c4c37fb, wasm_bindgen__convert__closures_____invoke__h769a6966742f9140);
             return ret;
         },
         __wbindgen_cast_0000000000000002: function(arg0, arg1) {
@@ -801,8 +801,8 @@ function wasm_bindgen__convert__closures_____invoke__h6498318c6e4b1211(arg0, arg
     wasm.wasm_bindgen__convert__closures_____invoke__h6498318c6e4b1211(arg0, arg1);
 }
 
-function wasm_bindgen__convert__closures_____invoke__h1d9f064e4bde653d(arg0, arg1, arg2) {
-    wasm.wasm_bindgen__convert__closures_____invoke__h1d9f064e4bde653d(arg0, arg1, arg2);
+function wasm_bindgen__convert__closures_____invoke__h769a6966742f9140(arg0, arg1, arg2) {
+    wasm.wasm_bindgen__convert__closures_____invoke__h769a6966742f9140(arg0, arg1, arg2);
 }
 
 function wasm_bindgen__convert__closures_____invoke__h10c013d297b780df(arg0, arg1, arg2) {

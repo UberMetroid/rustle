@@ -1,1 +1,1 @@
-/home/jeryd/Projects/rust-wordle/target/wasm32-unknown-unknown/debug/wordle-ui.wasm: /home/jeryd/Projects/rust-wordle/wordle-engine/src/lib.rs /home/jeryd/Projects/rust-wordle/wordle-engine/src/words.rs /home/jeryd/Projects/rust-wordle/wordle-ui/src/main.rs
+/home/jeryd/Projects/rustle/target/wasm32-unknown-unknown/debug/wordle-ui.wasm: /home/jeryd/Projects/rustle/wordle-engine/src/lib.rs /home/jeryd/Projects/rustle/wordle-engine/src/words.rs /home/jeryd/Projects/rustle/wordle-ui/src/main.rs

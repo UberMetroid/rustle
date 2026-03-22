@@ -3,165 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#10b981">
-    <title>Rustle</title>
-    
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) {
-                    registration.unregister();
-                }
-            });
-        }
-    </script>
-
+    <title>RUSTLE</title>
     <link data-trunk rel="tailwind-css" href="style/tailwind.css">
+    <link data-trunk rel="copy-file" href="public/global-stats.json">
     <script>
-        function cyberpunkVictory(theme, isHard, isNGPlus) {
-            const canvas = document.createElement('canvas');
-            canvas.style.position = 'fixed';
-            canvas.style.inset = '0';
-            canvas.style.pointerEvents = 'none';
-            canvas.style.zIndex = '200';
-            document.body.appendChild(canvas);
-            const ctx = canvas.getContext('2d');
-            
-            let width = canvas.width = window.innerWidth;
-            let height = canvas.height = window.innerHeight;
-
-            // SCALING FACTORS
-            const powerMult = (isHard ? 1.5 : 1.0) * (isNGPlus ? 2.0 : 1.0);
-            const duration = 120 * powerMult;
-
-            const effects = {
-                dark: () => { // DIGITAL VOID - GLITCH STROBE
-                    let frames = 0;
-                    const run = () => {
-                        ctx.clearRect(0, 0, width, height);
-                        if (Math.random() < 0.3 * powerMult) {
-                            ctx.fillStyle = `rgba(255, 255, 255, ${0.1 * powerMult})`;
-                            ctx.fillRect(Math.random() * width, 0, Math.random() * 100, height);
-                            ctx.fillRect(0, Math.random() * height, width, Math.random() * 50);
-                        }
-                        frames++;
-                        if (frames < duration) requestAnimationFrame(run);
-                        else canvas.remove();
-                    };
-                    run();
-                },
-                red: () => { // EMERGENCY MELTDOWN - RADIAL SHOCKWAVES
-                    let rings = [];
-                    let frames = 0;
-                    const run = () => {
-                        ctx.fillStyle = 'rgba(24, 0, 0, 0.2)';
-                        ctx.fillRect(0, 0, width, height);
-                        
-                        if (frames % Math.floor(10/powerMult) === 0) rings.push({ r: 0, a: 1 });
-                        
-                        rings.forEach((ring, i) => {
-                            ctx.strokeStyle = `rgba(255, 68, 68, ${ring.a})`;
-                            ctx.lineWidth = 15 * powerMult;
-                            ctx.beginPath();
-                            ctx.arc(width/2, height/2, ring.r, 0, Math.PI * 2);
-                            ctx.stroke();
-                            ring.r += 20 * powerMult;
-                            ring.a -= 0.02;
-                            if (ring.a <= 0) rings.splice(i, 1);
-                        });
-
-                        frames++;
-                        if (frames < duration * 1.5) requestAnimationFrame(run);
-                        else canvas.remove();
-                    };
-                    run();
-                },
-                green: () => { // MATRIX OVERLOAD
-                    const columns = Math.floor(width / 20);
-                    const drops = Array(columns).fill(1);
-                    let frames = 0;
-                    const run = () => {
-                        ctx.fillStyle = 'rgba(0, 26, 10, 0.15)';
-                        ctx.fillRect(0, 0, width, height);
-                        ctx.fillStyle = '#39ff14';
-                        ctx.font = `${Math.floor(20 * powerMult)}px monospace`;
-                        ctx.shadowBlur = 10 * powerMult;
-                        ctx.shadowColor = '#39ff14';
-
-                        for(let i = 0; i < drops.length; i++) {
-                            const text = String.fromCharCode(0x30A0 + Math.random() * 96);
-                            ctx.fillText(text, i * 20, drops[i] * 20);
-                            if(drops[i] * 20 > height && Math.random() > 0.95) drops[i] = 0;
-                            drops[i] += powerMult;
-                        }
-                        frames++;
-                        if (frames < duration * 2) requestAnimationFrame(run);
-                        else canvas.remove();
-                    };
-                    run();
-                },
-                blue: () => { // NEURAL UPLINK - FLYING HEXAGONS
-                    const hexes = Array(Math.floor(20 * powerMult)).fill().map(() => ({
-                        x: width/2, y: height/2, 
-                        vx: (Math.random() - 0.5) * 30 * powerMult,
-                        vy: (Math.random() - 0.5) * 30 * powerMult,
-                        s: 1, a: 1
-                    }));
-                    let frames = 0;
-                    const run = () => {
-                        ctx.fillStyle = 'rgba(0, 10, 26, 0.2)';
-                        ctx.fillRect(0, 0, width, height);
-                        
-                        hexes.forEach(h => {
-                            ctx.strokeStyle = `rgba(37, 99, 235, ${h.a})`;
-                            ctx.lineWidth = 3 * powerMult;
-                            ctx.beginPath();
-                            for(let i=0; i<6; i++) {
-                                let angle = i * Math.PI / 3;
-                                let px = h.x + Math.cos(angle) * 50 * h.s;
-                                let py = h.y + Math.sin(angle) * 50 * h.s;
-                                if(i===0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-                            }
-                            ctx.closePath();
-                            ctx.stroke();
-                            h.x += h.vx; h.y += h.vy; h.s += 0.05 * powerMult; h.a -= 0.01;
-                        });
-
-                        frames++;
-                        if (frames < duration) requestAnimationFrame(run);
-                        else canvas.remove();
-                    };
-                    run();
-                },
-                white: () => { // TOTAL SYSTEM PURGE - FRAGMENTATION
-                    let particles = Array(Math.floor(100 * powerMult)).fill().map(() => ({
-                        x: width/2, y: height/2,
-                        v: 10 + Math.random() * 20 * powerMult,
-                        angle: Math.random() * Math.PI * 2,
-                        size: 2 + Math.random() * 8
-                    }));
-                    let frames = 0;
-                    const run = () => {
-                        ctx.clearRect(0, 0, width, height);
-                        ctx.fillStyle = `rgba(255, 255, 255, ${1 - frames/duration})`;
-                        particles.forEach(p => {
-                            ctx.fillRect(p.x, p.y, p.size, p.size);
-                            p.x += Math.cos(p.angle) * p.v;
-                            p.y += Math.sin(p.angle) * p.v;
-                        });
-                        frames++;
-                        if (frames < duration) requestAnimationFrame(run);
-                        else canvas.remove();
-                    };
-                    run();
-                }
-            };
-
-            (effects[theme] || effects.dark)();
-        }
+        // BLOCKING THEME INITIALIZATION
+        (function() {
+            const savedTheme = localStorage.getItem('color-theme');
+            if (savedTheme) {
+                document.documentElement.className = 'theme-' + savedTheme;
+            } else {
+                const themes = ['dark', 'red', 'green', 'blue', 'white'];
+                const randomTheme = themes[Math.floor(Math.random() * themes.length)];
+                document.documentElement.className = 'theme-' + randomTheme;
+                localStorage.setItem('color-theme', randomTheme);
+            }
+        })();
     </script>
 </head>
-<body class="m-0 p-0 overflow-hidden">
+<body class="bg-black overflow-hidden fixed inset-0">
     <div id="root"></div>
+    <canvas id="victory-canvas" class="fixed inset-0 pointer-events-none z-[200] opacity-0 transition-opacity duration-1000"></canvas>
+    
+    <script>
+        // HIGH-PERFORMANCE 80s ARCADE CELEBRATION ENGINE
+        function cyberpunkVictory(theme, isHard, isNGPlus) {
+            const canvas = document.getElementById('victory-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            canvas.style.opacity = '1';
+
+            const particles = [];
+            const powerMult = (isHard ? 1.5 : 1.0) * (isNGPlus ? 2.5 : 1.0);
+            const particleCount = 150 * powerMult;
+
+            const colors = {
+                dark: ['#ffffff', '#333333', '#000000', '#666666'],
+                red: ['#ff0000', '#ff4444', '#880000', '#ff8888'],
+                green: ['#00ff00', '#44ff44', '#008800', '#88ff88'],
+                blue: ['#0000ff', '#4444ff', '#000088', '#8888ff'],
+                white: ['#10b981', '#059669', '#34d399', '#000000']
+            }[theme] || ['#00ff00'];
+
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 15 * powerMult,
+                    vy: (Math.random() - 0.5) * 15 * powerMult,
+                    size: Math.random() * 4 + 1,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 1.0,
+                    decay: Math.random() * 0.02 + 0.005,
+                    isGlitch: Math.random() > 0.9,
+                    char: String.fromCharCode(0x30A0 + Math.random() * 96)
+                });
+            }
+
+            function animate() {
+                ctx.fillStyle = theme === 'white' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                particles.forEach((p, i) => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life -= p.decay;
+
+                    if (theme === 'green' || (p.isGlitch && theme !== 'white')) {
+                        ctx.font = `${p.size * 4}px monospace`;
+                        ctx.fillStyle = p.color;
+                        ctx.fillText(p.char, p.x, p.y);
+                    } else {
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        ctx.fillStyle = p.color;
+                        ctx.fill();
+                    }
+
+                    if (p.life <= 0) particles.splice(i, 1);
+                });
+
+                if (particles.length > 0) {
+                    requestAnimationFrame(animate);
+                } else {
+                    canvas.style.opacity = '0';
+                    setTimeout(() => { ctx.clearRect(0, 0, canvas.width, canvas.height); }, 1000);
+                }
+            }
+            animate();
+        }
+    </script>
 </body>
 </html>

@@ -1994,6 +1994,7 @@ dependencies = [
  "chrono",
  "serde",
  "serde-wasm-bindgen 0.4.5",
+ "serde_json",
  "unicode-segmentation",
  "wasm-bindgen",
 ]
@@ -2005,9 +2006,14 @@ dependencies = [
  "chrono",
  "console_error_panic_hook",
  "gloo-timers",
+ "js-sys",
  "leptos",
+ "serde",
  "serde-wasm-bindgen 0.4.5",
+ "serde_json",
  "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
  "wordle-engine",
 ]
 

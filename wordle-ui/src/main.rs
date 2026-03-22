@@ -378,7 +378,7 @@ fn App() -> impl IntoView {
         if game_won.get() || game_lost.get() {
             if daily_game_done.get() {
                 if key == "ENTER" { start_ng_plus(); return; }
-                if key.len() == 1 && key.chars().next().unwrap().is_ascii_alphabetic() {
+                if key.len() == 1 && key.chars().next().unwrap_or(' ').is_ascii_alphabetic() {
                     start_ng_plus();
                 } else { return; }
             } else { return; }
@@ -437,7 +437,7 @@ fn App() -> impl IntoView {
             let mut turn_pts = 0;
             let current_map = char_statuses.get();
             for (i, status) in current_pattern.iter().enumerate() {
-                let c = input.chars().nth(i).unwrap();
+                let c = input.chars().nth(i).unwrap_or(' ');
                 let existing = current_map.get(&c).map(|s| s.as_str()).unwrap_or("");
                 if status == "correct" && existing != "correct" { turn_pts += 2; }
                 else if status == "present" && existing != "correct" && existing != "present" { turn_pts += 1; }
@@ -493,7 +493,7 @@ fn App() -> impl IntoView {
             }
         } else if key == "DELETE" {
             let len = current_input.get().len(); if len > 0 { set_last_typed_index.set(len as i32 - 1); set_destroy_trigger.set(js_sys::Date::now().to_string()); set_timeout(move || { set_current_input.update(|s| { s.pop(); }); set_last_typed_index.set(-1); set_destroy_trigger.set("".to_string()); }, std::time::Duration::from_millis(150)); }
-        } else if current_input.get().len() < 5 { let next_idx = current_input.get().len() as i32; set_last_typed_index.set(next_idx); let k = key.to_uppercase(); set_keyboard_pulse.set((k.chars().next().unwrap(), js_sys::Date::now().to_string())); set_current_input.update(|s| s.push_str(&k)); }
+        } else if current_input.get().len() < 5 { let next_idx = current_input.get().len() as i32; set_last_typed_index.set(next_idx); let k = key.to_uppercase(); set_keyboard_pulse.set((k.chars().next().unwrap_or(' '), js_sys::Date::now().to_string())); set_current_input.update(|s| s.push_str(&k)); }
     };
 
     let _ = window_event_listener(leptos::ev::keydown, move |ev| { 
@@ -505,7 +505,7 @@ fn App() -> impl IntoView {
             return; 
         }
         if show_help.get() { return; } 
-        if key == "Enter" { on_key("ENTER".to_string()); } else if key == "Backspace" { on_key("DELETE".to_string()); } else if key.len() == 1 { let c = key.chars().next().unwrap(); if c.is_ascii_alphabetic() { on_key(c.to_uppercase().to_string()); } } 
+        if key == "Enter" { on_key("ENTER".to_string()); } else if key == "Backspace" { on_key("DELETE".to_string()); } else if key.len() == 1 { let c = key.chars().next().unwrap_or(' '); if c.is_ascii_alphabetic() { on_key(c.to_uppercase().to_string()); } } 
     });
 
     view! {

@@ -212,7 +212,7 @@ fn App() -> impl IntoView {
                 "WALK BEFORE YOU RUN."
             ];
             set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
-            set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(3000));
+            set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(4000));
             return;
         }
         let was_active = is_ng_plus.get();
@@ -232,7 +232,7 @@ fn App() -> impl IntoView {
         text.push_str(&format!("\nTEAM {}: {} pts", t_val.to_uppercase(), if pts >= 0 { format!("+{}", pts) } else { pts.to_string() }));
         let _ = window().navigator().clipboard().write_text(&text);
         set_snarky_comment.set("RESULTS COPIED.".to_string());
-        set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));
+        set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(4000));
         if !is_ng_plus.get() { start_ng_plus(); }
     };
 
@@ -249,13 +249,13 @@ fn App() -> impl IntoView {
             let input = current_input.get().to_uppercase();
             let sol = solution_data.get().solution.to_uppercase();
             if input.len() < 5 { set_jiggle_row.set(true); set_timeout(move || set_jiggle_row.set(false), std::time::Duration::from_millis(500)); return; }
-            if !is_word_in_list(&input) { set_snarky_comment.set("NOT A WORD.".to_string()); set_jiggle_row.set(true); set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000)); return; }
+            if !is_word_in_list(&input) { set_snarky_comment.set("NOT A WORD.".to_string()); set_jiggle_row.set(true); set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(4000)); return; }
 
             let mut new_guesses = guesses.get(); let mut new_ss_vec = guess_statuses.get();
             if hard_mode.get() || is_ng_plus.get() {
                 let err = check_hard_mode(&input, serde_wasm_bindgen::to_value(&new_guesses).unwrap(), serde_wasm_bindgen::to_value(&new_ss_vec).unwrap());
                 if !err.is_empty() {
-                    set_snarky_comment.set(err); set_jiggle_row.set(true); set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(2000));
+                    set_snarky_comment.set(err); set_jiggle_row.set(true); set_timeout(move || { set_snarky_comment.set(String::new()); set_jiggle_row.set(false); }, std::time::Duration::from_millis(4000));
                     return;
                 }
             }
@@ -336,11 +336,11 @@ fn App() -> impl IntoView {
                             set_hard_mode.update(|h| *h = !*h);
                             let msgs = if hard_mode.get() { vec!["A GLUTTON FOR PUNISHMENT.", "OH, YOU THINK YOU'RE SMART?", "BRING THE PAIN.", "HARD MODE ENGAGED.", "NO MERCY.", "PREPARE TO SUFFER.", "FINALLY, A CHALLENGE."] } else { vec!["COWARD.", "TOO HARD FOR YOU?", "BACK TO BABY MODE.", "COPPING OUT ALREADY?", "WEAK AURA.", "I EXPECTED BETTER.", "EASY MODE ENGAGED."] };
                             set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
-                            set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));
+                            set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(4000));
                         } else {
                             let msgs = vec!["TOO LATE TO CHANGE NOW.", "YOU MADE YOUR BED.", "NO BACKING OUT MID-GAME.", "COMMITTED TO THIS PATH.", "NICE TRY."];
                             set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
-                            set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));
+                            set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(4000));
                         }
                     } title="Hard Mode" class=move || format!("btn-large shadow-lg border-2 transition-all active:scale-90 {}", if hard_mode.get() || is_ng_plus.get() { "correct-pad border-transparent" } else { "cell-neutral border-current" })> <svg class=move || format!("w-6 h-6 sm:w-8 sm:h-8 transition-all {}", if hard_mode.get() || is_ng_plus.get() { "text-yellow-300 scale-110 drop-shadow-[0_0_12px_rgba(253,224,71,1)]" } else { "text-current opacity-40" }) fill="currentColor" viewBox="0 0 24 24"> <path d="M13 10V3L4 14h7v7l9-11h-7z"></path> </svg> </button>
                 </aside>
@@ -358,7 +358,7 @@ fn App() -> impl IntoView {
                                 let l = label.to_uppercase();
                                 let msgs = vec![format!("JOINING TEAM {}.", l), format!("{} TEAM? BOLD CHOICE.", l), format!("TRAITOR. GOING TO {}.", l), format!("TEAM {} IT IS.", l)];
                                 set_snarky_comment.set(msgs[(js_sys::Math::random() * msgs.len() as f64).floor() as usize].to_string());
-                                set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(2000));
+                                set_timeout(move || set_snarky_comment.set(String::new()), std::time::Duration::from_millis(4000));
                             }
                         } title=format!("{} Team", label) class=format!("theme-square {} active:scale-125 {}", bg, if is_act { "active ring-2 ring-white ring-offset-2" } else { "" })> <Show when=move || winner_val == t> <div class="crown-icon">"👑"</div> </Show> <Show when=move || !pulse_val.is_empty() && is_act> <div key=pulse_val_2.clone() class="win-pulse">{pulse_val_2.clone()}</div> </Show> </button> }
                     }).collect_view()

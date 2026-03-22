@@ -94,6 +94,18 @@ If you want to build from source or contribute to the engine.
 
 ---
 
+## 📐 Engineering Standards
+This project adheres to a strict set of engineering mandates to ensure maximum maintainability and readability:
+- **Monolithic Deconstruction**: No single Rust source file exceeds **256 lines**. Logic is aggressively modularized into specialized components and modules.
+- **Self-Documenting & Empirical**: Every public struct, field, and function is documented with standard Rust `///` doc-comments. 
+- **Verifiable Logic**: The codebase features built-in testing suites for every crate:
+  - `wordle-engine`: Unit tests for core matching and adversarial AI.
+  - `wordle-server`: Integration tests using in-memory SQLite.
+  - `wordle-ui`: WebAssembly unit tests for state and reactive logic.
+- **Type-Safe Networking**: All communication between the frontend and backend is handled via shared Rust models and `serde`, ensuring zero runtime schema mismatches.
+
+---
+
 ## 📜 Credits
 While the code is 100% Rust, the visual inspiration and logic structure were informed by:
 *   [Cwackerfuss/React-Wordle](https://github.com/cwackerfuss/react-wordle)

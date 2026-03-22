@@ -25,8 +25,6 @@ pub struct GlobalStats {
     pub orange: TeamData,
     /// The name of the team that won yesterday.
     pub yesterday_winner: String,
-    /// A mapping of player unique IDs to their current team names.
-    pub active_players: HashMap<String, String>,
     /// The current game date in YYYY-MM-DD format.
     pub current_date: String,
     /// Current server time in milliseconds since epoch.
@@ -43,7 +41,6 @@ impl Default for GlobalStats {
             blue: TeamData::default(),
             orange: TeamData::default(),
             yesterday_winner: "none".to_string(),
-            active_players: HashMap::new(),
             current_date: Utc::now().format("%Y-%m-%d").to_string(),
             server_utc_timestamp: Utc::now().timestamp_millis() as u64,
         }

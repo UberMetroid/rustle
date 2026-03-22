@@ -30,10 +30,6 @@ pub mod state;
 pub mod app_helpers;
 /// The main keyboard event handler and game state machine.
 pub mod app_on_key;
-/// Specialized core modal logic.
-pub mod modals_core;
-/// Placeholder for complex logic extensions.
-pub mod app_logic;
 
 pub use api::*;
 pub use comments::*;
@@ -47,8 +43,6 @@ pub use modals::*;
 pub use state::*;
 pub use app_helpers::*;
 pub use app_on_key::*;
-pub use modals_core::*;
-pub use app_logic::*;
 
 use wasm_bindgen::JsCast;
 

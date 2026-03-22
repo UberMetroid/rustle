@@ -49,7 +49,7 @@ async fn main() {
 
 /// Creates the Axum router with all routes, state, and middleware configured.
 pub fn create_router(state: AppState) -> Router {
-    let governor_conf = Box::new(
+    let governor_conf = std::sync::Arc::new(
         GovernorConfigBuilder::default()
             .per_millisecond(500)
             .burst_size(10)
@@ -68,7 +68,7 @@ pub fn create_router(state: AppState) -> Router {
         .route(
             "/api/score",
             post(submit_score).layer(GovernorLayer {
-                config: Box::leak(governor_conf),
+                config: governor_conf,
             }),
         )
         .fallback_service(ServeDir::new("dist"))

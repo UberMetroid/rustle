@@ -4,12 +4,12 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-axum = "0.7.4"
-tokio = { version = "1.36", features = ["full"] }
-tower-http = { version = "0.5.1", features = ["fs", "cors", "compression-full"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-chrono = "0.4"
-tower_governor = "0.3.2"
-sqlx = { version = "0.8.6", features = ["sqlite", "runtime-tokio-rustls"] }
-dotenvy = "0.15"
+axum = "0.8.1"
+tokio = { version = "1.43.0", features = ["full"] }
+tower-http = { version = "0.6.2", features = ["fs", "cors", "compression-full"] }
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.135"
+chrono = "0.4.39"
+tower_governor = "0.6.0"
+sqlx = { version = "0.8.3", features = ["sqlite", "runtime-tokio-rustls"] }
+dotenvy = "0.15.7"

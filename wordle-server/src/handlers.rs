@@ -12,6 +12,7 @@ pub async fn get_stats(State(state): State<AppState>) -> Json<GlobalStats> {
         ..Default::default()
     };
 
+    // Fetch system state and team data in parallel or sequentially but efficiently
     if let Ok(row) =
         sqlx::query("SELECT current_date, yesterday_winner FROM sys_state WHERE id = 1")
             .fetch_one(&state.pool)

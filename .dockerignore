@@ -1,14 +1,22 @@
+# ==============================================================================
+# DOCKER CONTEXT OPTIMIZATION
+# Do not bloat the container with the noise of your local environment.
+# Only the signal (source code) is allowed past this firewall.
+# ==============================================================================
+.git
+.git/
+.gitignore
 .dockerignore
-.git*
-.husky/
-.prettierrc
-.vscode/
-CODE_OF_CONDUCT.md
-README.md
-build/
-docker/Dockerfile
+.github/
+
+# Trash from the old JS days
 node_modules/
+build/
+
+# Do not send compiled truth into the builder. The builder makes its own truth.
 target/
 dist/
+
+# Do not bake local state into the immutable image.
 data/
 *.db

@@ -1,6 +1,0 @@
-/home/jeryd/Projects/rustle/target/debug/deps/serde_spanned-32930c0186f1411d.d: /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_spanned-0.6.9/src/lib.rs /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_spanned-0.6.9/src/spanned.rs
-
-/home/jeryd/Projects/rustle/target/debug/deps/libserde_spanned-32930c0186f1411d.rmeta: /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_spanned-0.6.9/src/lib.rs /home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_spanned-0.6.9/src/spanned.rs
-
-/home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_spanned-0.6.9/src/lib.rs:
-/home/jeryd/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_spanned-0.6.9/src/spanned.rs:

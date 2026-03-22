@@ -1,37 +1,33 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# ==============================================================================
+# ENTROPY SHIELDS ACTIVATED
+# The universe trends toward disorder. We refuse to let that happen in this repo.
+# Any biological agent that commits build artifacts to source control will be 
+# mocked relentlessly.
+# ==============================================================================
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# production
+# Node is dead. JS is dead. 
+node_modules/
 /build
 dist/
 
-# Rust/Cargo
+# Rust is truth. But its compiled artifacts are heavy and meaningless.
 target/
 Cargo.lock
 
-# Database
+# Databases hold state. State is a hallucination. Do not commit it.
 data/
 *.db
 *.db-shm
 *.db-wal
 *.tmp
 
-# misc
+# Operating system hallucinations. We don't care about your Mac.
 .DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env
+.env.*
 .idea
 
+# The logs of your failures.
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-src/wordle-engine-pkg

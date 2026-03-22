@@ -26,6 +26,7 @@ struct GlobalStats {
     pub blue: TeamData,
     pub orange: TeamData,
     pub yesterday_winner: String,
+    pub server_utc_timestamp: u64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
@@ -80,6 +81,7 @@ async fn fetch_global_stats() -> GlobalStats {
         blue: TeamData { points: 0, players: 0, yesterday_total: 0 },
         orange: TeamData { points: 0, players: 0, yesterday_total: 0 },
         yesterday_winner: "none".to_string(),
+        server_utc_timestamp: js_sys::Date::now() as u64,
     }
 }
 
@@ -239,8 +241,14 @@ fn App() -> impl IntoView {
     let (point_locked_team, set_point_locked_team) = create_signal(None::<String>);
 
     let global_stats_res = create_local_resource(move || (), |_| fetch_global_stats());
-    let now = js_sys::Date::now();
-    let solution_data = create_memo(move |_| { let val = get_solution(now as u64); serde_wasm_bindgen::from_value::<SolutionData>(val).unwrap_or_else(|_| { SolutionData { solution: "APPLE".to_string(), solution_game_date: 0, solution_index: 0, tomorrow: 0 } }) });
+    let solution_data = create_memo(move |_| {
+        let ts = match global_stats_res.get() {
+            Some(stats) => stats.server_utc_timestamp,
+            None => js_sys::Date::now() as u64,
+        };
+        let val = get_solution(ts);
+        serde_wasm_bindgen::from_value::<SolutionData>(val).unwrap_or_else(|_| { SolutionData { solution: "APPLE".to_string(), solution_game_date: 0, solution_index: 0, tomorrow: 0 } }) 
+    });
 
     create_effect(move |_| {
         if let Some(storage) = get_storage() {
@@ -463,7 +471,7 @@ fn App() -> impl IntoView {
 
     view! {
         <div class="flex flex-col h-full bg-app-bg text-app-text overflow-hidden transition-all duration-500 relative">
-            <div class="absolute top-2 right-2 text-[8px] font-mono opacity-30 pointer-events-none z-50">"v1.2.0"</div>
+            <div class="absolute top-2 right-2 text-[8px] font-mono opacity-30 pointer-events-none z-50">"v1.3.0"</div>
             <header class="w-full flex flex-col items-center pt-2 sm:pt-4 shrink-0 relative z-50">
                 <div class="flex items-center gap-3">
                     <h1 class="text-3xl sm:text-5xl font-black tracking-tighter italic text-center title-text uppercase">"RUSTLE"</h1>

@@ -30,6 +30,7 @@ struct GlobalStats {
     pub yesterday_winner: String,
     pub active_players: HashMap<String, String>, // player_id -> team
     pub current_date: String,
+    pub server_utc_timestamp: u64,
 }
 
 impl Default for GlobalStats {
@@ -43,6 +44,7 @@ impl Default for GlobalStats {
             yesterday_winner: "none".to_string(),
             active_players: HashMap::new(),
             current_date: Utc::now().format("%Y-%m-%d").to_string(),
+            server_utc_timestamp: Utc::now().timestamp_millis() as u64,
         }
     }
 }
@@ -119,8 +121,9 @@ async fn main() {
 }
 
 async fn get_stats(State(state): State<AppState>) -> Json<GlobalStats> {
-    let r = state.read().await;
-    Json(r.clone())
+    let mut response = state.read().await.clone();
+    response.server_utc_timestamp = Utc::now().timestamp_millis() as u64;
+    Json(response)
 }
 
 async fn submit_score(State(state): State<AppState>, Json(payload): Json<ScorePayload>) {

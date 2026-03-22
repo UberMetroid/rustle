@@ -358,7 +358,7 @@ function __wbg_get_imports() {
             const ret = arg0.createTextNode(v0);
             return ret;
         },
-        __wbg_cyberpunkVictory_077cf843b78b3b7f: function(arg0, arg1, arg2, arg3) {
+        __wbg_cyberpunkVictory_5ea86dc922d07bca: function(arg0, arg1, arg2, arg3) {
             var v0 = getCachedStringFromWasm0(arg0, arg1);
             cyberpunkVictory(v0, arg2 !== 0, arg3 !== 0);
         },
@@ -742,7 +742,7 @@ function __wbg_get_imports() {
         },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
             // Cast intrinsic for `Closure(Closure { dtor_idx: 223, function: Function { arguments: [NamedExternref("MouseEvent")], shim_idx: 224, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__hded3ef3da009f324, wasm_bindgen__convert__closures_____invoke__h7a631fca426faa21);
+            const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__hbef263d2e83e4c92, wasm_bindgen__convert__closures_____invoke__hafe6707cfd2a18da);
             return ret;
         },
         __wbindgen_cast_0000000000000002: function(arg0, arg1) {
@@ -801,8 +801,8 @@ function wasm_bindgen__convert__closures_____invoke__h6498318c6e4b1211(arg0, arg
     wasm.wasm_bindgen__convert__closures_____invoke__h6498318c6e4b1211(arg0, arg1);
 }
 
-function wasm_bindgen__convert__closures_____invoke__h7a631fca426faa21(arg0, arg1, arg2) {
-    wasm.wasm_bindgen__convert__closures_____invoke__h7a631fca426faa21(arg0, arg1, arg2);
+function wasm_bindgen__convert__closures_____invoke__hafe6707cfd2a18da(arg0, arg1, arg2) {
+    wasm.wasm_bindgen__convert__closures_____invoke__hafe6707cfd2a18da(arg0, arg1, arg2);
 }
 
 function wasm_bindgen__convert__closures_____invoke__h10c013d297b780df(arg0, arg1, arg2) {
